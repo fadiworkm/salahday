@@ -13,9 +13,9 @@ let settings = {
 // ─── التهيئة ───
 document.addEventListener('DOMContentLoaded', () => {
   generateStars();
+  loadSettings();   // تحميل الإعدادات أولاً (بما فيها تنسيق الوقت)
   initDefaults();
   attachEvents();
-  loadSettings();
 });
 
 function initDefaults() {
@@ -67,6 +67,8 @@ function attachEvents() {
   document.getElementById('bedtime-input').addEventListener('change', hideResults);
   document.getElementById('calculate-btn').addEventListener('click', onCalculate);
   document.getElementById('btn-now').addEventListener('click', setCurrentTime);
+  document.getElementById('smart-btn').addEventListener('click', onSmartSleep);
+  document.getElementById('smart-recalc').addEventListener('click', onSmartSleep);
 
   // تغيير وقت بدء الفترة الثانية → إعادة حساب
   document.getElementById('period2-start-input').addEventListener('change', onPeriod2StartChange);
@@ -203,11 +205,84 @@ function showWarning(msg) {
 function hideResults() {
   const results = document.getElementById('results');
   results.classList.remove('visible');
+  document.getElementById('smart-section').style.display = 'none';
   setTimeout(() => {
     if (!results.classList.contains('visible')) {
       results.style.display = 'none';
     }
   }, 600);
+}
+
+// ─── النوم الذكي ───
+function onSmartSleep() {
+  const dateStr = document.getElementById('date-input').value;
+  if (!dateStr) return;
+
+  // إخفاء النتائج السابقة فقط (لا إخفاء قسم الذكي)
+  const results = document.getElementById('results');
+  results.classList.remove('visible');
+  setTimeout(() => {
+    if (!results.classList.contains('visible')) results.style.display = 'none';
+  }, 600);
+
+  const smartBed = document.getElementById('smart-bedtime').value || null;
+  const result = generateSmartSuggestions(dateStr, settings.cycleDuration, settings.preFajrBuffer, smartBed);
+  renderSmartTable(result);
+}
+
+function renderSmartTable(result) {
+  const section = document.getElementById('smart-section');
+  const tbody = document.getElementById('smart-tbody');
+
+  if (!result.suggestions.length) {
+    tbody.innerHTML = '<tr><td colspan="7" style="color:var(--text-muted)">لا توجد اقتراحات متاحة</td></tr>';
+    section.style.display = '';
+    return;
+  }
+
+  let html = '';
+  result.suggestions.forEach((s, i) => {
+    const qClass = s.total === 5 ? 'q-ideal' : s.total === 6 ? 'q-excellent' : s.total === 4 ? 'q-good' : 'q-long';
+    const totalH = (s.totalMinutes / 60);
+    const totalDisplay = totalH % 1 === 0 ? totalH + ' س' : totalH.toFixed(1) + ' س';
+    const p2Text = s.p2 > 0 ? formatCycles(s.p2) : '—';
+
+    html += `
+      <tr onclick="pickSmartOption(${i})" data-index="${i}">
+        <td class="td-time">${displayTime(s.bedtime)}</td>
+        <td class="td-time">${displayTime(s.wakeTime1)}</td>
+        <td class="td-cycles">${s.p1} دورات</td>
+        <td class="td-cycles2">${p2Text}</td>
+        <td class="td-total">${totalDisplay}</td>
+        <td class="td-quality ${qClass}">${s.qualityLabel}</td>
+        <td><button class="btn-pick" onclick="event.stopPropagation(); pickSmartOption(${i})">اختيار</button></td>
+      </tr>`;
+  });
+
+  tbody.innerHTML = html;
+  section.style.display = '';
+
+  // store suggestions for picking
+  window._smartSuggestions = result;
+
+  requestAnimationFrame(() => {
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+
+function pickSmartOption(index) {
+  const s = window._smartSuggestions.suggestions[index];
+  if (!s) return;
+
+  // تعبئة وقت النوم ووقت بدء الفترة الثانية
+  document.getElementById('bedtime-input').value = s.bedtime;
+  document.getElementById('period2-start-input').value = s.p2StartStr || s.sleepTime2 || '';
+
+  // إخفاء الاقتراحات
+  document.getElementById('smart-section').style.display = 'none';
+
+  // حساب
+  onCalculate();
 }
 
 // ─── عرض النتائج ───
@@ -240,15 +315,16 @@ function renderTimeline() {
   const opt = selectedOption;
   const plan = currentPlan;
 
+  const ishaMin = timeToMinutes(plan.isha);
   const bedMin = timeToMinutes(opt.bedtime);
   const wake1Min = timeToMinutes(opt.wakeTime1);
   const fajrMin = timeToMinutes(plan.fajr);
   const sleep2Min = opt.period2Cycles > 0 ? plan.period2StartMin : null;
   const wake2Min = opt.wakeTime2 ? timeToMinutes(opt.wakeTime2) : null;
 
-  // تطبيع الأوقات بالنسبة لوقت النوم
+  // تطبيع بالنسبة لوقت العشاء (بداية الجدول)
   function norm(t) {
-    let diff = t - bedMin;
+    let diff = t - ishaMin;
     if (diff < 0) diff += 1440;
     return diff;
   }
@@ -256,16 +332,24 @@ function renderTimeline() {
   const endMin = wake2Min ? norm(wake2Min) : norm(fajrMin) + 120;
   const total = endMin;
 
-  function pct(duration) {
-    return (duration / total * 100).toFixed(2) + '%';
-  }
-
   // بناء الأجزاء
   const segments = [];
   const cycleDur = plan.cycleDuration;
 
+  // فترة ما بعد العشاء (قبل النوم)
+  const ishaToSleepDur = norm(bedMin);
+  if (ishaToSleepDur > 0) {
+    segments.push({
+      flex: ishaToSleepDur,
+      cls: 'seg-isha',
+      label: 'بعد العشاء',
+      sub: formatDuration(ishaToSleepDur),
+      cycles: 0
+    });
+  }
+
   // الفترة 1: نوم
-  const sleep1Dur = norm(wake1Min);
+  const sleep1Dur = norm(wake1Min) - norm(bedMin);
   segments.push({
     flex: sleep1Dur,
     cls: 'seg-sleep',
@@ -285,7 +369,6 @@ function renderTimeline() {
   });
 
   if (opt.period2Cycles > 0) {
-    // فترة الصلاة والانتظار
     const prayerDur = norm(sleep2Min) - norm(fajrMin);
     segments.push({
       flex: prayerDur,
@@ -295,7 +378,6 @@ function renderTimeline() {
       cycles: 0
     });
 
-    // الفترة 2: نوم
     const sleep2Dur = norm(wake2Min) - norm(sleep2Min);
     segments.push({
       flex: sleep2Dur,
@@ -335,6 +417,7 @@ function renderTimeline() {
 
   html += '<div class="timeline-labels">';
   const allTimes = [];
+  allTimes.push({ time: plan.isha, label: 'العشاء', cls: 'lbl-isha' });
   allTimes.push({ time: opt.bedtime, label: 'النوم', cls: 'lbl-sleep' });
   allTimes.push({ time: opt.wakeTime1, label: 'استيقاظ', cls: 'lbl-wake' });
   allTimes.push({ time: plan.fajr, label: 'الفجر', cls: 'lbl-fajr' });
@@ -354,6 +437,8 @@ function renderTimeline() {
 
   // ─── عمودي (موبايل) ───
   const vtlSteps = [
+    { time: plan.isha, name: 'صلاة العشاء', fajr: false, isha: true },
+    { period: true, cls: 'vtl-p-isha', label: 'بعد العشاء', detail: formatDuration(ishaToSleepDur), cycles: 0 },
     { time: opt.bedtime, name: 'بدء النوم', fajr: false },
     { period: true, cls: 'vtl-p-sleep', label: formatCycles(opt.period1Cycles), detail: formatDuration(opt.period1Cycles * cycleDur), cycles: opt.period1Cycles, sleep: true },
     { time: opt.wakeTime1, name: 'استيقاظ', fajr: false },
@@ -386,8 +471,9 @@ function renderTimeline() {
           </div>
         </div>`;
     } else {
+      const evCls = step.fajr ? 'vtl-event-fajr' : step.isha ? 'vtl-event-isha' : '';
       html += `
-        <div class="vtl-event ${step.fajr ? 'vtl-event-fajr' : ''}">
+        <div class="vtl-event ${evCls}">
           <div class="vtl-time">${displayTime(step.time)}</div>
           <div class="vtl-dot"></div>
           <div class="vtl-evname">${step.name}</div>

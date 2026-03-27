@@ -57,11 +57,43 @@
           </div>
         </div>
 
-        <button id="calculate-btn" class="btn-primary">
-          &#9790; احسب جدول النوم
-        </button>
+        <div class="btn-row">
+          <button id="calculate-btn" class="btn-primary">
+            &#9790; احسب جدول النوم
+          </button>
+          <button id="smart-btn" type="button" class="btn-smart">
+            &#10024; النوم الذكي
+          </button>
+        </div>
 
         <div class="warning-msg" id="warning-msg"></div>
+      </div>
+
+      <!-- اقتراحات النوم الذكي -->
+      <div class="card smart-card" id="smart-section" style="display: none;">
+        <h2><span class="icon">&#10024;</span> اقتراحات النوم الذكي</h2>
+        <div class="smart-input-row">
+          <label>أنوي النوم الساعة</label>
+          <input type="time" id="smart-bedtime" step="900" placeholder="اختياري">
+          <button type="button" id="smart-recalc" class="btn-inline btn-inline-sm">تحديث</button>
+        </div>
+        <p class="smart-subtitle">أفضل 5 خيارات مع 4-5 دورات في الفترة الأولى (45-60 د بعد العشاء والفجر)</p>
+        <div class="smart-table-wrap">
+          <table class="smart-table" id="smart-table">
+            <thead>
+              <tr>
+                <th>النوم</th>
+                <th>الاستيقاظ</th>
+                <th>الفترة 1</th>
+                <th>الفترة 2</th>
+                <th>المجموع</th>
+                <th>الجودة</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="smart-tbody"></tbody>
+          </table>
+        </div>
       </div>
     </section>
 

@@ -382,6 +382,176 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   background: rgba(124, 106, 239, 0.25);
 }
 
+/* ─── صف الأزرار ─── */
+.btn-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.btn-row .btn-primary { flex: 1; margin-top: 0; }
+
+.btn-smart {
+  padding: 16px 20px;
+  background: linear-gradient(135deg, var(--purple), var(--blue));
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 20px var(--purple-glow);
+  white-space: nowrap;
+}
+
+.btn-smart:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(124, 106, 239, 0.35);
+}
+
+/* ─── اقتراحات النوم الذكي ─── */
+.smart-card {
+  border-color: rgba(124, 106, 239, 0.2);
+  animation: fade-in-up 0.5s ease;
+}
+
+.smart-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  background: rgba(124, 106, 239, 0.06);
+  border: 1px solid rgba(124, 106, 239, 0.12);
+  border-radius: var(--radius-sm);
+}
+
+.smart-input-row label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--purple);
+  white-space: nowrap;
+}
+
+.smart-input-row input {
+  max-width: 130px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(124, 106, 239, 0.2);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  outline: none;
+  direction: ltr;
+  text-align: center;
+  transition: border-color 0.3s;
+}
+
+.smart-input-row input:focus {
+  border-color: var(--purple);
+}
+
+.smart-subtitle {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 16px;
+}
+
+.smart-table-wrap {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.smart-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.smart-table th {
+  padding: 10px 8px;
+  text-align: center;
+  font-weight: 700;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  white-space: nowrap;
+}
+
+.smart-table td {
+  padding: 12px 8px;
+  text-align: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  white-space: nowrap;
+}
+
+.smart-table tbody tr {
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.smart-table tbody tr:hover {
+  background: rgba(124, 106, 239, 0.08);
+}
+
+.smart-table .td-time {
+  font-weight: 700;
+  font-size: 0.9rem;
+  direction: ltr;
+  unicode-bidi: bidi-override;
+}
+
+.smart-table .td-cycles {
+  font-weight: 700;
+  color: var(--purple);
+}
+
+.smart-table .td-cycles2 {
+  font-weight: 600;
+  color: var(--fajr);
+}
+
+.smart-table .td-total {
+  font-weight: 800;
+}
+
+.smart-table .td-quality {
+  font-weight: 700;
+  font-size: 0.78rem;
+}
+
+.smart-table .q-ideal { color: var(--success); }
+.smart-table .q-excellent { color: var(--gold); }
+.smart-table .q-good { color: var(--blue); }
+.smart-table .q-long { color: var(--fajr); }
+
+.btn-pick {
+  padding: 6px 14px;
+  background: rgba(124, 106, 239, 0.15);
+  color: var(--purple);
+  border: 1px solid rgba(124, 106, 239, 0.3);
+  border-radius: 8px;
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-pick:hover {
+  background: rgba(124, 106, 239, 0.3);
+}
+
+@media (max-width: 600px) {
+  .btn-row { flex-direction: column; }
+  .smart-table { font-size: 0.78rem; }
+  .smart-table th, .smart-table td { padding: 8px 4px; }
+}
+
 /* ─── رسالة التحذير ─── */
 .warning-msg {
   display: none;
@@ -659,6 +829,11 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   line-height: 1.2;
 }
 
+.seg-isha {
+  background: rgba(124, 106, 239, 0.12);
+  color: var(--purple);
+}
+
 .seg-sleep {
   background: linear-gradient(135deg, var(--purple), var(--blue));
   color: #fff;
@@ -729,6 +904,15 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   font-weight: 600;
 }
 
+.lbl-isha .tl-line {
+  background: var(--purple);
+  height: 12px;
+  width: 2px;
+}
+
+.lbl-isha .tl-time { color: var(--purple); }
+.lbl-isha .tl-name { color: var(--purple); font-weight: 600; }
+
 /* ─── الجدول الزمني العمودي (موبايل) ─── */
 .vtl { display: none; }
 
@@ -783,6 +967,11 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   margin-right: 4.5px; /* center under 12px dot */
 }
 
+.vtl-p-isha .vtl-bar { background: rgba(124, 106, 239, 0.3); }
+.vtl-p-isha .vtl-info-label { color: var(--text-muted); }
+.vtl-event-isha .vtl-dot { background: var(--purple); box-shadow: 0 0 8px var(--purple-glow); }
+.vtl-event-isha .vtl-time { color: var(--purple); }
+.vtl-event-isha .vtl-evname { color: var(--purple); font-weight: 700; }
 .vtl-p-sleep .vtl-bar { background: linear-gradient(to bottom, var(--purple), var(--blue)); }
 .vtl-p-awake .vtl-bar { background: rgba(255, 255, 255, 0.12); }
 .vtl-p-prayer .vtl-bar { background: var(--fajr); opacity: 0.5; }

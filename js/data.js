@@ -49,7 +49,7 @@ function minutesToTime(minutes) {
 function displayTime(timeStr) {
   if (typeof settings === 'undefined' || settings.timeFormat !== '12') return timeStr;
   const [h, m] = timeStr.split(':').map(Number);
-  const period = h >= 12 ? 'م' : 'ص';
+  const period = h >= 12 ? 'PM' : 'AM';
   const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
   return `${h12}:${String(m).padStart(2, '0')} ${period}`;
 }
