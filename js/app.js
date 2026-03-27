@@ -6,7 +6,8 @@ let currentPlan = null;
 let selectedOption = null;
 let settings = {
   cycleDuration: 90,
-  preFajrBuffer: 60
+  preFajrBuffer: 60,
+  timeFormat: '24'  // '24' أو '12'
 };
 
 // ─── التهيئة ───
@@ -87,6 +88,15 @@ function attachEvents() {
   preFajrInput.addEventListener('input', () => {
     document.getElementById('pre-fajr-buffer-value').textContent = preFajrInput.value;
   });
+
+  // أزرار تبديل تنسيق الوقت
+  document.querySelectorAll('#time-format-toggle .toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#time-format-toggle .toggle-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      settings.timeFormat = btn.dataset.value;
+    });
+  });
 }
 
 // ─── عرض أوقات الصلاة ───
@@ -97,8 +107,8 @@ function updatePrayerDisplay() {
   const todayPrayer = getPrayerTimes(dateStr);
   const tomorrowPrayer = getPrayerTimes(getNextDate(dateStr));
 
-  document.getElementById('isha-time').textContent = todayPrayer.isha;
-  document.getElementById('fajr-time').textContent = tomorrowPrayer.fajr;
+  document.getElementById('isha-time').textContent = displayTime(todayPrayer.isha);
+  document.getElementById('fajr-time').textContent = displayTime(tomorrowPrayer.fajr);
   document.getElementById('fajr-date-label').textContent = formatArabicDate(getNextDate(dateStr));
 
   // إعادة تعيين وقت بدء الفترة الثانية للافتراضي
@@ -336,7 +346,7 @@ function renderTimeline() {
     html += `
       <div class="timeline-label ${t.cls}" style="right: ${pos}%">
         <div class="tl-line"></div>
-        <div class="tl-time">${t.time}</div>
+        <div class="tl-time">${displayTime(t.time)}</div>
         <div class="tl-name">${t.label}</div>
       </div>`;
   });
@@ -378,7 +388,7 @@ function renderTimeline() {
     } else {
       html += `
         <div class="vtl-event ${step.fajr ? 'vtl-event-fajr' : ''}">
-          <div class="vtl-time">${step.time}</div>
+          <div class="vtl-time">${displayTime(step.time)}</div>
           <div class="vtl-dot"></div>
           <div class="vtl-evname">${step.name}</div>
         </div>`;
@@ -399,12 +409,12 @@ function renderPeriod1() {
       <div class="info-item">
         <div class="info-icon sleep-icon"></div>
         <div class="info-label">وقت النوم</div>
-        <div class="info-value">${opt.bedtime}</div>
+        <div class="info-value">${displayTime(opt.bedtime)}</div>
       </div>
       <div class="info-item">
         <div class="info-icon wake-icon"></div>
         <div class="info-label">وقت الاستيقاظ</div>
-        <div class="info-value">${opt.wakeTime1}</div>
+        <div class="info-value">${displayTime(opt.wakeTime1)}</div>
       </div>
     </div>
     <div class="cycles-display">
@@ -438,7 +448,7 @@ function renderPeriod2() {
       <div class="info-item">
         <div class="info-icon wake-icon2"></div>
         <div class="info-label">وقت الاستيقاظ</div>
-        <div class="info-value">${opt.wakeTime2}</div>
+        <div class="info-value">${displayTime(opt.wakeTime2)}</div>
       </div>
     </div>
     <div class="cycles-display">
@@ -530,11 +540,17 @@ function loadSettings() {
   document.getElementById('cycle-duration-value').textContent = settings.cycleDuration;
   document.getElementById('pre-fajr-buffer').value = settings.preFajrBuffer;
   document.getElementById('pre-fajr-buffer-value').textContent = settings.preFajrBuffer;
+
+  // تحديث زر تنسيق الوقت
+  document.querySelectorAll('#time-format-toggle .toggle-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.value === settings.timeFormat);
+  });
 }
 
 function saveSettings() {
   settings.cycleDuration = parseInt(document.getElementById('cycle-duration').value);
   settings.preFajrBuffer = parseInt(document.getElementById('pre-fajr-buffer').value);
+  // timeFormat is already updated live via toggle click
   localStorage.setItem('sleepCalcSettings', JSON.stringify(settings));
 }
 
@@ -547,6 +563,9 @@ function closeSettings() {
   saveSettings();
   document.getElementById('settings-overlay').classList.remove('active');
   document.body.style.overflow = '';
+
+  // تحديث عرض أوقات الصلاة بالتنسيق الجديد
+  updatePrayerDisplay();
 
   // إعادة الحساب إن كانت هناك نتائج
   if (currentPlan) onCalculate();

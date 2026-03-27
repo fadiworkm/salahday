@@ -45,6 +45,15 @@ function minutesToTime(minutes) {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
+/** عرض الوقت بتنسيق 12 أو 24 ساعة حسب الإعدادات */
+function displayTime(timeStr) {
+  if (typeof settings === 'undefined' || settings.timeFormat !== '12') return timeStr;
+  const [h, m] = timeStr.split(':').map(Number);
+  const period = h >= 12 ? 'م' : 'ص';
+  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return `${h12}:${String(m).padStart(2, '0')} ${period}`;
+}
+
 /** تقريب الدقائق لأعلى إلى أقرب مضاعف لـ 15 */
 function roundUpTo15(minutes) {
   return Math.ceil(minutes / 15) * 15;
