@@ -48,6 +48,15 @@ function setCurrentTime() {
   hideResults();
 }
 
+/** ضبط الوقت الحالي لبدء الفترة الثانية */
+function setCurrentTimeP2() {
+  const now = new Date();
+  let mins = now.getHours() * 60 + now.getMinutes();
+  mins = roundUpTo15(mins);
+  document.getElementById('period2-start-input').value = minutesToTime(mins);
+  onPeriod2StartChange();
+}
+
 function attachEvents() {
   document.getElementById('date-input').addEventListener('change', () => {
     updatePrayerDisplay();
@@ -60,6 +69,7 @@ function attachEvents() {
 
   // تغيير وقت بدء الفترة الثانية → إعادة حساب
   document.getElementById('period2-start-input').addEventListener('change', onPeriod2StartChange);
+  document.getElementById('btn-now-p2').addEventListener('click', setCurrentTimeP2);
 
   // الإعدادات
   document.getElementById('settings-toggle').addEventListener('click', openSettings);
@@ -242,72 +252,77 @@ function renderTimeline() {
 
   // بناء الأجزاء
   const segments = [];
+  const cycleDur = plan.cycleDuration;
 
   // الفترة 1: نوم
   const sleep1Dur = norm(wake1Min);
   segments.push({
-    width: pct(sleep1Dur),
+    flex: sleep1Dur,
     cls: 'seg-sleep',
-    label: 'نوم',
-    startTime: opt.bedtime,
-    endTime: opt.wakeTime1
+    label: formatCycles(opt.period1Cycles),
+    sub: formatDuration(opt.period1Cycles * cycleDur),
+    cycles: opt.period1Cycles
   });
 
   // فترة اليقظة قبل الفجر
   const awakeDur = norm(fajrMin) - norm(wake1Min);
   segments.push({
-    width: pct(awakeDur),
+    flex: awakeDur,
     cls: 'seg-awake',
     label: 'يقظة وعبادة',
-    startTime: opt.wakeTime1,
-    endTime: plan.fajr
+    sub: formatDuration(awakeDur),
+    cycles: 0
   });
 
   if (opt.period2Cycles > 0) {
     // فترة الصلاة والانتظار
     const prayerDur = norm(sleep2Min) - norm(fajrMin);
     segments.push({
-      width: pct(prayerDur),
+      flex: prayerDur,
       cls: 'seg-prayer',
-      label: 'صلاة الفجر',
-      startTime: plan.fajr,
-      endTime: opt.sleepTime2
+      label: 'صلاة',
+      sub: '',
+      cycles: 0
     });
 
     // الفترة 2: نوم
     const sleep2Dur = norm(wake2Min) - norm(sleep2Min);
     segments.push({
-      width: pct(sleep2Dur),
+      flex: sleep2Dur,
       cls: 'seg-sleep2',
-      label: 'نوم',
-      startTime: opt.sleepTime2,
-      endTime: opt.wakeTime2
+      label: formatCycles(opt.period2Cycles),
+      sub: formatDuration(opt.period2Cycles * cycleDur),
+      cycles: opt.period2Cycles
     });
   } else {
-    // لا نوم بعد الفجر
     const restDur = endMin - norm(fajrMin);
     segments.push({
-      width: pct(restDur),
+      flex: restDur,
       cls: 'seg-prayer',
-      label: 'صلاة الفجر',
-      startTime: plan.fajr,
-      endTime: ''
+      label: 'صباح',
+      sub: '',
+      cycles: 0
     });
   }
 
-  let html = '<div class="timeline-wrapper" dir="ltr">';
+  // ─── أفقي (سطح المكتب) ───
+  let html = '<div class="timeline-horizontal">';
   html += '<div class="timeline-bar">';
   segments.forEach(seg => {
+    const dots = seg.cycles > 0
+      ? '<span class="seg-dots">' + '●'.repeat(seg.cycles) + '</span>'
+      : '';
     html += `
-      <div class="timeline-segment ${seg.cls}" style="flex: ${(parseFloat(seg.width))}">
+      <div class="timeline-segment ${seg.cls}" style="flex: ${seg.flex}">
         <div class="seg-inner">
+          ${dots}
           <div class="seg-label">${seg.label}</div>
+          ${seg.sub ? '<div class="seg-sub">' + seg.sub + '</div>' : ''}
         </div>
       </div>`;
   });
   html += '</div>';
 
-  // صف الأوقات تحت الشريط
   html += '<div class="timeline-labels">';
   const allTimes = [];
   allTimes.push({ time: opt.bedtime, label: 'النوم', cls: 'lbl-sleep' });
@@ -319,13 +334,57 @@ function renderTimeline() {
   allTimes.forEach(t => {
     const pos = (norm(timeToMinutes(t.time)) / total * 100).toFixed(2);
     html += `
-      <div class="timeline-label ${t.cls}" style="left: ${pos}%">
+      <div class="timeline-label ${t.cls}" style="right: ${pos}%">
         <div class="tl-line"></div>
         <div class="tl-time">${t.time}</div>
         <div class="tl-name">${t.label}</div>
       </div>`;
   });
   html += '</div></div>';
+
+  // ─── عمودي (موبايل) ───
+  const vtlSteps = [
+    { time: opt.bedtime, name: 'بدء النوم', fajr: false },
+    { period: true, cls: 'vtl-p-sleep', label: formatCycles(opt.period1Cycles), detail: formatDuration(opt.period1Cycles * cycleDur), cycles: opt.period1Cycles, sleep: true },
+    { time: opt.wakeTime1, name: 'استيقاظ', fajr: false },
+    { period: true, cls: 'vtl-p-awake', label: 'يقظة وعبادة', detail: formatDuration(awakeDur), cycles: 0 },
+    { time: plan.fajr, name: 'صلاة الفجر', fajr: true }
+  ];
+
+  if (opt.period2Cycles > 0) {
+    vtlSteps.push(
+      { period: true, cls: 'vtl-p-prayer', label: 'صلاة وأذكار', detail: '', cycles: 0 },
+      { time: plan.period2Start, name: 'بدء النوم', fajr: false },
+      { period: true, cls: 'vtl-p-sleep2', label: formatCycles(opt.period2Cycles), detail: formatDuration(opt.period2Cycles * cycleDur), cycles: opt.period2Cycles, sleep: true },
+      { time: opt.wakeTime2, name: 'استيقاظ نهائي', fajr: false }
+    );
+  }
+
+  html += '<div class="vtl">';
+  vtlSteps.forEach(step => {
+    if (step.period) {
+      const dots = step.cycles > 0
+        ? '<div class="vtl-info-dots">' + '●'.repeat(step.cycles) + '</div>'
+        : '';
+      html += `
+        <div class="vtl-period ${step.cls}">
+          <div class="vtl-bar"></div>
+          <div class="vtl-info">
+            ${dots}
+            <div class="vtl-info-label">${step.label}</div>
+            ${step.detail ? '<div class="vtl-info-detail">' + step.detail + '</div>' : ''}
+          </div>
+        </div>`;
+    } else {
+      html += `
+        <div class="vtl-event ${step.fajr ? 'vtl-event-fajr' : ''}">
+          <div class="vtl-time">${step.time}</div>
+          <div class="vtl-dot"></div>
+          <div class="vtl-evname">${step.name}</div>
+        </div>`;
+    }
+  });
+  html += '</div>';
 
   container.innerHTML = html;
 }

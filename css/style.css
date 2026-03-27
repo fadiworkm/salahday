@@ -223,6 +223,11 @@ header .subtitle {
   transform: translateY(0);
 }
 
+.btn-inline-sm {
+  padding: 8px 14px;
+  font-size: 0.78rem;
+}
+
 /* حقل بدء الفترة الثانية */
 .period2-start-row {
   display: flex;
@@ -594,13 +599,13 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   padding-bottom: 8px;
 }
 
-.timeline-wrapper {
-  direction: ltr;
+.timeline-horizontal {
+  /* RTL: flows right-to-left naturally */
 }
 
 .timeline-bar {
   display: flex;
-  height: 48px;
+  height: 72px;
   border-radius: 12px;
   overflow: hidden;
   background: rgba(255, 255, 255, 0.03);
@@ -624,13 +629,34 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 .seg-inner {
   text-align: center;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+}
+
+.seg-dots {
+  font-size: 0.5rem;
+  letter-spacing: 2px;
+  opacity: 0.7;
+  line-height: 1;
 }
 
 .seg-label {
-  font-size: 0.72rem;
+  font-size: 0.68rem;
   font-weight: 700;
   white-space: nowrap;
   opacity: 0.9;
+  line-height: 1.2;
+}
+
+.seg-sub {
+  font-size: 0.58rem;
+  font-weight: 400;
+  opacity: 0.65;
+  white-space: nowrap;
+  line-height: 1.2;
 }
 
 .seg-sleep {
@@ -663,7 +689,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 .timeline-label {
   position: absolute;
   top: 0;
-  transform: translateX(-50%);
+  transform: translateX(50%);
   text-align: center;
   white-space: nowrap;
 }
@@ -701,6 +727,101 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 .lbl-fajr .tl-name {
   color: var(--fajr);
   font-weight: 600;
+}
+
+/* ─── الجدول الزمني العمودي (موبايل) ─── */
+.vtl { display: none; }
+
+.vtl-event {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+}
+
+.vtl-time {
+  min-width: 48px;
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: var(--text-secondary);
+  text-align: center;
+  direction: ltr;
+  flex-shrink: 0;
+}
+
+.vtl-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  flex-shrink: 0;
+  z-index: 1;
+}
+
+.vtl-event-fajr .vtl-dot { background: var(--fajr); width: 14px; height: 14px; box-shadow: 0 0 8px var(--fajr-glow); }
+.vtl-event-fajr .vtl-time { color: var(--fajr); }
+.vtl-event-fajr .vtl-evname { color: var(--fajr); font-weight: 700; }
+
+.vtl-evname {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.vtl-period {
+  display: flex;
+  gap: 12px;
+  padding: 2px 0;
+  margin-right: 54px; /* align bar under dot: 48px time + 6px gap center */
+}
+
+.vtl-bar {
+  width: 3px;
+  min-height: 36px;
+  border-radius: 2px;
+  flex-shrink: 0;
+  margin-right: 4.5px; /* center under 12px dot */
+}
+
+.vtl-p-sleep .vtl-bar { background: linear-gradient(to bottom, var(--purple), var(--blue)); }
+.vtl-p-awake .vtl-bar { background: rgba(255, 255, 255, 0.12); }
+.vtl-p-prayer .vtl-bar { background: var(--fajr); opacity: 0.5; }
+.vtl-p-sleep2 .vtl-bar { background: linear-gradient(to bottom, #5b3eaa, var(--fajr)); }
+
+.vtl-info {
+  padding: 6px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.vtl-info-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.vtl-p-sleep .vtl-info-label { color: var(--purple); }
+.vtl-p-sleep2 .vtl-info-label { color: var(--fajr); }
+.vtl-p-awake .vtl-info-label { color: var(--text-muted); }
+
+.vtl-info-detail {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.vtl-info-dots {
+  font-size: 0.55rem;
+  letter-spacing: 3px;
+  color: var(--purple);
+  line-height: 1;
+}
+
+.vtl-p-sleep2 .vtl-info-dots { color: var(--fajr); }
+
+@media (max-width: 600px) {
+  .timeline-horizontal { display: none; }
+  .vtl { display: block; }
 }
 
 /* ─── الملخص ─── */
