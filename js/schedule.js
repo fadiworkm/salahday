@@ -709,6 +709,10 @@ function renderWorkBlocks(segments, prayerMins) {
     if (!disabled) totalAvail += freeTime;
 
     const periodName = prayerMins ? getWorkBetweenPrayers(seg, prayerMins) : '';
+    const now2 = new Date();
+    const nowMin2 = now2.getHours() * 60 + now2.getMinutes();
+    const isToday2 = document.getElementById('schedule-date').value === now2.toISOString().split('T')[0];
+    const isCurrent = isToday2 && nowMin2 >= seg.start && nowMin2 < seg.end;
 
     html += `<div class="wt-period${currentClass}${disabledClass}">`;
 
@@ -719,6 +723,36 @@ function renderWorkBlocks(segments, prayerMins) {
     html += `</div>`;
     if (periodName) {
       html += `<div class="wt-period-name">${periodName}</div>`;
+    }
+
+    // شريط التقدم للفترة الحالية
+    if (isCurrent && !disabled && freeTime > 0) {
+      // حساب الوقت المنقضي والمتبقي لهذه الفترة فقط
+      let pGone = 0, pLeft = 0;
+      let cursor2 = seg.start;
+      periodActs.forEach(act => {
+        if (act.start > cursor2) {
+          const fs = cursor2, fe = act.start;
+          if (nowMin2 >= fe) pGone += fe - fs;
+          else if (nowMin2 > fs) { pGone += nowMin2 - fs; pLeft += fe - nowMin2; }
+          else pLeft += fe - fs;
+        }
+        cursor2 = act.end;
+      });
+      if (cursor2 < seg.end) {
+        const fs = cursor2, fe = seg.end;
+        if (nowMin2 >= fe) pGone += fe - fs;
+        else if (nowMin2 > fs) { pGone += nowMin2 - fs; pLeft += fe - nowMin2; }
+        else pLeft += fe - fs;
+      }
+      const pPct = freeTime > 0 ? ((pGone / freeTime) * 100).toFixed(1) : 0;
+
+      html += `<div class="wt-period-progress">`;
+      html += `<div class="wp-bar"><div class="wp-fill" style="width:${pPct}%"></div></div>`;
+      html += `<div class="wp-labels">`;
+      html += `<div class="wp-gone"><span class="wp-dot wp-dot-gone"></span> انتهى <b>${formatDuration(pGone)}</b></div>`;
+      html += `<div class="wp-left"><span class="wp-dot wp-dot-left"></span> متبقي <b>${formatDuration(pLeft)}</b></div>`;
+      html += `</div></div>`;
     }
 
     if (!disabled) {
