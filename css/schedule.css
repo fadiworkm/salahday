@@ -488,63 +488,283 @@
 
 /* ─── 5. Work Blocks Summary ─── */
 .work-blocks {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
   margin-top: 8px;
 }
 
-.work-block-item {
+/* ─── جدول فترات العمل (timeline) ─── */
+.work-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.wt-block {
+  display: flex;
+  align-items: stretch;
+  border-bottom: 1px solid rgba(78, 205, 196, 0.08);
+  transition: opacity 0.25s, background 0.2s;
+}
+
+.wt-block:last-child {
+  border-bottom: none;
+}
+
+.wt-bar {
+  width: 4px;
+  background: var(--success);
+  flex-shrink: 0;
+  border-radius: 2px 0 0 2px;
+  transition: background 0.25s;
+}
+
+.wt-main {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
-  background: rgba(78, 205, 196, 0.04);
-  border: 1px solid rgba(78, 205, 196, 0.1);
-  border-radius: var(--radius-sm);
-  border-right: 3px solid var(--success);
-  transition: background 0.2s;
-}
-
-.work-block-item:hover {
-  background: rgba(78, 205, 196, 0.08);
-}
-
-.wb-time {
-  font-size: 0.9rem;
-  font-weight: 700;
-  color: var(--cyan);
-  direction: ltr;
-  text-align: left;
-  white-space: nowrap;
-  font-variant-numeric: tabular-nums;
-}
-
-.wb-duration {
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--text-secondary);
   flex: 1;
 }
 
-.wb-note {
+.wt-check-label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.wt-check-label input[type="checkbox"] {
+  display: none;
+}
+
+.wt-check-custom {
+  width: 22px;
+  height: 22px;
+  border: 2px solid rgba(78, 205, 196, 0.4);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.wt-check-label input:checked + .wt-check-custom {
+  background: var(--success);
+  border-color: var(--success);
+}
+
+.wt-check-label input:checked + .wt-check-custom::after {
+  content: '\2713';
+  color: #fff;
   font-size: 0.75rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.wt-info {
+  display: flex;
+  align-items: center;
+  gap: 8px 12px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.wt-time {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--cyan);
+  unicode-bidi: plaintext;
+  direction: rtl;
+  white-space: nowrap;
+}
+
+.wt-dur {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: rgba(78, 205, 196, 0.1);
+  padding: 2px 10px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+.wt-between {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  width: 100%;
+}
+
+/* بلوك غير محدد */
+.wt-block-unchecked {
+  opacity: 0.4;
+}
+
+.wt-block-unchecked .wt-bar {
+  background: var(--text-muted);
+}
+
+.wt-block-unchecked .wt-time {
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.wt-block-unchecked .wt-dur {
+  background: rgba(255, 255, 255, 0.04);
   color: var(--text-muted);
 }
 
-.wb-total {
+/* البلوك الحالي */
+.wt-block-current {
+  background: rgba(78, 205, 196, 0.06);
+}
+
+.wt-block-current .wt-bar {
+  box-shadow: 0 0 8px rgba(78, 205, 196, 0.4);
+}
+
+/* شريط المجموع */
+.work-total-bar {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   padding: 14px 16px;
-  margin-top: 6px;
+  margin-top: 10px;
   background: rgba(78, 205, 196, 0.06);
   border: 1px solid rgba(78, 205, 196, 0.15);
   border-radius: var(--radius-sm);
-  font-size: 0.92rem;
+  font-size: 0.88rem;
   font-weight: 700;
+  flex-wrap: wrap;
+}
+
+.wtb-label {
+  color: var(--text-secondary);
+}
+
+.wtb-value {
   color: var(--success);
+  font-size: 1rem;
+}
+
+.wtb-sep {
+  color: var(--text-muted);
+  font-weight: 400;
+}
+
+.wtb-all {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.no-work-msg {
+  text-align: center;
+  color: var(--text-muted);
+  padding: 20px;
+}
+
+/* ─── فترات العمل المرئية ─── */
+.wt-period {
+  margin-bottom: 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(78, 205, 196, 0.1);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.wt-period.wt-block-current {
+  border-color: rgba(78, 205, 196, 0.25);
+  box-shadow: 0 0 12px rgba(78, 205, 196, 0.08);
+}
+
+.wt-period.wt-block-unchecked {
+  opacity: 0.4;
+  border-color: rgba(255, 255, 255, 0.05);
+}
+
+.wt-period-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  gap: 8px;
+}
+
+.wt-period-time {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--cyan);
+  unicode-bidi: plaintext;
+  direction: rtl;
+}
+
+.wt-period-free {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.wt-period-name {
+  padding: 0 14px 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.wt-visual-bar {
+  display: flex;
+  height: 38px;
+  margin: 0 12px 8px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgba(78, 205, 196, 0.08);
+  border: 1px solid rgba(78, 205, 196, 0.1);
+}
+
+.wt-vb-seg {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.68rem;
+  font-weight: 600;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.wt-vb-free {
+  color: var(--text-muted);
+  background: rgba(78, 205, 196, 0.06);
+}
+
+.wt-vb-act {
+  color: #fff;
+  font-size: 0.8rem;
+}
+
+.wt-act-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 0 12px 10px;
+}
+
+.wt-act-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px 10px;
+  border-radius: 14px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.wt-disabled-label {
+  padding: 4px 14px 10px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
 }
 
 .wb-total-label {
@@ -859,6 +1079,82 @@
 
 .tb-hidden {
   display: none;
+}
+
+/* ─── مجموعة النوم المتصلة ─── */
+.sleep-group {
+  background: rgba(90, 79, 158, 0.08);
+  border: 1px solid rgba(90, 79, 158, 0.2);
+  border-radius: var(--radius-sm);
+  padding: 0;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.sleep-group-current {
+  border-color: rgba(244, 196, 48, 0.3);
+  box-shadow: 0 0 12px rgba(244, 196, 48, 0.08);
+}
+
+.sleep-group-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(90, 79, 158, 0.12);
+  border-bottom: 1px solid rgba(90, 79, 158, 0.15);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--purple);
+}
+
+.sg-icon {
+  font-size: 1.1rem;
+}
+
+.sg-range {
+  unicode-bidi: plaintext;
+  direction: rtl;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.sg-duration {
+  margin-right: auto;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: rgba(90, 79, 158, 0.2);
+  padding: 2px 10px;
+  border-radius: 20px;
+}
+
+.sleep-group-items {
+  padding: 4px 0;
+}
+
+.sleep-group-items .timeline-block {
+  margin-bottom: 0;
+  border-radius: 0;
+  border: none;
+  background: transparent;
+}
+
+.sleep-group-items .timeline-block:not(:last-child) {
+  border-bottom: 1px solid rgba(90, 79, 158, 0.1);
+}
+
+.sleep-group-items .tb-bar {
+  opacity: 0.5;
+}
+
+/* ─── تلميح الشروق ─── */
+.tb-sunrise-hint {
+  margin-top: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--sunrise);
+  opacity: 0.8;
 }
 
 /* ─── معلومات التحضير على المخمس ─── */

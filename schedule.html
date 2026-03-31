@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/schedule.css">
+  <link rel="stylesheet" href="css/planner.css">
 </head>
 <body>
 
@@ -28,6 +29,7 @@
     <nav class="page-nav">
       <a href="index.html" class="nav-link">&#9790; حاسبة النوم</a>
       <a href="schedule.html" class="nav-link active">&#128197; جدول اليوم</a>
+      <a href="analysis.html" class="nav-link">&#128202; التحليل</a>
     </nav>
 
     <!-- Date Selector -->
@@ -66,27 +68,30 @@
       </div>
     </section>
 
+    <!-- Time Blocks List -->
+    <section>
+      <div class="card">
+        <div class="card-header-row">
+          <h2><span class="icon">&#9881;</span> فترات العمل المتاحة</h2>
+          <button class="btn-planner" id="open-planner">&#9997; إدارة الوقت</button>
+        </div>
+        <div class="work-blocks" id="work-blocks">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+    </section>
+
     <!-- Linear Timeline -->
     <section>
       <div class="card">
         <div class="card-header-row">
           <h2><span class="icon">&#128197;</span> جدول اليوم</h2>
           <label class="detail-toggle">
-            <input type="checkbox" id="toggle-details" checked>
+            <input type="checkbox" id="toggle-details">
             <span class="detail-toggle-text">أوقات التحضير</span>
           </label>
         </div>
         <div class="day-timeline" id="day-timeline">
-          <!-- Filled by JS -->
-        </div>
-      </div>
-    </section>
-
-    <!-- Time Blocks List -->
-    <section>
-      <div class="card">
-        <h2><span class="icon">&#9881;</span> فترات العمل المتاحة</h2>
-        <div class="work-blocks" id="work-blocks">
           <!-- Filled by JS -->
         </div>
       </div>
@@ -223,7 +228,59 @@
     </div>
   </div>
 
+  <!-- ─── أداة تخطيط العمل ─── -->
+  <div class="planner-overlay" id="planner-overlay">
+    <div class="planner-modal">
+      <div class="planner-header">
+        <h2>&#9997; إدارة وقت العمل</h2>
+        <button class="planner-close" id="planner-close">&times;</button>
+      </div>
+      <div class="planner-body" id="planner-body">
+        <!-- Filled by JS -->
+      </div>
+      <div class="planner-footer">
+        <div class="planner-summary" id="planner-summary"></div>
+        <button class="btn-primary" id="planner-save" style="margin-top:12px;">حفظ الجدول</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── نموذج إضافة نشاط ─── -->
+  <div class="activity-form-overlay" id="activity-form-overlay">
+    <div class="activity-form-modal">
+      <div class="af-header">
+        <h3>إضافة نشاط</h3>
+        <button class="planner-close" id="af-close">&times;</button>
+      </div>
+      <div class="af-body">
+        <div class="af-presets" id="af-presets">
+          <button class="af-preset" data-name="رياضة" data-icon="🏃" data-color="#ff6b6b">🏃 رياضة</button>
+          <button class="af-preset" data-name="اجتماع" data-icon="🤝" data-color="#4a6cf7">🤝 اجتماع</button>
+          <button class="af-preset" data-name="استراحة" data-icon="☕" data-color="#ffa366">☕ استراحة</button>
+          <button class="af-preset" data-name="دراسة" data-icon="📚" data-color="#7c6aef">📚 دراسة</button>
+          <button class="af-preset" data-name="مهمة" data-icon="📋" data-color="#f4c430">📋 مهمة</button>
+          <button class="af-preset" data-name="أخرى" data-icon="📌" data-color="#38bdf8">📌 أخرى</button>
+        </div>
+        <input type="text" id="af-custom-name" class="af-input" placeholder="اسم النشاط (اختياري)">
+        <div class="af-field">
+          <label>وقت البدء</label>
+          <input type="time" id="af-start-time" class="af-input" step="300">
+        </div>
+        <div class="af-field">
+          <label>المدة (دقيقة)</label>
+          <div class="af-duration-row">
+            <input type="range" id="af-duration" min="5" max="120" step="5" value="30">
+            <span id="af-duration-value" class="af-dur-val">30</span>
+          </div>
+        </div>
+        <button class="btn-primary" id="af-add-btn">إضافة</button>
+        <button class="btn-delete" id="af-delete-btn" style="display:none">&#128465; حذف النشاط</button>
+      </div>
+    </div>
+  </div>
+
   <script src="js/pray-times-data.js"></script>
   <script src="js/schedule.js"></script>
+  <script src="js/planner.js"></script>
 </body>
 </html>

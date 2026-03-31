@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تحليل فترات العمل</title>
+  <meta name="description" content="تحليل فترات العمل المتاحة عبر أيام متعددة">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/analysis.css">
+</head>
+<body>
+
+  <div id="stars-container"></div>
+
+  <div class="container">
+
+    <header>
+      <div class="header-icon">&#128202;</div>
+      <h1>تحليل فترات العمل</h1>
+      <p class="subtitle">تحليل الوقت المتاح للعمل عبر أيام متعددة</p>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="page-nav">
+      <a href="index.html" class="nav-link">&#9790; حاسبة النوم</a>
+      <a href="schedule.html" class="nav-link">&#128197; جدول اليوم</a>
+      <a href="analysis.html" class="nav-link active">&#128202; التحليل</a>
+    </nav>
+
+    <!-- Date Range -->
+    <section class="input-section">
+      <div class="card">
+        <h2><span class="icon">&#128197;</span> نطاق التاريخ</h2>
+        <div class="date-range-row">
+          <div class="date-field">
+            <label>من</label>
+            <input type="date" id="date-from">
+          </div>
+          <div class="date-field">
+            <label>إلى</label>
+            <input type="date" id="date-to">
+          </div>
+        </div>
+        <button id="analyze-btn" class="btn-primary" style="margin-top: 16px;">&#128202; تحليل</button>
+      </div>
+    </section>
+
+    <!-- Statistics Summary -->
+    <section id="stats-section" style="display: none;">
+      <div class="card">
+        <h2><span class="icon">&#128202;</span> الإحصائيات</h2>
+        <div class="stats-grid" id="stats-grid">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Daily Breakdown with checkboxes -->
+    <section id="daily-section" style="display: none;">
+      <div class="card">
+        <div class="card-header-row">
+          <h2><span class="icon">&#128197;</span> تفاصيل الأيام</h2>
+          <label class="select-all-label">
+            <input type="checkbox" id="select-all" checked>
+            <span>تحديد الكل</span>
+          </label>
+        </div>
+        <div id="daily-breakdown">
+          <!-- Filled by JS: each day has work periods with checkboxes -->
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="city-info">درعا، سوريا</div>
+      <div>المصدر: وزارة الأوقاف</div>
+    </footer>
+
+  </div>
+
+  <script src="js/pray-times-data.js"></script>
+  <script src="js/analysis.js"></script>
+</body>
+</html>
