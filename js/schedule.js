@@ -720,6 +720,7 @@ function renderWorkBlocks(segments, prayerMins) {
     html += `<div class="wt-period-header">`;
     html += `<span class="wt-period-time">${displayTimeRange(seg.start, seg.end)}</span>`;
     html += `<span class="wt-period-free">${formatDuration(freeTime)} عمل</span>`;
+    html += `<button class="wt-edit-btn" onclick="openPlannerForPeriod(${i})" title="إدارة">&#9998;</button>`;
     html += `</div>`;
     if (periodName) {
       html += `<div class="wt-period-name">${periodName}</div>`;
@@ -953,6 +954,40 @@ function changeDate(delta) {
   const bedtimeInput = document.getElementById('manual-bedtime');
   if (bedtimeInput) bedtimeInput.dataset.manual = '';
   renderDay();
+}
+
+// ─── نسخ من يوم ───
+
+function copyFromDay() {
+  const fromDate = document.getElementById('copy-from-date').value;
+  const toDate = document.getElementById('schedule-date').value;
+  if (!fromDate || !toDate || fromDate === toDate) return;
+
+  try {
+    const raw = localStorage.getItem('workPlannerData');
+    const all = raw ? JSON.parse(raw) : {};
+    let source = all[fromDate];
+    if (!source) return;
+
+    if (Array.isArray(source)) source = { activities: source, disabledPeriods: [] };
+
+    // نسخ عميق
+    const copy = {
+      activities: JSON.parse(JSON.stringify(source.activities || [])),
+      disabledPeriods: JSON.parse(JSON.stringify(source.disabledPeriods || []))
+    };
+    if (source.manualBedtime != null) copy.manualBedtime = source.manualBedtime;
+
+    all[toDate] = copy;
+    localStorage.setItem('workPlannerData', JSON.stringify(all));
+
+    // تحديث وقت النوم
+    const bi = document.getElementById('manual-bedtime');
+    if (bi) bi.dataset.manual = '';
+    renderDay();
+  } catch (e) {
+    console.error('فشل النسخ:', e);
+  }
 }
 
 // ─── الأحداث ───

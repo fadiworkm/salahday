@@ -112,108 +112,80 @@
   margin-top: 2px;
 }
 
-/* ─── إدخال وقت النوم ─── */
-.bedtime-input-row {
+/* ─── شريط التحكم المدمج ─── */
+.controls-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-top: 12px;
-  padding: 10px 14px;
-  background: rgba(124, 106, 239, 0.06);
-  border: 1px solid rgba(124, 106, 239, 0.12);
-  border-radius: var(--radius-sm);
-}
-
-.bedtime-input-row label {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--purple);
-  white-space: nowrap;
-}
-
-.bedtime-input-row input[type="time"] {
-  flex: 1;
-  max-width: 120px;
-  padding: 8px 10px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(124, 106, 239, 0.2);
-  border-radius: 8px;
-  color: var(--text-primary);
-  font-family: 'Cairo', sans-serif;
-  font-size: 0.95rem;
-  font-weight: 700;
-  outline: none;
-  direction: ltr;
-  text-align: center;
-}
-
-.bedtime-input-row input[type="time"]:focus {
-  border-color: var(--purple);
-  box-shadow: 0 0 0 3px var(--purple-glow);
-}
-
-/* ─── نسخ من يوم ─── */
-.copy-day-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  justify-content: center;
+  gap: 8px;
   margin-top: 10px;
-  padding: 10px 14px;
-  background: rgba(78, 205, 196, 0.04);
-  border: 1px solid rgba(78, 205, 196, 0.1);
-  border-radius: var(--radius-sm);
-}
-
-.copy-day-row label {
-  font-size: 0.82rem;
-  font-weight: 600;
-  color: var(--success);
-  white-space: nowrap;
-}
-
-.copy-day-row input[type="date"] {
-  flex: 1;
-  max-width: 150px;
   padding: 8px 10px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(78, 205, 196, 0.2);
-  border-radius: 8px;
-  color: var(--text-primary);
-  font-family: 'Cairo', sans-serif;
-  font-size: 0.9rem;
-  font-weight: 700;
-  outline: none;
-  direction: ltr;
-  text-align: center;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-sm);
+  flex-wrap: wrap;
 }
 
-.copy-day-row input[type="date"]:focus {
-  border-color: var(--success);
-  box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.15);
-}
-
-.btn-today {
-  display: block;
-  margin: 8px auto 20px;
-  padding: 6px 20px;
+.ctrl-btn {
+  padding: 6px 14px;
   background: rgba(124, 106, 239, 0.1);
   border: 1px solid rgba(124, 106, 239, 0.2);
-  border-radius: 20px;
+  border-radius: 8px;
   color: var(--purple);
   font-family: 'Cairo', sans-serif;
   font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s, transform 0.2s;
+  transition: all 0.2s;
+  white-space: nowrap;
 }
 
-.btn-today:hover {
-  background: rgba(124, 106, 239, 0.2);
-  transform: translateY(-1px);
+.ctrl-btn:hover { background: rgba(124, 106, 239, 0.2); }
+
+.ctrl-btn.ctrl-sm {
+  padding: 6px 10px;
+  font-size: 0.9rem;
 }
 
-.btn-today:active {
-  transform: translateY(0);
+.ctrl-icon {
+  font-size: 1rem;
+  color: var(--purple);
+}
+
+.ctrl-input {
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  outline: none;
+  direction: ltr;
+  text-align: center;
+  max-width: 110px;
+}
+
+.ctrl-input:focus {
+  border-color: var(--purple);
+  box-shadow: 0 0 0 2px var(--purple-glow);
+}
+
+.ctrl-date { max-width: 120px; }
+
+.ctrl-sep {
+  width: 1px;
+  height: 24px;
+  background: rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+@media (max-width: 600px) {
+  .controls-row { gap: 6px; padding: 8px; }
+  .ctrl-btn { padding: 5px 10px; font-size: 0.72rem; }
+  .ctrl-input { font-size: 0.8rem; max-width: 95px; padding: 5px 6px; }
+  .ctrl-date { max-width: 105px; }
 }
 
 /* ─── 3. Prayer Times Grid ─── */
@@ -1182,6 +1154,27 @@
   font-size: 0.78rem;
   font-weight: 600;
   color: var(--text-muted);
+}
+
+.wt-edit-btn {
+  width: 30px;
+  height: 30px;
+  background: rgba(78, 205, 196, 0.1);
+  border: 1px solid rgba(78, 205, 196, 0.2);
+  border-radius: 8px;
+  color: var(--success);
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.wt-edit-btn:hover {
+  background: rgba(78, 205, 196, 0.2);
+  transform: scale(1.1);
 }
 
 .wt-period-name {

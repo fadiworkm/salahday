@@ -35,7 +35,7 @@
       <a href="analysis.html" class="nav-link">&#128202; التحليل</a>
     </nav>
 
-    <!-- Date Selector -->
+    <!-- Date + Controls -->
     <section class="input-section">
       <div class="card">
         <div class="date-row">
@@ -47,18 +47,15 @@
           </div>
           <button id="next-day" class="btn-nav-day">&larr;</button>
         </div>
-        <button id="today-btn" class="btn-today">اليوم</button>
-
-        <div class="bedtime-input-row">
-          <label>&#9790; وقت النوم</label>
-          <input type="time" id="manual-bedtime" step="300">
-          <button type="button" id="reset-bedtime" class="btn-inline btn-inline-sm" title="إعادة للافتراضي">افتراضي</button>
-        </div>
-
-        <div class="copy-day-row">
-          <label>&#128203; نسخ من يوم</label>
-          <input type="date" id="copy-from-date">
-          <button type="button" id="copy-day-btn" class="btn-inline btn-inline-sm">نسخ</button>
+        <div class="controls-row">
+          <button id="today-btn" class="ctrl-btn" title="اليوم">&#128197; اليوم</button>
+          <div class="ctrl-sep"></div>
+          <span class="ctrl-icon">&#9790;</span>
+          <input type="time" id="manual-bedtime" class="ctrl-input" step="300">
+          <button type="button" id="reset-bedtime" class="ctrl-btn ctrl-sm" title="افتراضي">&#8634;</button>
+          <div class="ctrl-sep"></div>
+          <input type="date" id="copy-from-date" class="ctrl-input ctrl-date">
+          <button type="button" id="copy-day-btn" class="ctrl-btn ctrl-sm" title="نسخ من يوم">&#128203;</button>
         </div>
       </div>
     </section>

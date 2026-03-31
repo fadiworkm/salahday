@@ -69,8 +69,14 @@ function openPlanner() {
 function closePlanner() {
   savePlannerData();
   document.getElementById('planner-overlay').classList.remove('active');
-  // تحديث عرض فترات العمل على الصفحة الرئيسية
   updateMainWorkBlocks();
+}
+
+/** فتح المخطط لفترة واحدة فقط */
+function openPlannerForPeriod(periodIdx) {
+  loadPlannerData();
+  renderPlanner(periodIdx);
+  document.getElementById('planner-overlay').classList.add('active');
 }
 
 // ─── بناء شرائح الشريط ───
@@ -116,12 +122,15 @@ function togglePeriodEnabled(period) {
 
 // ─── عرض المخطط ───
 
-function renderPlanner() {
+function renderPlanner(onlyPeriodIdx) {
   var periods = getPlannerPeriods();
   var activities = getDayActivities();
   var html = '';
 
   periods.forEach(function (period, pIdx) {
+    // عرض فترة واحدة فقط إذا تم تحديدها
+    if (onlyPeriodIdx != null && pIdx !== onlyPeriodIdx) return;
+
     var periodActs = activities.filter(function (a) { return a.start >= period.start && a.end <= period.end; });
     periodActs.sort(function (a, b) { return a.start - b.start; });
 

@@ -107,6 +107,16 @@
   color: #fff;
 }
 
+/* إبراز الفترة */
+.pl-period-highlight {
+  animation: pl-flash 1.5s ease;
+}
+
+@keyframes pl-flash {
+  0%, 100% { box-shadow: none; }
+  30% { box-shadow: 0 0 20px rgba(78, 205, 196, 0.3), inset 0 0 10px rgba(78, 205, 196, 0.05); }
+}
+
 /* ─── فترة العمل ─── */
 .pl-period {
   margin-bottom: 16px;
