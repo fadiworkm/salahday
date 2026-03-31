@@ -4,120 +4,185 @@
  * ذكي: يحاول تعظيم دورات الفترة الأولى مع مرونة في وقت الاستيقاظ قبل الفجر
  */
 
-function calculateSleepPlan(bedtimeStr, todayDateStr, cycleDuration, preFajrBuffer, period2StartStr) {
+function calculateSleepPlan(bedtimeStr, todayDateStr, cycleDuration, preFajrBuffer, period2StartStr, flexibleWake) {
   cycleDuration = cycleDuration != null ? cycleDuration : 90;
   preFajrBuffer = preFajrBuffer != null ? preFajrBuffer : 60;
+  if (flexibleWake == null) flexibleWake = true;
 
   const todayPrayer = getPrayerTimes(todayDateStr);
   const tomorrowDateStr = getNextDate(todayDateStr);
   const tomorrowPrayer = getPrayerTimes(tomorrowDateStr);
 
-  const bedtimeMin = timeToMinutes(bedtimeStr);
+  const originalBedtimeMin = timeToMinutes(bedtimeStr);
   const fajrMin = timeToMinutes(tomorrowPrayer.fajr);
 
   // مرونة ذكية: الحد الأدنى المطلق
-  const minBuffer = preFajrBuffer > 0 ? Math.max(preFajrBuffer - 20, 0) : 0;
-
-  // حساب الوقت المتاح مع المرونة
-  const latestWakeFlexible = fajrMin - minBuffer;
-  let availableMin;
-  if (bedtimeMin > latestWakeFlexible) {
-    availableMin = (1440 - bedtimeMin) + latestWakeFlexible;
-  } else {
-    availableMin = latestWakeFlexible - bedtimeMin;
-  }
-  const maxCyclesP1 = Math.floor(availableMin / cycleDuration);
+  const minBuffer = flexibleWake
+    ? (preFajrBuffer > 0 ? Math.max(preFajrBuffer - 20, 0) : 0)
+    : preFajrBuffer;
 
   // بداية الفترة الثانية
   const period2StartMin = period2StartStr
     ? timeToMinutes(period2StartStr)
     : roundUpTo15(fajrMin + 60);
 
+  // تحديد أوقات النوم المرشحة
+  let bedtimeCandidates;
+  if (flexibleWake) {
+    // الاستيقاظ المرن: تجربة تعديلات -30 إلى +30 بخطوات 5 دقائق
+    const offsets = [];
+    for (let o = 0; o <= 30; o += 5) {
+      offsets.push(o);
+      if (o !== 0) offsets.push(-o);
+    }
+    bedtimeCandidates = offsets.map(offset => ({
+      bedtimeMin: (originalBedtimeMin + offset + 1440) % 1440,
+      offset
+    }));
+  } else {
+    bedtimeCandidates = [{ bedtimeMin: originalBedtimeMin, offset: 0 }];
+  }
+
   // توليد جميع الخيارات الصالحة
   const options = [];
-  const minP1 = Math.max(1, maxCyclesP1 - 3);
+  const seenKeys = new Set();
 
-  for (let p1 = maxCyclesP1; p1 >= minP1; p1--) {
-    let wake1Min = bedtimeMin + (p1 * cycleDuration);
-    if (wake1Min >= 1440) wake1Min -= 1440;
+  for (const { bedtimeMin, offset } of bedtimeCandidates) {
+    const candidateBedtimeStr = minutesToTime(bedtimeMin);
 
-    // حساب الوقت الفعلي قبل الفجر
-    let timeBefore;
-    if (wake1Min <= fajrMin) {
-      timeBefore = fajrMin - wake1Min;
+    // حساب الوقت المتاح مع المرونة
+    const latestWakeFlexible = fajrMin - minBuffer;
+    let availableMin;
+    if (bedtimeMin > latestWakeFlexible) {
+      availableMin = (1440 - bedtimeMin) + latestWakeFlexible;
     } else {
-      timeBefore = (1440 - wake1Min) + fajrMin;
+      availableMin = latestWakeFlexible - bedtimeMin;
     }
+    const maxCyclesP1 = Math.floor(availableMin / cycleDuration);
 
-    // رفض إذا أقل من الحد الأدنى المطلق
-    if (timeBefore < minBuffer) continue;
+    const minP1 = Math.max(1, maxCyclesP1 - 3);
 
-    for (let p2 = 0; p2 <= 4; p2++) {
-      const totalCycles = p1 + p2;
-      if (totalCycles < 3 || totalCycles > 8) continue;
+    for (let p1 = maxCyclesP1; p1 >= minP1; p1--) {
+      let wake1Min = bedtimeMin + (p1 * cycleDuration);
+      if (wake1Min >= 1440) wake1Min -= 1440;
 
-      const totalMinutes = totalCycles * cycleDuration;
-      let wake2Min = null;
-
-      if (p2 > 0) {
-        wake2Min = period2StartMin + (p2 * cycleDuration);
-        if (wake2Min > 14 * 60) continue;
-      }
-
-      let quality, qualityLabel, qualityStars;
-      if (totalCycles === 5) {
-        quality = 'ideal';
-        qualityLabel = 'مثالي';
-        qualityStars = 3;
-      } else if (totalCycles === 6) {
-        quality = 'excellent';
-        qualityLabel = 'ممتاز';
-        qualityStars = 3;
-      } else if (totalCycles === 4) {
-        quality = 'good';
-        qualityLabel = 'جيد';
-        qualityStars = 2;
-      } else if (totalCycles === 7) {
-        quality = 'long';
-        qualityLabel = 'طويل';
-        qualityStars = 2;
+      // حساب الوقت الفعلي قبل الفجر
+      let timeBefore;
+      if (wake1Min <= fajrMin) {
+        timeBefore = fajrMin - wake1Min;
       } else {
-        quality = 'acceptable';
-        qualityLabel = 'مقبول';
-        qualityStars = 1;
+        timeBefore = (1440 - wake1Min) + fajrMin;
       }
 
-      options.push({
-        period1Cycles: p1,
-        period2Cycles: p2,
-        totalCycles,
-        totalMinutes,
-        bedtime: bedtimeStr,
-        wakeTime1: minutesToTime(wake1Min),
-        sleepTime2: p2 > 0 ? minutesToTime(period2StartMin) : null,
-        wakeTime2: p2 > 0 ? minutesToTime(wake2Min) : null,
-        quality,
-        qualityLabel,
-        qualityStars,
-        timeBeforeFajr: timeBefore
-      });
+      // رفض إذا أقل من الحد الأدنى المطلق
+      if (timeBefore < minBuffer) continue;
+
+      for (let p2 = 0; p2 <= 4; p2++) {
+        const totalCycles = p1 + p2;
+        if (totalCycles < 4 || totalCycles > 8) continue;
+
+        const totalMinutes = totalCycles * cycleDuration;
+        let wake2Min = null;
+
+        if (p2 > 0) {
+          wake2Min = period2StartMin + (p2 * cycleDuration);
+          if (wake2Min > 14 * 60) continue;
+        }
+
+        // إزالة التكرار: نفس وقت الاستيقاظ ونفس عدد الدورات
+        const dedupeKey = `${minutesToTime(wake1Min)}-${p1}+${p2}`;
+        if (seenKeys.has(dedupeKey)) continue;
+        seenKeys.add(dedupeKey);
+
+        let quality, qualityLabel, qualityStars;
+        if (totalCycles === 5) {
+          quality = 'ideal';
+          qualityLabel = 'مثالي';
+          qualityStars = 3;
+        } else if (totalCycles === 6) {
+          quality = 'excellent';
+          qualityLabel = 'ممتاز';
+          qualityStars = 3;
+        } else if (totalCycles === 4) {
+          quality = 'good';
+          qualityLabel = 'جيد';
+          qualityStars = 2;
+        } else if (totalCycles === 7) {
+          quality = 'long';
+          qualityLabel = 'طويل';
+          qualityStars = 2;
+        } else {
+          quality = 'acceptable';
+          qualityLabel = 'مقبول';
+          qualityStars = 1;
+        }
+
+        const option = {
+          period1Cycles: p1,
+          period2Cycles: p2,
+          totalCycles,
+          totalMinutes,
+          bedtime: candidateBedtimeStr,
+          wakeTime1: minutesToTime(wake1Min),
+          sleepTime2: p2 > 0 ? minutesToTime(period2StartMin) : null,
+          wakeTime2: p2 > 0 ? minutesToTime(wake2Min) : null,
+          quality,
+          qualityLabel,
+          qualityStars,
+          timeBeforeFajr: timeBefore
+        };
+
+        if (offset !== 0) {
+          option.bedtimeAdjusted = true;
+          option.bedtimeAdjustment = offset;
+        }
+
+        options.push(option);
+      }
     }
   }
 
-  // ترتيب ذكي: تعظيم دورات الفترة الأولى ضمن الجودة الجيدة
+  // حساب maxCyclesP1 للوقت الأصلي (للقيمة المرجعة)
+  const latestWakeRef = fajrMin - minBuffer;
+  let availableRef;
+  if (originalBedtimeMin > latestWakeRef) {
+    availableRef = (1440 - originalBedtimeMin) + latestWakeRef;
+  } else {
+    availableRef = latestWakeRef - originalBedtimeMin;
+  }
+  const maxCyclesP1 = Math.floor(availableRef / cycleDuration);
+
+  // ترتيب ذكي: التركيز على تعظيم دورات ما قبل الفجر
   const qualityOrder = { ideal: 0, excellent: 1, good: 2, long: 3, acceptable: 4 };
   options.sort((a, b) => {
-    // تجميع: مثالي+ممتاز في مجموعة، والباقي في مجموعة أخرى
-    const aTop = qualityOrder[a.quality] <= 1;
-    const bTop = qualityOrder[b.quality] <= 1;
-    if (aTop !== bTop) return aTop ? -1 : 1;
-
-    // ضمن نفس المجموعة: الأكثر دورات في الفترة الأولى أولاً
+    // الأولوية 1: الأكثر دورات في الفترة الأولى (قبل الفجر)
     if (a.period1Cycles !== b.period1Cycles) return b.period1Cycles - a.period1Cycles;
 
-    // ثم الأفضل جودة
-    return qualityOrder[a.quality] - qualityOrder[b.quality];
+    // الأولوية 2: الأفضل جودة إجمالية
+    const qDiff = qualityOrder[a.quality] - qualityOrder[b.quality];
+    if (qDiff !== 0) return qDiff;
+
+    // الأولوية 3: تفضيل الأقرب لوقت النوم الأصلي
+    const aAdj = Math.abs(a.bedtimeAdjustment || 0);
+    const bAdj = Math.abs(b.bedtimeAdjustment || 0);
+    if (aAdj !== bAdj) return aAdj - bAdj;
+
+    // الأولوية 4: وقت أطول قبل الفجر (أفضل)
+    return b.timeBeforeFajr - a.timeBeforeFajr;
   });
+
+  // تصفية ذكية: الاحتفاظ بأفضل الخيارات المتنوعة (حد أقصى 12)
+  const filtered = [];
+  const seenSplits = {};
+  for (const opt of options) {
+    const splitKey = `${opt.period1Cycles}+${opt.period2Cycles}`;
+    const count = seenSplits[splitKey] || 0;
+    // لكل تقسيم (مثل 5+0): أقصى 3 خيارات (أوقات نوم مختلفة)
+    if (count >= 3) continue;
+    seenSplits[splitKey] = count + 1;
+    filtered.push(opt);
+    if (filtered.length >= 12) break;
+  }
 
   return {
     isha: todayPrayer.isha,
@@ -126,13 +191,14 @@ function calculateSleepPlan(bedtimeStr, todayDateStr, cycleDuration, preFajrBuff
     latestWake: minutesToTime(fajrMin - minBuffer),
     period2Start: minutesToTime(period2StartMin),
     period2StartMin,
-    options,
-    recommended: options[0] || null,
+    options: filtered,
+    recommended: filtered[0] || null,
     maxCyclesP1,
     cycleDuration,
     preFajrBuffer,
     minBuffer,
-    bedtime: bedtimeStr
+    bedtime: bedtimeStr,
+    flexibleWake
   };
 }
 
@@ -141,15 +207,18 @@ function calculateSleepPlan(bedtimeStr, todayDateStr, cycleDuration, preFajrBuff
  * يحترم أوقات الصلاة: 45-60 دقيقة بعد العشاء و 45-60 دقيقة بعد الفجر
  * يركز على 4-5 دورات في الفترة الأولى مع تنويع الخيارات
  */
-function generateSmartSuggestions(dateStr, cycleDuration, preFajrBuffer, fixedBedtime) {
+function generateSmartSuggestions(dateStr, cycleDuration, preFajrBuffer, fixedBedtime, flexibleWake) {
   cycleDuration = cycleDuration != null ? cycleDuration : 90;
   preFajrBuffer = preFajrBuffer != null ? preFajrBuffer : 60;
+  if (flexibleWake == null) flexibleWake = true;
 
   const prayer = getPrayerTimes(dateStr);
   const tomorrow = getPrayerTimes(getNextDate(dateStr));
   const ishaMin = timeToMinutes(prayer.isha);
   const fajrMin = timeToMinutes(tomorrow.fajr);
-  const minFajrBuffer = preFajrBuffer > 0 ? Math.max(preFajrBuffer - 20, 0) : 0;
+  const minFajrBuffer = flexibleWake
+    ? (preFajrBuffer > 0 ? Math.max(preFajrBuffer - 20, 0) : 0)
+    : preFajrBuffer;
 
   const all = [];
 

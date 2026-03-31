@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>جدول اليوم - أوقات الصلاة</title>
+  <meta name="description" content="جدول يومك بناءً على أوقات الصلاة">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/schedule.css">
+</head>
+<body>
+
+  <div id="stars-container"></div>
+
+  <div class="container">
+
+    <!-- Header -->
+    <header>
+      <div class="header-icon">&#128197;</div>
+      <h1>جدول اليوم</h1>
+      <p class="subtitle">نظّم يومك وفق أوقات الصلاة</p>
+    </header>
+
+    <!-- Navigation back to sleep calc -->
+    <nav class="page-nav">
+      <a href="index.html" class="nav-link">&#9790; حاسبة النوم</a>
+      <a href="schedule.html" class="nav-link active">&#128197; جدول اليوم</a>
+    </nav>
+
+    <!-- Date Selector -->
+    <section class="input-section">
+      <div class="card">
+        <div class="date-row">
+          <button id="prev-day" class="btn-nav-day">&rarr;</button>
+          <div class="date-display">
+            <input type="date" id="schedule-date">
+            <div class="hijri-date" id="hijri-date"></div>
+            <div class="day-name" id="day-name"></div>
+          </div>
+          <button id="next-day" class="btn-nav-day">&larr;</button>
+        </div>
+        <button id="today-btn" class="btn-today">اليوم</button>
+      </div>
+    </section>
+
+    <!-- Prayer Times Overview -->
+    <section>
+      <div class="card">
+        <h2><span class="icon">&#128336;</span> أوقات الصلاة</h2>
+        <div class="prayer-times-grid" id="prayer-times-grid">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Pentagon Timeline -->
+    <section>
+      <div class="card">
+        <h2><span class="icon">&#11088;</span> خريطة اليوم</h2>
+        <div class="pentagon-wrap" id="pentagon-wrap">
+          <!-- Filled by JS: SVG pentagonal visualization -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Linear Timeline -->
+    <section>
+      <div class="card">
+        <div class="card-header-row">
+          <h2><span class="icon">&#128197;</span> جدول اليوم</h2>
+          <label class="detail-toggle">
+            <input type="checkbox" id="toggle-details" checked>
+            <span class="detail-toggle-text">أوقات التحضير</span>
+          </label>
+        </div>
+        <div class="day-timeline" id="day-timeline">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Time Blocks List -->
+    <section>
+      <div class="card">
+        <h2><span class="icon">&#9881;</span> فترات العمل المتاحة</h2>
+        <div class="work-blocks" id="work-blocks">
+          <!-- Filled by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <div class="city-info">درعا، سوريا</div>
+      <div>المصدر: وزارة الأوقاف</div>
+    </footer>
+
+  </div>
+
+  <!-- Settings Button -->
+  <div class="settings-toggle" id="settings-toggle">&#9881;</div>
+
+  <!-- Settings Modal -->
+  <div class="settings-overlay" id="settings-overlay">
+    <div class="settings-modal">
+      <h2 style="margin-bottom: 24px; font-size: 1.15rem;">&#9881; إعدادات الجدول</h2>
+
+      <!-- Each prayer has before/after buffer settings -->
+      <div class="setting-item">
+        <label>الفجر</label>
+        <div class="buffer-row">
+          <div class="buffer-field">
+            <span class="buffer-label">قبل</span>
+            <input type="number" id="buf-fajr-before" min="0" max="120" value="90" class="buffer-input">
+            <span class="buffer-unit">د</span>
+          </div>
+          <div class="buffer-field">
+            <span class="buffer-label">بعد</span>
+            <input type="number" id="buf-fajr-after" min="0" max="120" value="30" class="buffer-input">
+            <span class="buffer-unit">د</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <label>الشروق (علامة فقط)</label>
+        <div class="buffer-row">
+          <div class="buffer-field">
+            <span class="buffer-label">بعد</span>
+            <input type="number" id="buf-sunrise-after" min="0" max="60" value="20" class="buffer-input">
+            <span class="buffer-unit">د</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <label>الظهر</label>
+        <div class="buffer-row">
+          <div class="buffer-field">
+            <span class="buffer-label">قبل</span>
+            <input type="number" id="buf-dhuhr-before" min="0" max="60" value="15" class="buffer-input">
+            <span class="buffer-unit">د</span>
+          </div>
+          <div class="buffer-field">
+            <span class="buffer-label">بعد</span>
+            <input type="number" id="buf-dhuhr-after" min="0" max="60" value="20" class="buffer-input">
+            <span class="buffer-unit">د</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <label>العصر</label>
+        <div class="buffer-row">
+          <div class="buffer-field">
+            <span class="buffer-label">قبل</span>
+            <input type="number" id="buf-asr-before" min="0" max="60" value="15" class="buffer-input">
+            <span class="buffer-unit">د</span>
+          </div>
+          <div class="buffer-field">
+            <span class="buffer-label">بعد</span>
+            <input type="number" id="buf-asr-after" min="0" max="60" value="15" class="buffer-input">
+            <span class="buffer-unit">د</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <label>المغرب</label>
+        <div class="buffer-row">
+          <div class="buffer-field">
+            <span class="buffer-label">قبل</span>
+            <input type="number" id="buf-maghrib-before" min="0" max="60" value="10" class="buffer-input">
+            <span class="buffer-unit">د</span>
+          </div>
+          <div class="buffer-field">
+            <span class="buffer-label">بعد</span>
+            <input type="number" id="buf-maghrib-after" min="0" max="60" value="20" class="buffer-input">
+            <span class="buffer-unit">د</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <label>العشاء</label>
+        <div class="buffer-row">
+          <div class="buffer-field">
+            <span class="buffer-label">قبل</span>
+            <input type="number" id="buf-isha-before" min="0" max="60" value="10" class="buffer-input">
+            <span class="buffer-unit">د</span>
+          </div>
+          <div class="buffer-field">
+            <span class="buffer-label">بعد</span>
+            <input type="number" id="buf-isha-after" min="0" max="60" value="20" class="buffer-input">
+            <span class="buffer-unit">د</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <label>وقت النوم بعد العشاء</label>
+        <div class="buffer-row">
+          <div class="buffer-field">
+            <span class="buffer-label">بعد</span>
+            <input type="number" id="bedtime-after-isha-schedule" min="30" max="300" value="120" class="buffer-input">
+            <span class="buffer-unit">دقيقة</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <label>تنسيق الوقت</label>
+        <div class="toggle-group" id="time-format-toggle">
+          <button type="button" class="toggle-btn active" data-value="24">24 ساعة</button>
+          <button type="button" class="toggle-btn" data-value="12">12 ص/م</button>
+        </div>
+      </div>
+
+      <button class="btn-secondary" id="close-settings">حفظ وإغلاق</button>
+    </div>
+  </div>
+
+  <script src="js/pray-times-data.js"></script>
+  <script src="js/schedule.js"></script>
+</body>
+</html>

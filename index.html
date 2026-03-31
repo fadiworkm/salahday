@@ -68,6 +68,15 @@
           </div>
         </div>
 
+        <div class="flex-wake-row">
+          <label class="checkbox-label">
+            <input type="checkbox" id="flexible-wake" checked>
+            <span class="checkbox-custom"></span>
+            الاستيقاظ المرن
+          </label>
+          <span class="flex-wake-hint">تعديل وقت النوم تلقائياً للحصول على دورات نوم إضافية</span>
+        </div>
+
         <div class="btn-row">
           <button id="calculate-btn" class="btn-primary">
             &#9790; احسب جدول النوم
@@ -178,6 +187,17 @@
           <input type="range" id="cycle-duration" min="60" max="120" step="5" value="90">
           <div class="range-value">
             <span id="cycle-duration-value">90</span>
+            <span class="range-unit">دقيقة</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="setting-item">
+        <label>وقت النوم الافتراضي بعد العشاء</label>
+        <div class="range-row">
+          <input type="range" id="bedtime-after-isha" min="30" max="240" step="15" value="60">
+          <div class="range-value">
+            <span id="bedtime-after-isha-value">60</span>
             <span class="range-unit">دقيقة</span>
           </div>
         </div>

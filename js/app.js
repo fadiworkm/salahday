@@ -7,7 +7,9 @@ let selectedOption = null;
 let settings = {
   cycleDuration: 90,
   preFajrBuffer: 60,
-  timeFormat: '24'  // '24' أو '12'
+  timeFormat: '24',  // '24' أو '12'
+  flexibleWake: true,
+  bedtimeAfterIsha: 60
 };
 
 // ─── التهيئة ───
@@ -36,7 +38,7 @@ function updateBedtimeDefault() {
 
   const prayer = getPrayerTimes(dateStr);
   const ishaMin = timeToMinutes(prayer.isha);
-  const defaultBedtime = roundUpTo15(ishaMin + 60);
+  const defaultBedtime = roundUpTo15(ishaMin + (settings.bedtimeAfterIsha || 60));
   document.getElementById('bedtime-input').value = minutesToTime(defaultBedtime);
 }
 
@@ -94,6 +96,24 @@ function attachEvents() {
     hideResults();
   });
 
+  // خيار الاستيقاظ المرن
+  const flexWakeInput = document.getElementById('flexible-wake');
+  if (flexWakeInput) {
+    flexWakeInput.addEventListener('change', () => {
+      settings.flexibleWake = flexWakeInput.checked;
+      saveSettings();
+      hideResults();
+    });
+  }
+
+  // وقت النوم بعد العشاء (في الإعدادات)
+  const bedAfterIshaInput = document.getElementById('bedtime-after-isha');
+  if (bedAfterIshaInput) {
+    bedAfterIshaInput.addEventListener('input', () => {
+      document.getElementById('bedtime-after-isha-value').textContent = bedAfterIshaInput.value;
+    });
+  }
+
   // أزرار تبديل تنسيق الوقت
   document.querySelectorAll('#time-format-toggle .toggle-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -148,7 +168,7 @@ function onCalculate() {
   const p2Input = document.getElementById('period2-start-input');
   const period2Start = p2Input.value || null;
 
-  currentPlan = calculateSleepPlan(bedtime, dateStr, settings.cycleDuration, settings.preFajrBuffer, period2Start);
+  currentPlan = calculateSleepPlan(bedtime, dateStr, settings.cycleDuration, settings.preFajrBuffer, period2Start, settings.flexibleWake);
 
   if (!currentPlan.recommended) {
     showWarning('لا يوجد وقت كافٍ لدورة نوم واحدة على الأقل. حاول النوم مبكراً.');
@@ -181,7 +201,7 @@ function onPeriod2StartChange() {
   const prevP1 = selectedOption ? selectedOption.period1Cycles : null;
   const prevP2 = selectedOption ? selectedOption.period2Cycles : null;
 
-  currentPlan = calculateSleepPlan(bedtime, dateStr, settings.cycleDuration, settings.preFajrBuffer, p2Input.value);
+  currentPlan = calculateSleepPlan(bedtime, dateStr, settings.cycleDuration, settings.preFajrBuffer, p2Input.value, settings.flexibleWake);
 
   if (!currentPlan.recommended) {
     selectedOption = null;
@@ -229,7 +249,7 @@ function onSmartSleep() {
   }, 600);
 
   const smartBed = document.getElementById('smart-bedtime').value || null;
-  const result = generateSmartSuggestions(dateStr, settings.cycleDuration, settings.preFajrBuffer, smartBed);
+  const result = generateSmartSuggestions(dateStr, settings.cycleDuration, settings.preFajrBuffer, smartBed, settings.flexibleWake);
   renderSmartTable(result);
 }
 
@@ -515,7 +535,8 @@ function renderPeriod1() {
     </div>
     <div class="fajr-note">
       الاستيقاظ قبل الفجر بـ ${formatDuration(opt.timeBeforeFajr)}
-    </div>`;
+    </div>
+    ${opt.bedtimeAdjusted ? `<div class="flex-note">تم تعديل وقت النوم بـ ${Math.abs(opt.bedtimeAdjustment)} دقيقة ${opt.bedtimeAdjustment < 0 ? 'مبكراً' : 'متأخراً'} للحصول على دورة إضافية</div>` : ''}`;
 }
 
 // ─── بطاقة الفترة الثانية ───
@@ -593,13 +614,22 @@ function renderOptions() {
     const isSelected = opt === selectedOption;
     const totalHours = (opt.totalMinutes / 60);
     const hoursDisplay = totalHours % 1 === 0 ? totalHours : totalHours.toFixed(1);
+    const adjTag = opt.bedtimeAdjusted
+      ? `<span class="option-adj">${opt.bedtimeAdjustment > 0 ? '+' : ''}${opt.bedtimeAdjustment} د</span>`
+      : '';
 
     html += `
       <button class="option-card ${isSelected ? 'option-selected' : ''} quality-border-${opt.quality}"
               onclick="selectOption(${i})" aria-label="اختيار ${opt.period1Cycles} + ${opt.period2Cycles}">
         <div class="option-split">${opt.period1Cycles} + ${opt.period2Cycles}</div>
+        <div class="option-times">
+          <span>${displayTime(opt.bedtime)}</span>
+          <span class="option-arrow">&larr;</span>
+          <span>${displayTime(opt.wakeTime1)}</span>
+        </div>
+        <div class="option-fajr-note">قبل الفجر ${formatDuration(opt.timeBeforeFajr)}</div>
         <div class="option-total">${hoursDisplay} ساعة</div>
-        <div class="option-quality quality-${opt.quality}">${opt.qualityLabel}</div>
+        <div class="option-quality quality-${opt.quality}">${opt.qualityLabel} ${adjTag}</div>
         ${isSelected ? '<div class="option-check">&#10003;</div>' : ''}
       </button>`;
   });
@@ -630,6 +660,19 @@ function loadSettings() {
   document.getElementById('pre-fajr-buffer').value = settings.preFajrBuffer;
   document.getElementById('pre-fajr-buffer-value').textContent = settings.preFajrBuffer;
 
+  // تحميل إعداد الاستيقاظ المرن
+  const flexWakeEl = document.getElementById('flexible-wake');
+  if (flexWakeEl) {
+    flexWakeEl.checked = settings.flexibleWake !== false;
+  }
+
+  // تحميل إعداد وقت النوم بعد العشاء
+  const bedAfterIshaEl = document.getElementById('bedtime-after-isha');
+  if (bedAfterIshaEl) {
+    bedAfterIshaEl.value = settings.bedtimeAfterIsha;
+    document.getElementById('bedtime-after-isha-value').textContent = settings.bedtimeAfterIsha;
+  }
+
   // تحديث زر تنسيق الوقت
   document.querySelectorAll('#time-format-toggle .toggle-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.value === settings.timeFormat);
@@ -639,6 +682,14 @@ function loadSettings() {
 function saveSettings() {
   settings.cycleDuration = parseInt(document.getElementById('cycle-duration').value);
   settings.preFajrBuffer = parseInt(document.getElementById('pre-fajr-buffer').value);
+  const flexWakeEl = document.getElementById('flexible-wake');
+  if (flexWakeEl) {
+    settings.flexibleWake = flexWakeEl.checked;
+  }
+  const bedAfterIshaEl = document.getElementById('bedtime-after-isha');
+  if (bedAfterIshaEl) {
+    settings.bedtimeAfterIsha = parseInt(bedAfterIshaEl.value);
+  }
   // timeFormat is already updated live via toggle click
   localStorage.setItem('sleepCalcSettings', JSON.stringify(settings));
 }
@@ -653,7 +704,8 @@ function closeSettings() {
   document.getElementById('settings-overlay').classList.remove('active');
   document.body.style.overflow = '';
 
-  // تحديث عرض أوقات الصلاة بالتنسيق الجديد
+  // تحديث وقت النوم الافتراضي والصلاة بالتنسيق الجديد
+  updateBedtimeDefault();
   updatePrayerDisplay();
 
   // إعادة الحساب إن كانت هناك نتائج

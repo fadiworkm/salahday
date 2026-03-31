@@ -1,0 +1,890 @@
+/* ═══════════════════════════════════════════════════
+   schedule.css - Daily Prayer Schedule Page Styles
+   Requires: style.css (base variables, card, header, etc.)
+   ═══════════════════════════════════════════════════ */
+
+/* ─── 1. Page Navigation ─── */
+.page-nav {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.nav-link {
+  padding: 10px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.nav-link:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+}
+
+.nav-link.active {
+  background: rgba(124, 106, 239, 0.15);
+  border-color: rgba(124, 106, 239, 0.3);
+  color: var(--purple);
+}
+
+/* ─── 2. Date Row ─── */
+.date-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.btn-nav-day {
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(124, 106, 239, 0.3);
+  background: rgba(124, 106, 239, 0.1);
+  color: var(--purple);
+  font-size: 1.2rem;
+  font-family: 'Cairo', sans-serif;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
+}
+
+.btn-nav-day:hover {
+  transform: scale(1.1);
+  background: rgba(124, 106, 239, 0.2);
+  box-shadow: 0 0 16px var(--purple-glow);
+}
+
+.btn-nav-day:active {
+  transform: scale(0.95);
+}
+
+.date-display {
+  text-align: center;
+  flex-grow: 1;
+  min-width: 0;
+}
+
+#schedule-date {
+  width: 100%;
+  max-width: 200px;
+  padding: 10px 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: 'Cairo', sans-serif;
+  font-size: 1rem;
+  font-weight: 600;
+  outline: none;
+  direction: ltr;
+  text-align: center;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+#schedule-date:focus {
+  border-color: var(--purple);
+  box-shadow: 0 0 0 3px var(--purple-glow);
+}
+
+.hijri-date {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.day-name {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.btn-today {
+  display: block;
+  margin: 8px auto 20px;
+  padding: 6px 20px;
+  background: rgba(124, 106, 239, 0.1);
+  border: 1px solid rgba(124, 106, 239, 0.2);
+  border-radius: 20px;
+  color: var(--purple);
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+
+.btn-today:hover {
+  background: rgba(124, 106, 239, 0.2);
+  transform: translateY(-1px);
+}
+
+.btn-today:active {
+  transform: translateY(0);
+}
+
+/* ─── 3. Prayer Times Grid ─── */
+.prayer-times-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.prayer-time-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-sm);
+  padding: 14px 12px;
+  text-align: center;
+  border-right: 3px solid transparent;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.prayer-time-card:hover {
+  transform: translateY(-2px);
+}
+
+/* Prayer color borders */
+.prayer-time-card.pt-fajr    { border-right-color: var(--fajr); }
+.prayer-time-card.pt-sunrise { border-right-color: var(--sunrise); }
+.prayer-time-card.pt-dhuhr   { border-right-color: var(--gold); }
+.prayer-time-card.pt-asr     { border-right-color: var(--blue); }
+.prayer-time-card.pt-maghrib { border-right-color: var(--danger); }
+.prayer-time-card.pt-isha    { border-right-color: var(--purple); }
+
+.pt-name {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.pt-time {
+  font-size: 1.25rem;
+  font-weight: 800;
+  direction: ltr;
+  color: var(--text-primary);
+}
+
+/* Prayer-specific time colors */
+.pt-fajr    .pt-time { color: var(--fajr); }
+.pt-sunrise .pt-time { color: var(--sunrise); }
+.pt-dhuhr   .pt-time { color: var(--gold); }
+.pt-asr     .pt-time { color: var(--blue); }
+.pt-maghrib .pt-time { color: var(--danger); }
+.pt-isha    .pt-time { color: var(--purple); }
+
+/* ─── 4. Day Timeline ─── */
+.day-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.timeline-block {
+  display: flex;
+  min-height: 48px;
+  transition: background 0.2s;
+}
+
+.timeline-block:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Left color bar */
+.tb-bar {
+  width: 4px;
+  min-height: 100%;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* Block content */
+.tb-content {
+  flex: 1;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.timeline-block:last-child .tb-content {
+  border-bottom: none;
+}
+
+.tb-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.tb-time-range {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  direction: ltr;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+
+.tb-duration {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.tb-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+/* ── Timeline Block Types ── */
+
+/* Work blocks */
+.tb-work .tb-bar {
+  background: linear-gradient(180deg, var(--cyan), var(--success));
+}
+
+.tb-work {
+  background: rgba(78, 205, 196, 0.04);
+}
+
+.tb-work:hover {
+  background: rgba(78, 205, 196, 0.08);
+}
+
+.tb-work .tb-label {
+  color: var(--success);
+}
+
+.tb-work .tb-duration {
+  background: rgba(78, 205, 196, 0.12);
+  color: var(--success);
+}
+
+.tb-work .tb-time-range {
+  color: var(--cyan);
+}
+
+/* Prayer blocks - Fajr */
+.tb-prayer-fajr .tb-bar {
+  background: var(--fajr);
+}
+
+.tb-prayer-fajr .tb-label {
+  color: var(--fajr);
+}
+
+.tb-prayer-fajr .tb-duration {
+  background: rgba(255, 140, 66, 0.12);
+  color: var(--fajr);
+}
+
+/* Prayer blocks - Sunrise */
+.tb-prayer-sunrise .tb-bar {
+  background: var(--sunrise);
+}
+
+.tb-prayer-sunrise .tb-label {
+  color: var(--sunrise);
+}
+
+.tb-prayer-sunrise .tb-duration {
+  background: rgba(255, 163, 102, 0.12);
+  color: var(--sunrise);
+}
+
+/* Prayer blocks - Dhuhr */
+.tb-prayer-dhuhr .tb-bar {
+  background: var(--gold);
+}
+
+.tb-prayer-dhuhr .tb-label {
+  color: var(--gold);
+}
+
+.tb-prayer-dhuhr .tb-duration {
+  background: rgba(244, 196, 48, 0.12);
+  color: var(--gold);
+}
+
+/* Prayer blocks - Asr */
+.tb-prayer-asr .tb-bar {
+  background: var(--blue);
+}
+
+.tb-prayer-asr .tb-label {
+  color: var(--blue);
+}
+
+.tb-prayer-asr .tb-duration {
+  background: rgba(74, 108, 247, 0.12);
+  color: var(--blue);
+}
+
+/* Prayer blocks - Maghrib */
+.tb-prayer-maghrib .tb-bar {
+  background: var(--danger);
+}
+
+.tb-prayer-maghrib .tb-label {
+  color: var(--danger);
+}
+
+.tb-prayer-maghrib .tb-duration {
+  background: rgba(255, 107, 107, 0.12);
+  color: var(--danger);
+}
+
+/* Prayer blocks - Isha */
+.tb-prayer-isha .tb-bar {
+  background: var(--purple);
+}
+
+.tb-prayer-isha .tb-label {
+  color: var(--purple);
+}
+
+.tb-prayer-isha .tb-duration {
+  background: rgba(124, 106, 239, 0.12);
+  color: var(--purple);
+}
+
+/* Preparation blocks (dimmer version of prayer colors) */
+.tb-prep .tb-bar {
+  opacity: 0.5;
+}
+
+.tb-prep {
+  opacity: 0.75;
+}
+
+.tb-prep .tb-label {
+  font-style: italic;
+}
+
+.tb-prep-fajr .tb-bar {
+  background: var(--fajr);
+}
+
+.tb-prep-fajr .tb-label {
+  color: rgba(255, 140, 66, 0.7);
+}
+
+.tb-prep-sunrise .tb-bar {
+  background: var(--sunrise);
+}
+
+.tb-prep-sunrise .tb-label {
+  color: rgba(255, 163, 102, 0.7);
+}
+
+.tb-prep-dhuhr .tb-bar {
+  background: var(--gold);
+}
+
+.tb-prep-dhuhr .tb-label {
+  color: rgba(244, 196, 48, 0.7);
+}
+
+.tb-prep-asr .tb-bar {
+  background: var(--blue);
+}
+
+.tb-prep-asr .tb-label {
+  color: rgba(74, 108, 247, 0.7);
+}
+
+.tb-prep-maghrib .tb-bar {
+  background: var(--danger);
+}
+
+.tb-prep-maghrib .tb-label {
+  color: rgba(255, 107, 107, 0.7);
+}
+
+.tb-prep-isha .tb-bar {
+  background: var(--purple);
+}
+
+.tb-prep-isha .tb-label {
+  color: rgba(124, 106, 239, 0.7);
+}
+
+/* Sleep blocks */
+.tb-sleep .tb-bar {
+  background: linear-gradient(180deg, var(--purple), #3a2d7c);
+}
+
+.tb-sleep {
+  background: rgba(124, 106, 239, 0.04);
+}
+
+.tb-sleep .tb-label {
+  color: rgba(124, 106, 239, 0.7);
+}
+
+.tb-sleep .tb-duration {
+  background: rgba(124, 106, 239, 0.1);
+  color: rgba(124, 106, 239, 0.8);
+}
+
+.tb-sleep .tb-time-range {
+  color: rgba(124, 106, 239, 0.7);
+}
+
+/* Current time indicator */
+.tb-current {
+  position: relative;
+}
+
+.tb-current::before {
+  content: '';
+  position: absolute;
+  right: -2px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 10px var(--gold-glow), 0 0 20px var(--gold-glow);
+  animation: pulse-dot 1.5s ease-in-out infinite;
+  z-index: 2;
+}
+
+@keyframes pulse-dot {
+  0%, 100% {
+    box-shadow: 0 0 6px var(--gold-glow), 0 0 12px var(--gold-glow);
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 14px var(--gold-glow), 0 0 28px var(--gold-glow);
+    opacity: 0.8;
+  }
+}
+
+/* ─── 5. Work Blocks Summary ─── */
+.work-blocks {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.work-block-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  background: rgba(78, 205, 196, 0.04);
+  border: 1px solid rgba(78, 205, 196, 0.1);
+  border-radius: var(--radius-sm);
+  border-right: 3px solid var(--success);
+  transition: background 0.2s;
+}
+
+.work-block-item:hover {
+  background: rgba(78, 205, 196, 0.08);
+}
+
+.wb-time {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--cyan);
+  direction: ltr;
+  text-align: left;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.wb-duration {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  flex: 1;
+}
+
+.wb-note {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.wb-total {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 16px;
+  margin-top: 6px;
+  background: rgba(78, 205, 196, 0.06);
+  border: 1px solid rgba(78, 205, 196, 0.15);
+  border-radius: var(--radius-sm);
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--success);
+}
+
+.wb-total-label {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+/* ─── 6. Settings - Buffer Inputs ─── */
+.buffer-row {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.buffer-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+}
+
+.buffer-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.buffer-input {
+  width: 60px;
+  padding: 6px 4px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-align: center;
+  outline: none;
+  direction: ltr;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  -moz-appearance: textfield;
+}
+
+.buffer-input::-webkit-outer-spin-button,
+.buffer-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.buffer-input:focus {
+  border-color: var(--purple);
+  box-shadow: 0 0 0 3px var(--purple-glow);
+}
+
+.buffer-unit {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* ─── 7. Responsive ─── */
+
+/* Tablet and up */
+@media (min-width: 601px) {
+  .prayer-times-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .timeline-block {
+    min-height: 56px;
+  }
+
+  .tb-content {
+    padding: 14px 18px;
+  }
+
+  .date-row {
+    gap: 20px;
+  }
+
+  #schedule-date {
+    max-width: 220px;
+    font-size: 1.05rem;
+  }
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .prayer-times-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .prayer-time-card {
+    padding: 10px 8px;
+  }
+
+  .pt-name {
+    font-size: 0.72rem;
+  }
+
+  .pt-time {
+    font-size: 1.1rem;
+  }
+
+  .nav-link {
+    padding: 8px 14px;
+    font-size: 0.82rem;
+  }
+
+  .tb-header {
+    gap: 6px;
+  }
+
+  .tb-time-range {
+    font-size: 0.85rem;
+  }
+
+  .tb-duration {
+    font-size: 0.68rem;
+    padding: 2px 8px;
+  }
+
+  .tb-label {
+    font-size: 0.78rem;
+  }
+
+  .tb-content {
+    padding: 10px 12px;
+  }
+
+  .btn-nav-day {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    font-size: 1.05rem;
+  }
+
+  .date-row {
+    gap: 10px;
+  }
+
+  #schedule-date {
+    max-width: 170px;
+    font-size: 0.92rem;
+    padding: 8px 10px;
+  }
+
+  .work-block-item {
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px 12px;
+  }
+
+  .wb-time {
+    font-size: 0.82rem;
+  }
+
+  .wb-duration {
+    font-size: 0.72rem;
+  }
+
+  .buffer-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+/* Very small screens */
+@media (max-width: 380px) {
+  .prayer-times-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .page-nav {
+    flex-wrap: wrap;
+  }
+
+  .nav-link {
+    padding: 7px 12px;
+    font-size: 0.78rem;
+  }
+
+  .pt-time {
+    font-size: 1rem;
+  }
+
+  .tb-time-range {
+    font-size: 0.8rem;
+  }
+
+  .tb-label {
+    font-size: 0.74rem;
+  }
+
+  .wb-total {
+    font-size: 0.82rem;
+    padding: 10px 12px;
+  }
+}
+
+/* ─── المخمس (Pentagon) ─── */
+.pentagon-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 10px 0;
+}
+
+.pentagon-svg {
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+}
+
+.pent-outline {
+  fill: rgba(255, 255, 255, 0.02);
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 1;
+}
+
+.pent-dot {
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.3));
+}
+
+.pent-prayer-name {
+  font-family: 'Cairo', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.pent-prayer-time {
+  font-family: 'Cairo', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  fill: var(--text-secondary);
+}
+
+.pent-duration {
+  font-family: 'Cairo', sans-serif;
+  font-size: 9px;
+  font-weight: 600;
+  fill: var(--text-muted);
+}
+
+.pent-center-label {
+  font-family: 'Cairo', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  fill: var(--purple);
+}
+
+.pent-center-time {
+  font-family: 'Cairo', sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  fill: var(--text-primary);
+}
+
+/* ─── وقت النوم (bedtime block) ─── */
+.tb-bedtime,
+.prayer-bedtime {
+  border-right-color: var(--purple) !important;
+}
+
+.tb-bedtime .tb-bar {
+  background: var(--purple) !important;
+}
+
+.tb-bedtime .tb-label {
+  color: var(--purple);
+}
+
+/* ─── تبديل التفاصيل ─── */
+.card-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.card-header-row h2 {
+  margin-bottom: 0;
+}
+
+.detail-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+.detail-toggle input[type="checkbox"] {
+  accent-color: var(--purple);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.detail-toggle-text {
+  font-weight: 600;
+}
+
+.tb-hidden {
+  display: none;
+}
+
+/* ─── معلومات التحضير على المخمس ─── */
+.pent-buffer-info {
+  font-family: 'Cairo', sans-serif;
+  font-size: 8.5px;
+  font-weight: 600;
+  fill: var(--text-muted);
+}
+
+.pent-work-dur {
+  fill: var(--success);
+  font-weight: 700;
+  font-size: 9.5px;
+}
+
+/* ─── RTL time range ─── */
+.tb-time-range,
+.wi-time {
+  unicode-bidi: plaintext;
+  direction: rtl;
+}
+
+@media (max-width: 380px) {
+  .pent-prayer-name { font-size: 11px; }
+  .pent-prayer-time { font-size: 10px; }
+  .pent-duration { font-size: 8px; }
+  .pent-center-time { font-size: 14px; }
+}
