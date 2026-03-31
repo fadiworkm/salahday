@@ -89,6 +89,9 @@ function attachEvents() {
   });
   preFajrInput.addEventListener('input', () => {
     document.getElementById('pre-fajr-buffer-value').textContent = preFajrInput.value;
+    settings.preFajrBuffer = parseInt(preFajrInput.value);
+    saveSettings();
+    hideResults();
   });
 
   // أزرار تبديل تنسيق الوقت

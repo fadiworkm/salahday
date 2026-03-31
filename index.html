@@ -57,6 +57,17 @@
           </div>
         </div>
 
+        <div class="setting-item inline-setting">
+          <label>وقت الاستيقاظ قبل الفجر</label>
+          <div class="range-row">
+            <input type="range" id="pre-fajr-buffer" min="0" max="120" step="5" value="60">
+            <div class="range-value">
+              <span id="pre-fajr-buffer-value">60</span>
+              <span class="range-unit">دقيقة</span>
+            </div>
+          </div>
+        </div>
+
         <div class="btn-row">
           <button id="calculate-btn" class="btn-primary">
             &#9790; احسب جدول النوم
@@ -167,17 +178,6 @@
           <input type="range" id="cycle-duration" min="60" max="120" step="5" value="90">
           <div class="range-value">
             <span id="cycle-duration-value">90</span>
-            <span class="range-unit">دقيقة</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="setting-item">
-        <label>وقت الاستيقاظ قبل الفجر</label>
-        <div class="range-row">
-          <input type="range" id="pre-fajr-buffer" min="15" max="120" step="5" value="60">
-          <div class="range-value">
-            <span id="pre-fajr-buffer-value">60</span>
             <span class="range-unit">دقيقة</span>
           </div>
         </div>

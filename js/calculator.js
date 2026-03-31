@@ -5,8 +5,8 @@
  */
 
 function calculateSleepPlan(bedtimeStr, todayDateStr, cycleDuration, preFajrBuffer, period2StartStr) {
-  cycleDuration = cycleDuration || 90;
-  preFajrBuffer = preFajrBuffer || 60;
+  cycleDuration = cycleDuration != null ? cycleDuration : 90;
+  preFajrBuffer = preFajrBuffer != null ? preFajrBuffer : 60;
 
   const todayPrayer = getPrayerTimes(todayDateStr);
   const tomorrowDateStr = getNextDate(todayDateStr);
@@ -15,8 +15,8 @@ function calculateSleepPlan(bedtimeStr, todayDateStr, cycleDuration, preFajrBuff
   const bedtimeMin = timeToMinutes(bedtimeStr);
   const fajrMin = timeToMinutes(tomorrowPrayer.fajr);
 
-  // مرونة ذكية: الحد الأدنى المطلق = الأقل بين (المفضل - 20) و 30 دقيقة كحد أدنى
-  const minBuffer = Math.max(preFajrBuffer - 20, 30);
+  // مرونة ذكية: الحد الأدنى المطلق
+  const minBuffer = preFajrBuffer > 0 ? Math.max(preFajrBuffer - 20, 0) : 0;
 
   // حساب الوقت المتاح مع المرونة
   const latestWakeFlexible = fajrMin - minBuffer;
@@ -142,14 +142,14 @@ function calculateSleepPlan(bedtimeStr, todayDateStr, cycleDuration, preFajrBuff
  * يركز على 4-5 دورات في الفترة الأولى مع تنويع الخيارات
  */
 function generateSmartSuggestions(dateStr, cycleDuration, preFajrBuffer, fixedBedtime) {
-  cycleDuration = cycleDuration || 90;
-  preFajrBuffer = preFajrBuffer || 60;
+  cycleDuration = cycleDuration != null ? cycleDuration : 90;
+  preFajrBuffer = preFajrBuffer != null ? preFajrBuffer : 60;
 
   const prayer = getPrayerTimes(dateStr);
   const tomorrow = getPrayerTimes(getNextDate(dateStr));
   const ishaMin = timeToMinutes(prayer.isha);
   const fajrMin = timeToMinutes(tomorrow.fajr);
-  const minFajrBuffer = Math.max(preFajrBuffer - 20, 30);
+  const minFajrBuffer = preFajrBuffer > 0 ? Math.max(preFajrBuffer - 20, 0) : 0;
 
   const all = [];
 

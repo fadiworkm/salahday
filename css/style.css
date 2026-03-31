@@ -1198,6 +1198,46 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   margin-bottom: 24px;
 }
 
+.inline-setting {
+  margin-top: 8px;
+  margin-bottom: 16px;
+}
+
+.inline-setting .range-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.inline-setting input[type="range"] {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  outline: none;
+}
+
+.inline-setting input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  background: var(--fajr);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 0 8px var(--fajr-glow);
+}
+
+.inline-setting input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: var(--fajr);
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
 .setting-item label {
   display: block;
   font-size: 0.9rem;
