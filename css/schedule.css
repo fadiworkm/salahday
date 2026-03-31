@@ -354,11 +354,34 @@
   color: var(--purple);
 }
 
+/* عرض بسيط لغير اليوم */
+.pl-simple-times {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+
+.pl-st {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+}
+
+.pl-st b {
+  color: var(--text-primary);
+  margin-right: 4px;
+}
+
 @media (max-width: 600px) {
-  .pp-pie-chart { width: 72px; height: 72px; }
-  .pp-pie-inner { width: 48px; height: 48px; }
-  .pp-pie-label { font-size: 0.8rem; }
-  .pp-pie-value { font-size: 0.82rem; }
+  .pp-pie-section { flex-direction: column; gap: 12px; padding: 14px; }
+  .pp-pie-chart { width: 80px; height: 80px; }
+  .pp-pie-inner { width: 52px; height: 52px; }
+  .pp-pie-info { width: 100%; }
+  .pp-pie-label { font-size: 0.82rem; }
+  .pp-pie-value { font-size: 0.8rem; padding: 2px 10px; }
 }
 
 /* ─── شريط التقدم الخطي ─── */
@@ -480,7 +503,7 @@
 
 .pp-point-name {
   display: block;
-  font-size: 0.58rem;
+  font-size: 0.7rem;
   font-weight: 600;
   color: var(--text-muted);
 }
@@ -490,7 +513,7 @@
 
 .pp-point-time {
   display: block;
-  font-size: 0.55rem;
+  font-size: 0.68rem;
   font-weight: 700;
   color: var(--text-muted);
   direction: ltr;
@@ -526,8 +549,8 @@
 }
 
 @media (max-width: 600px) {
-  .pp-point-name { font-size: 0.52rem; }
-  .pp-point-time { font-size: 0.5rem; }
+  .pp-point-name { font-size: 0.62rem; }
+  .pp-point-time { font-size: 0.58rem; }
 }
 
 /* ─── 4. Day Timeline ─── */
