@@ -166,11 +166,59 @@ const PREP_NAMES = {
   isha:    'تحضير للعشاء'
 };
 
+function getSavedBedtime() {
+  try {
+    const raw = localStorage.getItem('workPlannerData');
+    if (!raw) return null;
+    const all = JSON.parse(raw);
+    const dateStr = document.getElementById('schedule-date').value;
+    const dayPlan = all[dateStr];
+    if (dayPlan && dayPlan.manualBedtime != null) return dayPlan.manualBedtime;
+  } catch (e) {}
+  return null;
+}
+
+function saveManualBedtime(bedtimeMin) {
+  try {
+    const raw = localStorage.getItem('workPlannerData');
+    const all = raw ? JSON.parse(raw) : {};
+    const dateStr = document.getElementById('schedule-date').value;
+    if (!all[dateStr]) all[dateStr] = { activities: [], disabledPeriods: [] };
+    if (Array.isArray(all[dateStr])) all[dateStr] = { activities: all[dateStr], disabledPeriods: [] };
+    all[dateStr].manualBedtime = bedtimeMin;
+    localStorage.setItem('workPlannerData', JSON.stringify(all));
+  } catch (e) {}
+}
+
+function clearSavedBedtime() {
+  try {
+    const raw = localStorage.getItem('workPlannerData');
+    if (!raw) return;
+    const all = JSON.parse(raw);
+    const dateStr = document.getElementById('schedule-date').value;
+    if (all[dateStr]) {
+      delete all[dateStr].manualBedtime;
+      localStorage.setItem('workPlannerData', JSON.stringify(all));
+    }
+  } catch (e) {}
+}
+
+function getManualBedtime(prayerMins) {
+  const input = document.getElementById('manual-bedtime');
+  if (input && input.dataset.manual === '1') {
+    const parts = input.value.split(':').map(Number);
+    return parts[0] * 60 + parts[1];
+  }
+  const saved = getSavedBedtime();
+  if (saved != null) return saved;
+  return prayerMins.isha + scheduleSettings.bedtimeAfterIsha;
+}
+
 function generateDaySegments(prayerMins) {
   const buf = scheduleSettings.buffers;
   const now = new Date();
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  const bedtimeMin = prayerMins.isha + scheduleSettings.bedtimeAfterIsha;
+  const bedtimeMin = getManualBedtime(prayerMins);
 
   const occupiedRanges = [];
 
@@ -206,9 +254,8 @@ function generateDaySegments(prayerMins) {
   }
   occupiedRanges.push({ type: 'prayer', label: PRAYER_NAMES.isha, prayerKey: 'isha', start: prayerMins.isha, end: prayerMins.isha + buf.isha.after });
 
-  // وقت النوم بعد العشاء
+  // وقت النوم — يحدد نهاية فترة العمل وبداية النوم
   const bedEnd = Math.min(bedtimeMin, 1440);
-  occupiedRanges.push({ type: 'bedtime', label: 'وقت شخصي قبل النوم', prayerKey: 'bedtime', start: prayerMins.isha + buf.isha.after, end: bedEnd });
 
   // ترتيب ودمج
   occupiedRanges.sort((a, b) => a.start - b.start);
@@ -249,8 +296,14 @@ function generateDaySegments(prayerMins) {
       const gapStart = range.end;
       const gapEnd = nextRange.start;
       if (gapEnd > gapStart) {
-        const isAfterBedtime = gapStart >= bedEnd;
-        segments.push({ type: isAfterBedtime ? 'sleep' : 'work', label: isAfterBedtime ? 'نوم' : 'وقت عمل', prayerKey: isAfterBedtime ? 'sleep' : 'work', start: gapStart, end: gapEnd, duration: gapEnd - gapStart, isCurrent: currentMinutes >= gapStart && currentMinutes < gapEnd });
+        // تقسيم الفجوة عند وقت النوم
+        if (gapStart < bedEnd && gapEnd > bedEnd) {
+          segments.push({ type: 'work', label: 'وقت عمل', prayerKey: 'work', start: gapStart, end: bedEnd, duration: bedEnd - gapStart, isCurrent: currentMinutes >= gapStart && currentMinutes < bedEnd });
+          segments.push({ type: 'sleep', label: 'نوم', prayerKey: 'sleep', start: bedEnd, end: gapEnd, duration: gapEnd - bedEnd, isCurrent: currentMinutes >= bedEnd && currentMinutes < gapEnd });
+        } else {
+          const isAfterBedtime = gapStart >= bedEnd;
+          segments.push({ type: isAfterBedtime ? 'sleep' : 'work', label: isAfterBedtime ? 'نوم' : 'وقت عمل', prayerKey: isAfterBedtime ? 'sleep' : 'work', start: gapStart, end: gapEnd, duration: gapEnd - gapStart, isCurrent: currentMinutes >= gapStart && currentMinutes < gapEnd });
+        }
       }
     }
   }
@@ -258,7 +311,14 @@ function generateDaySegments(prayerMins) {
   const lastOccupied = merged[merged.length - 1];
   if (lastOccupied && lastOccupied.end < 1440) {
     const gapStart = lastOccupied.end;
-    segments.push({ type: 'sleep', label: 'نوم', prayerKey: 'sleep', start: gapStart, end: 1440, duration: 1440 - gapStart, isCurrent: currentMinutes >= gapStart && currentMinutes < 1440 });
+    // تقسيم عند وقت النوم
+    if (gapStart < bedEnd && bedEnd < 1440) {
+      segments.push({ type: 'work', label: 'وقت عمل', prayerKey: 'work', start: gapStart, end: bedEnd, duration: bedEnd - gapStart, isCurrent: currentMinutes >= gapStart && currentMinutes < bedEnd });
+      segments.push({ type: 'sleep', label: 'نوم', prayerKey: 'sleep', start: bedEnd, end: 1440, duration: 1440 - bedEnd, isCurrent: currentMinutes >= bedEnd && currentMinutes < 1440 });
+    } else {
+      const isSleep = gapStart >= bedEnd;
+      segments.push({ type: isSleep ? 'sleep' : 'work', label: isSleep ? 'نوم' : 'وقت عمل', prayerKey: isSleep ? 'sleep' : 'work', start: gapStart, end: 1440, duration: 1440 - gapStart, isCurrent: currentMinutes >= gapStart && currentMinutes < 1440 });
+    }
   }
 
   return segments;
@@ -397,7 +457,7 @@ function renderPentagon(prayerMins) {
   }
 
   // وقت النوم في المركز
-  const bedtime = prayerMins.isha + scheduleSettings.bedtimeAfterIsha;
+  const bedtime = getManualBedtime(prayerMins);
   svg += `<text x="${cx}" y="${cy - 10}" class="pent-center-label" text-anchor="middle" dominant-baseline="middle">وقت النوم</text>`;
   svg += `<text x="${cx}" y="${cy + 14}" class="pent-center-time" text-anchor="middle" dominant-baseline="middle">${displayTime(bedtime)}</text>`;
 
@@ -405,74 +465,104 @@ function renderPentagon(prayerMins) {
   container.innerHTML = svg;
 }
 
-function isSleepType(type) {
-  return type === 'sleep' || type === 'bedtime';
-}
+function renderDayStats(segments) {
+  const container = document.getElementById('day-stats');
+  if (!container) return;
 
-function renderTimelineBlock(seg, hideBuffers, sunriseHint) {
-  const currentClass = seg.isCurrent ? ' tb-current' : '';
-  const hiddenClass = hideBuffers && (seg.type === 'prep' || seg.type === 'prayer') ? ' tb-hidden' : '';
-  const hintHtml = sunriseHint ? `<div class="tb-sunrise-hint">&#9788; الشروق ${sunriseHint}</div>` : '';
-  return `
-    <div class="timeline-block tb-${seg.type} prayer-${seg.prayerKey}${currentClass}${hiddenClass}">
-      <div class="tb-bar"></div>
-      <div class="tb-content">
-        <div class="tb-header">
-          <span class="tb-time-range">${displayTimeRange(seg.start, seg.end)}</span>
-          <span class="tb-duration">${formatDuration(seg.duration)}</span>
-        </div>
-        <div class="tb-label">${seg.label}</div>
-        ${hintHtml}
-      </div>
-    </div>`;
-}
+  const TOTAL_DAY = 1440;
 
-function renderTimeline(segments, prayerMins) {
-  const container = document.getElementById('day-timeline');
-  const showDetails = document.getElementById('toggle-details');
-  const hideBuffers = showDetails && !showDetails.checked;
-  const sunriseMin = prayerMins ? prayerMins.sunrise : null;
-  const sunriseAfter = scheduleSettings.buffers.sunrise.after;
+  // تحميل أنشطة المخطط المحفوظة
+  let planActivities = [];
+  try {
+    const raw = localStorage.getItem('workPlannerData');
+    if (raw) {
+      const all = JSON.parse(raw);
+      const dateStr = document.getElementById('schedule-date').value;
+      let savedPlan = all[dateStr] || null;
+      if (Array.isArray(savedPlan)) savedPlan = { activities: savedPlan, disabledPeriods: [] };
+      if (savedPlan) planActivities = savedPlan.activities || [];
+    }
+  } catch (e) {}
 
-  // تجميع شرائح النوم المتجاورة
-  let html = '';
-  let i = 0;
-  while (i < segments.length) {
-    if (isSleepType(segments[i].type)) {
-      // جمع كل الشرائح المتتالية من نوع نوم/وقت شخصي
-      const group = [];
-      while (i < segments.length && isSleepType(segments[i].type)) {
-        group.push(segments[i]);
-        i++;
-      }
-      // حساب المدة الإجمالية للمجموعة
-      const totalDur = group.reduce((s, g) => s + g.duration, 0);
-      const groupStart = group[0].start;
-      const groupEnd = group[group.length - 1].end;
-      const anyCurrent = group.some(g => g.isCurrent);
-
-      html += `<div class="sleep-group${anyCurrent ? ' sleep-group-current' : ''}">`;
-      html += `<div class="sleep-group-header">`;
-      html += `<span class="sg-icon">&#9790;</span>`;
-      html += `<span class="sg-range">${displayTimeRange(groupStart, groupEnd)}</span>`;
-      html += `<span class="sg-duration">${formatDuration(totalDur)}</span>`;
-      html += `</div>`;
-      html += `<div class="sleep-group-items">`;
-      group.forEach(seg => {
-        html += renderTimelineBlock(seg, hideBuffers, null);
-      });
-      html += `</div></div>`;
-    } else {
-      // إضافة تلميح الشروق على فترة العمل التي تحتوي عليه
-      let hint = null;
-      const seg = segments[i];
-      if (seg.type === 'work' && sunriseMin !== null && sunriseMin >= seg.start && sunriseMin < seg.end) {
-        hint = displayTime(sunriseMin) + (sunriseAfter > 0 ? ` (+ ${sunriseAfter} د)` : '');
-      }
-      html += renderTimelineBlock(seg, hideBuffers, hint);
-      i++;
+  // حساب الأوقات حسب النوع
+  const typeTotals = { sleep: 0, prayer: 0, prep: 0, work: 0 };
+  for (const seg of segments) {
+    if (typeTotals.hasOwnProperty(seg.type)) {
+      typeTotals[seg.type] += seg.duration;
     }
   }
+
+  // تجميع أنشطة المخطط حسب الاسم (نشاط "عمل" يُحسب كعمل)
+  const activityMap = {};
+  let totalActivityTime = 0;
+  let activityWorkTime = 0;
+  for (const act of planActivities) {
+    const dur = act.end - act.start;
+    if (act.name === 'عمل') {
+      activityWorkTime += dur;
+    } else {
+      if (!activityMap[act.name]) {
+        activityMap[act.name] = { name: act.name, icon: act.icon, color: act.color, duration: 0 };
+      }
+      activityMap[act.name].duration += dur;
+    }
+    totalActivityTime += dur;
+  }
+
+  // تحديد أنشطة تقع في فترات العمل
+  let workActivityTime = 0;
+  const workSegs = segments.filter(s => s.type === 'work');
+  for (const act of planActivities) {
+    for (const wSeg of workSegs) {
+      if (act.start >= wSeg.start && act.end <= wSeg.end) {
+        workActivityTime += (act.end - act.start);
+      }
+    }
+  }
+
+  // بناء الفئات
+  const categories = [];
+
+  if (typeTotals.sleep > 0) {
+    categories.push({ name: 'نوم', icon: '☾', color: '#3a3f6b', duration: typeTotals.sleep });
+  }
+  const prayerTotal = (typeTotals.prayer || 0) + (typeTotals.prep || 0);
+  if (prayerTotal > 0) {
+    categories.push({ name: 'صلاة وتحضير', icon: '❤️', color: '#7c6aef', duration: prayerTotal, itemClass: 'ds-item-prayer' });
+  }
+
+  const remainingWork = Math.max(0, typeTotals.work - workActivityTime) + activityWorkTime;
+  if (remainingWork > 0) {
+    categories.push({ name: 'عمل', icon: '💼', color: '#4ecdc4', duration: remainingWork, itemClass: 'ds-item-work' });
+  }
+
+  // إضافة أنشطة المخطط
+  for (const key of Object.keys(activityMap)) {
+    const act = activityMap[key];
+    if (act.duration > 0) {
+      categories.push({ name: act.name, icon: act.icon, color: act.color, duration: act.duration });
+    }
+  }
+
+  // ترتيب حسب المدة تنازلياً
+  categories.sort((a, b) => b.duration - a.duration);
+
+  // بناء HTML
+  let html = '<div class="day-stats-grid">';
+  for (const cat of categories) {
+    const pct = ((cat.duration / TOTAL_DAY) * 100).toFixed(1);
+    html += `
+      <div class="ds-item ${cat.itemClass || ''}">
+        <div class="ds-bar" style="width: ${pct}%; background: ${cat.color}"></div>
+        <div class="ds-info">
+          <span class="ds-icon">${cat.icon}</span>
+          <span class="ds-name">${cat.name}</span>
+          <span class="ds-time">${formatDuration(cat.duration)}</span>
+          <span class="ds-pct">${pct}%</span>
+        </div>
+      </div>`;
+  }
+  html += '</div>';
 
   container.innerHTML = html;
 }
@@ -503,9 +593,7 @@ function getWorkBetweenPrayers(seg, prayerMins) {
 function renderWorkBlocks(segments, prayerMins) {
   const container = document.getElementById('work-blocks');
   const workSegments = segments.filter(s => s.type === 'work');
-  const bedtimeSeg = segments.find(s => s.type === 'bedtime');
   const allPeriods = [...workSegments];
-  if (bedtimeSeg) allPeriods.push(bedtimeSeg);
 
   window._workSegments = workSegments;
 
@@ -533,28 +621,25 @@ function renderWorkBlocks(segments, prayerMins) {
   let totalAvail = 0;
 
   allPeriods.forEach((seg, i) => {
-    const isBedtime = seg.type === 'bedtime';
-    const pKey = (isBedtime ? 'bedtime' : 'work') + ':' + seg.start + '-' + seg.end;
+    const pKey = 'work:' + seg.start + '-' + seg.end;
     const disabled = disabledPeriods.indexOf(pKey) !== -1;
     const currentClass = seg.isCurrent ? ' wt-block-current' : '';
     const disabledClass = disabled ? ' wt-block-unchecked' : '';
 
-    // أنشطة هذه الفترة
     const periodActs = planActivities.filter(a => a.start >= seg.start && a.end <= seg.end).sort((a, b) => a.start - b.start);
     const usedTime = periodActs.reduce((sum, a) => sum + (a.end - a.start), 0);
     const freeTime = seg.duration - usedTime;
 
     if (!disabled) totalAvail += freeTime;
 
-    const timeColor = isBedtime ? 'color:var(--purple)' : '';
-    const periodName = isBedtime ? 'وقت شخصي قبل النوم' : (prayerMins ? getWorkBetweenPrayers(seg, prayerMins) : '');
+    const periodName = prayerMins ? getWorkBetweenPrayers(seg, prayerMins) : '';
 
     html += `<div class="wt-period${currentClass}${disabledClass}">`;
 
     // الرأس
     html += `<div class="wt-period-header">`;
-    html += `<span class="wt-period-time" style="${timeColor}">${displayTimeRange(seg.start, seg.end)}</span>`;
-    html += `<span class="wt-period-free">${formatDuration(freeTime)} ${isBedtime ? '' : 'عمل'}</span>`;
+    html += `<span class="wt-period-time">${displayTimeRange(seg.start, seg.end)}</span>`;
+    html += `<span class="wt-period-free">${formatDuration(freeTime)} عمل</span>`;
     html += `</div>`;
     if (periodName) {
       html += `<div class="wt-period-name">${periodName}</div>`;
@@ -568,15 +653,24 @@ function renderWorkBlocks(segments, prayerMins) {
         periodActs.forEach(act => {
           if (act.start > cursor) {
             const freeDur = act.start - cursor;
-            html += `<div class="wt-vb-seg wt-vb-free" style="flex:${freeDur}">${freeDur >= 15 ? formatDuration(freeDur) : ''}</div>`;
+            html += `<div class="wt-vb-seg wt-vb-free" style="flex:${freeDur}">`;
+            if (freeDur >= 15) html += `<span class="vb-dur">${formatDuration(freeDur)}</span>`;
+            html += `<span class="vb-range">${displayTime(cursor)} - ${displayTime(act.start)}</span>`;
+            html += `</div>`;
           }
           const actDur = act.end - act.start;
-          html += `<div class="wt-vb-seg wt-vb-act" style="flex:${actDur}; background:${act.color}">${act.icon}</div>`;
+          html += `<div class="wt-vb-seg wt-vb-act" style="flex:${actDur}; background:${act.color}">`;
+          html += `<span class="vb-dur">${act.icon}</span>`;
+          html += `<span class="vb-range">${displayTime(act.start)} - ${displayTime(act.end)}</span>`;
+          html += `</div>`;
           cursor = act.end;
         });
         if (cursor < seg.end) {
           const freeDur = seg.end - cursor;
-          html += `<div class="wt-vb-seg wt-vb-free" style="flex:${freeDur}">${freeDur >= 15 ? formatDuration(freeDur) : ''}</div>`;
+          html += `<div class="wt-vb-seg wt-vb-free" style="flex:${freeDur}">`;
+          if (freeDur >= 15) html += `<span class="vb-dur">${formatDuration(freeDur)}</span>`;
+          html += `<span class="vb-range">${displayTime(cursor)} - ${displayTime(seg.end)}</span>`;
+          html += `</div>`;
         }
         html += `</div>`;
 
@@ -640,7 +734,7 @@ function renderDay() {
   if (!dayData) {
     document.getElementById('prayer-times-grid').innerHTML = '<p class="no-data-msg">لا توجد بيانات متوفرة</p>';
     document.getElementById('pentagon-wrap').innerHTML = '';
-    document.getElementById('day-timeline').innerHTML = '';
+    document.getElementById('day-stats').innerHTML = '';
     document.getElementById('work-blocks').innerHTML = '';
     document.getElementById('hijri-date').textContent = '';
     document.getElementById('day-name').textContent = '';
@@ -655,6 +749,20 @@ function renderDay() {
   }
 
   const prayerMins = extractPrayerMinutes(dayData);
+
+  // تعيين وقت النوم — من المحفوظ أو الافتراضي
+  const bedtimeInput = document.getElementById('manual-bedtime');
+  if (bedtimeInput && bedtimeInput.dataset.manual !== '1') {
+    const saved = getSavedBedtime();
+    if (saved != null) {
+      bedtimeInput.value = minutesToTimeStr(saved);
+      bedtimeInput.dataset.manual = '1';
+    } else {
+      const defaultBedtime = prayerMins.isha + scheduleSettings.bedtimeAfterIsha;
+      bedtimeInput.value = minutesToTimeStr(defaultBedtime);
+    }
+  }
+
   const segments = generateDaySegments(prayerMins);
 
   // حفظ الشرائح للمخطط
@@ -662,7 +770,7 @@ function renderDay() {
 
   renderPrayerGrid(dayData, prayerMins);
   renderPentagon(prayerMins);
-  renderTimeline(segments, prayerMins);
+  renderDayStats(segments);
   renderWorkBlocks(segments, prayerMins);
 }
 
@@ -678,21 +786,43 @@ function changeDate(delta) {
   const current = new Date(dateInput.value + 'T12:00:00');
   current.setDate(current.getDate() + delta);
   dateInput.value = current.toISOString().split('T')[0];
-  renderDay();
-}
-
-function goToToday() {
-  document.getElementById('schedule-date').value = new Date().toISOString().split('T')[0];
+  // إعادة تعيين وقت النوم للافتراضي عند تغيير اليوم
+  const bedtimeInput = document.getElementById('manual-bedtime');
+  if (bedtimeInput) bedtimeInput.dataset.manual = '';
   renderDay();
 }
 
 // ─── الأحداث ───
 
 function attachEvents() {
-  document.getElementById('schedule-date').addEventListener('change', renderDay);
+  document.getElementById('schedule-date').addEventListener('change', () => {
+    const bi = document.getElementById('manual-bedtime');
+    if (bi) bi.dataset.manual = '';
+    renderDay();
+  });
   document.getElementById('prev-day').addEventListener('click', () => changeDate(-1));
   document.getElementById('next-day').addEventListener('click', () => changeDate(1));
-  document.getElementById('today-btn').addEventListener('click', goToToday);
+  document.getElementById('today-btn').addEventListener('click', () => {
+    document.getElementById('schedule-date').value = new Date().toISOString().split('T')[0];
+    const bi = document.getElementById('manual-bedtime');
+    if (bi) bi.dataset.manual = '';
+    renderDay();
+  });
+
+  // وقت النوم اليدوي — حفظ عند التغيير
+  document.getElementById('manual-bedtime').addEventListener('change', () => {
+    const bi = document.getElementById('manual-bedtime');
+    bi.dataset.manual = '1';
+    const parts = bi.value.split(':').map(Number);
+    saveManualBedtime(parts[0] * 60 + parts[1]);
+    renderDay();
+  });
+  document.getElementById('reset-bedtime').addEventListener('click', () => {
+    const bi = document.getElementById('manual-bedtime');
+    bi.dataset.manual = '';
+    clearSavedBedtime();
+    renderDay();
+  });
 
   document.getElementById('settings-toggle').addEventListener('click', openSettings);
   document.getElementById('close-settings').addEventListener('click', closeSettings);
@@ -708,11 +838,6 @@ function attachEvents() {
     });
   });
 
-  // تبديل إظهار/إخفاء أوقات التحضير
-  const toggleDetails = document.getElementById('toggle-details');
-  if (toggleDetails) {
-    toggleDetails.addEventListener('change', renderDay);
-  }
 }
 
 // ─── الإعدادات ───

@@ -112,6 +112,46 @@
   margin-top: 2px;
 }
 
+/* ─── إدخال وقت النوم ─── */
+.bedtime-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: rgba(124, 106, 239, 0.06);
+  border: 1px solid rgba(124, 106, 239, 0.12);
+  border-radius: var(--radius-sm);
+}
+
+.bedtime-input-row label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--purple);
+  white-space: nowrap;
+}
+
+.bedtime-input-row input[type="time"] {
+  flex: 1;
+  max-width: 120px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(124, 106, 239, 0.2);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  outline: none;
+  direction: ltr;
+  text-align: center;
+}
+
+.bedtime-input-row input[type="time"]:focus {
+  border-color: var(--purple);
+  box-shadow: 0 0 0 3px var(--purple-glow);
+}
+
 .btn-today {
   display: block;
   margin: 8px auto 20px;
@@ -736,11 +776,26 @@
 .wt-vb-free {
   color: var(--text-muted);
   background: rgba(78, 205, 196, 0.06);
+  flex-direction: column;
+  gap: 1px;
 }
 
 .wt-vb-act {
   color: #fff;
   font-size: 0.8rem;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.vb-dur {
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+.vb-range {
+  font-size: 0.55rem;
+  opacity: 0.6;
+  direction: ltr;
 }
 
 .wt-act-chips {
@@ -1183,4 +1238,112 @@
   .pent-prayer-time { font-size: 10px; }
   .pent-duration { font-size: 8px; }
   .pent-center-time { font-size: 14px; }
+}
+
+/* ─── إحصائيات اليوم ─── */
+.day-stats-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ds-item {
+  position: relative;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 10px;
+  overflow: hidden;
+  min-height: 44px;
+}
+
+.ds-bar {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  border-radius: 10px;
+  opacity: 0.15;
+  transition: width 0.6s ease;
+}
+
+.ds-info {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  z-index: 1;
+}
+
+.ds-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  width: 28px;
+  text-align: center;
+}
+
+.ds-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.ds-time {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.ds-pct {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  min-width: 36px;
+  text-align: left;
+  direction: ltr;
+}
+
+/* تأثير خاص لصف الصلاة */
+.ds-item-prayer .ds-name {
+  color: var(--purple);
+}
+
+.ds-item-prayer .ds-icon {
+  color: var(--danger);
+}
+
+/* تأثير خاص لصف العمل */
+.ds-item-work .ds-name {
+  color: var(--success);
+}
+
+/* ─── إجمالي اليوم ─── */
+.ds-total {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  margin-top: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.ds-total-value {
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+@media (max-width: 600px) {
+  .ds-info {
+    padding: 8px 10px;
+    gap: 8px;
+  }
+  .ds-name { font-size: 0.8rem; }
+  .ds-time { font-size: 0.78rem; }
 }

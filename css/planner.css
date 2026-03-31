@@ -227,6 +227,17 @@
 }
 .pl-seg-work:hover { background: rgba(78, 205, 196, 0.2); }
 
+.seg-dur {
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+.seg-range {
+  font-size: 0.55rem;
+  opacity: 0.6;
+  direction: ltr;
+}
+
 .pl-seg-activity {
   color: #fff;
   cursor: pointer;
@@ -269,6 +280,25 @@
   transition: all 0.2s;
 }
 .pl-add-btn:hover { color: var(--success); background: rgba(78, 205, 196, 0.04); }
+
+.pl-full-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 10px;
+  background: rgba(124, 106, 239, 0.08);
+  border: none;
+  border-top: 1px solid rgba(124, 106, 239, 0.12);
+  color: var(--purple);
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.pl-full-btn:hover { background: rgba(124, 106, 239, 0.15); }
 
 /* ─── شرائح الأنشطة ─── */
 .pl-activities-list {

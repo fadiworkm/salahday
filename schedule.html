@@ -45,6 +45,12 @@
           <button id="next-day" class="btn-nav-day">&larr;</button>
         </div>
         <button id="today-btn" class="btn-today">اليوم</button>
+
+        <div class="bedtime-input-row">
+          <label>&#9790; وقت النوم</label>
+          <input type="time" id="manual-bedtime" step="300">
+          <button type="button" id="reset-bedtime" class="btn-inline btn-inline-sm" title="إعادة للافتراضي">افتراضي</button>
+        </div>
       </div>
     </section>
 
@@ -81,17 +87,11 @@
       </div>
     </section>
 
-    <!-- Linear Timeline -->
+    <!-- إحصائيات الـ 24 ساعة -->
     <section>
       <div class="card">
-        <div class="card-header-row">
-          <h2><span class="icon">&#128197;</span> جدول اليوم</h2>
-          <label class="detail-toggle">
-            <input type="checkbox" id="toggle-details">
-            <span class="detail-toggle-text">أوقات التحضير</span>
-          </label>
-        </div>
-        <div class="day-timeline" id="day-timeline">
+        <h2><span class="icon">&#128202;</span> إحصائيات يومك</h2>
+        <div id="day-stats">
           <!-- Filled by JS -->
         </div>
       </div>
@@ -254,6 +254,7 @@
       </div>
       <div class="af-body">
         <div class="af-presets" id="af-presets">
+          <button class="af-preset" data-name="عمل" data-icon="💼" data-color="#4ecdc4">💼 عمل</button>
           <button class="af-preset" data-name="رياضة" data-icon="🏃" data-color="#ff6b6b">🏃 رياضة</button>
           <button class="af-preset" data-name="اجتماع" data-icon="🤝" data-color="#4a6cf7">🤝 اجتماع</button>
           <button class="af-preset" data-name="استراحة" data-icon="☕" data-color="#ffa366">☕ استراحة</button>

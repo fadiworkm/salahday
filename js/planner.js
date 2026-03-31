@@ -54,12 +54,6 @@ function getPlannerPeriods() {
     return { type: 'work', index: i, start: seg.start, end: seg.end, duration: seg.duration, label: 'وقت عمل' };
   });
 
-  // فترة ما بعد العشاء (وقت شخصي قبل النوم)
-  const bedtimeSeg = allSegments.find(function (s) { return s.type === 'bedtime'; });
-  if (bedtimeSeg) {
-    periods.push({ type: 'bedtime', index: -1, start: bedtimeSeg.start, end: bedtimeSeg.end, duration: bedtimeSeg.duration, label: 'وقت شخصي قبل النوم' });
-  }
-
   periods.sort(function (a, b) { return a.start - b.start; });
   return periods;
 }
@@ -160,13 +154,15 @@ function renderPlanner() {
         if (bs.type === 'free') {
           var freeCls = isBedtime ? 'pl-seg-bedtime' : 'pl-seg-work';
           html += '<div class="pl-segment ' + freeCls + '" style="flex:' + bs.duration + '" onclick="onBarFreeClick(' + pIdx + ', ' + bs.start + ')">';
-          if (bs.duration >= 15) html += formatDuration(bs.duration);
+          if (bs.duration >= 15) html += '<span class="seg-dur">' + formatDuration(bs.duration) + '</span>';
+          html += '<span class="seg-range">' + displayTime(bs.start) + ' - ' + displayTime(bs.end) + '</span>';
           html += '</div>';
         } else {
           var actGIdx = activities.indexOf(periodActs[bs.actIndex]);
           html += '<div class="pl-segment pl-seg-activity" style="flex:' + bs.duration + '; background:' + bs.color + '" onclick="editActivity(' + pIdx + ', ' + actGIdx + ')" title="' + bs.name + ': ' + formatDuration(bs.duration) + '">';
           html += '<span class="pl-seg-edit">&#9998;</span>';
-          html += bs.icon;
+          html += '<span class="seg-dur">' + bs.icon + '</span>';
+          html += '<span class="seg-range">' + displayTime(bs.start) + ' - ' + displayTime(bs.end) + '</span>';
           html += '</div>';
         }
       });
@@ -182,6 +178,11 @@ function renderPlanner() {
           html += '<span class="chip-edit">&#9998;</span></span>';
         });
         html += '</div>';
+      }
+
+      // زر تعيين كامل الفترة (يظهر فقط عندما لا توجد أنشطة)
+      if (periodActs.length === 0) {
+        html += '<button class="pl-full-btn" onclick="setFullPeriod(' + pIdx + ')">تعيين كامل الفترة</button>';
       }
 
       // زر الإضافة
@@ -242,7 +243,9 @@ function showActivityForm(pIdx) {
   startInput.value = minutesToTimeStr(period.start);
 
   document.getElementById('af-custom-name').value = '';
-  document.getElementById('af-duration').value = 30;
+  var slider = document.getElementById('af-duration');
+  slider.step = 5;
+  slider.value = 30;
   document.getElementById('af-duration-value').textContent = '30';
   document.querySelectorAll('.af-preset').forEach(function (p) { p.classList.remove('af-preset-selected'); });
 
@@ -252,6 +255,34 @@ function showActivityForm(pIdx) {
   document.querySelector('.af-header h3').textContent = 'إضافة نشاط';
 
   updateDurationMax();
+  document.getElementById('activity-form-overlay').classList.add('active');
+}
+
+function setFullPeriod(pIdx) {
+  var periods = getPlannerPeriods();
+  var period = periods[pIdx];
+  if (!period) return;
+
+  currentFormWorkIndex = pIdx;
+  editingActivityIndex = null;
+  selectedPreset = null;
+
+  document.getElementById('af-start-time').value = minutesToTimeStr(period.start);
+  document.getElementById('af-custom-name').value = '';
+
+  var fullDur = period.duration;
+  var slider = document.getElementById('af-duration');
+  slider.step = 1;
+  slider.max = fullDur;
+  slider.value = fullDur;
+  document.getElementById('af-duration-value').textContent = fullDur;
+
+  document.querySelectorAll('.af-preset').forEach(function (p) { p.classList.remove('af-preset-selected'); });
+
+  document.getElementById('af-add-btn').textContent = 'تعيين';
+  document.getElementById('af-delete-btn').style.display = 'none';
+  document.querySelector('.af-header h3').textContent = 'تعيين كامل الفترة';
+
   document.getElementById('activity-form-overlay').classList.add('active');
 }
 
@@ -269,7 +300,9 @@ function editActivity(pIdx, globalIdx) {
   document.getElementById('af-start-time').value = minutesToTimeStr(act.start);
   document.getElementById('af-custom-name').value = act.name;
   var duration = act.end - act.start;
-  document.getElementById('af-duration').value = duration;
+  var slider = document.getElementById('af-duration');
+  slider.step = 1;
+  slider.value = duration;
   document.getElementById('af-duration-value').textContent = duration;
 
   // تحديد النوع المسبق
