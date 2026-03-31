@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   initDateInput();
   attachEvents();
   renderDay();
+  startCountdownTimer();
 });
 
 // ─── تحميل بيانات الصلاة ───
@@ -334,6 +335,10 @@ const PRAYER_COLORS = {
 
 function renderPrayerGrid(dayData, prayerMins) {
   const grid = document.getElementById('prayer-times-grid');
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const isToday = document.getElementById('schedule-date').value === now.toISOString().split('T')[0];
+
   const prayers = [
     { key: 'fajr',    name: 'الفجر',  mins: prayerMins.fajr },
     { key: 'sunrise', name: 'الشروق', mins: prayerMins.sunrise },
@@ -343,12 +348,127 @@ function renderPrayerGrid(dayData, prayerMins) {
     { key: 'isha',    name: 'العشاء', mins: prayerMins.isha }
   ];
 
-  grid.innerHTML = prayers.map(p => `
-    <div class="prayer-time-card prayer-${p.key}">
+  // تحديد الصلاة السابقة والتالية
+  let prevIdx = -1, nextIdx = -1;
+  if (isToday) {
+    for (let i = prayers.length - 1; i >= 0; i--) {
+      if (prayers[i].mins <= nowMin) { prevIdx = i; break; }
+    }
+    for (let i = 0; i < prayers.length; i++) {
+      if (prayers[i].mins > nowMin) { nextIdx = i; break; }
+    }
+  }
+
+  grid.innerHTML = prayers.map((p, i) => {
+    let statusHtml = '';
+    if (isToday) {
+      if (i === nextIdx) {
+        const remaining = p.mins - nowMin;
+        statusHtml = `<div class="ptc-status ptc-next">بعد ${formatDuration(remaining)}</div>`;
+      } else if (i === prevIdx) {
+        const elapsed = nowMin - p.mins;
+        statusHtml = `<div class="ptc-status ptc-prev">منذ ${formatDuration(elapsed)}</div>`;
+      } else if (p.mins <= nowMin) {
+        statusHtml = `<div class="ptc-status ptc-done">&#10003;</div>`;
+      }
+    }
+    const activeClass = (i === nextIdx) ? ' ptc-active-next' : (i === prevIdx) ? ' ptc-active-prev' : '';
+    return `
+    <div class="prayer-time-card prayer-${p.key}${activeClass}">
       <div class="ptc-name">${p.name}</div>
       <div class="ptc-time">${displayTime(p.mins)}</div>
-    </div>
-  `).join('');
+      ${statusHtml}
+    </div>`;
+  }).join('');
+
+  // شريط التقدم الخطي + زر التحديث
+  if (isToday) {
+    const first = prayers[0].mins;
+    const last = prayers[prayers.length - 1].mins;
+    const totalSpan = last - first;
+    const progressPct = totalSpan > 0 ? Math.min(100, Math.max(0, ((nowMin - first) / totalSpan) * 100)) : 0;
+
+    // قسم الدائرة + العد التنازلي
+    let countdownHtml = '';
+    if (nextIdx >= 0 && prevIdx >= 0) {
+      const prevMin = prayers[prevIdx].mins;
+      const nextMin = prayers[nextIdx].mins;
+      const totalBetween = nextMin - prevMin;
+      const elapsed = nowMin - prevMin;
+      const remaining = nextMin - nowMin;
+      const pct = totalBetween > 0 ? (elapsed / totalBetween) * 100 : 0;
+      // conic-gradient للدائرة
+      const conicAngle = (pct / 100) * 360;
+
+      countdownHtml = `<div class="pp-pie-section" id="pp-countdown" data-prev="${prevMin}" data-target="${nextMin}">`;
+      countdownHtml += `<div class="pp-pie-chart" style="background: conic-gradient(var(--gold) 0deg, var(--gold) ${conicAngle}deg, rgba(78,205,196,0.2) ${conicAngle}deg, rgba(78,205,196,0.2) 360deg)">`;
+      countdownHtml += `<div class="pp-pie-inner"></div>`;
+      countdownHtml += `</div>`;
+      countdownHtml += `<div class="pp-pie-info">`;
+      countdownHtml += `<div class="pp-pie-row pp-pie-next"><span class="pp-pie-label">${prayers[nextIdx].name}</span><span class="pp-pie-value" id="pp-cd-remaining">بعد ${formatDuration(remaining)}</span></div>`;
+      countdownHtml += `<div class="pp-pie-row pp-pie-prev"><span class="pp-pie-label">${prayers[prevIdx].name}</span><span class="pp-pie-value" id="pp-cd-elapsed">منذ ${formatDuration(elapsed)}</span></div>`;
+      countdownHtml += `</div></div>`;
+    } else if (prevIdx === prayers.length - 1) {
+      countdownHtml = `<div class="pp-countdown pp-cd-done">`;
+      countdownHtml += `<span class="pp-cd-label">&#10003; انتهت صلوات اليوم</span>`;
+      countdownHtml += `</div>`;
+    }
+
+    let barHtml = countdownHtml;
+    barHtml += '<div class="prayer-progress-wrap">';
+    barHtml += '<button class="pp-refresh" onclick="renderDay()" title="تحديث">&#8635;</button>';
+    barHtml += '<div class="prayer-progress-outer">';
+    barHtml += '<div class="prayer-progress-bar">';
+
+    // شريط الملء
+    barHtml += `<div class="pp-fill" style="width:${progressPct}%"></div>`;
+
+    // مؤشر الوقت الحالي
+    barHtml += `<div class="pp-now" style="right:${progressPct}%"></div>`;
+
+    // تسميات المدة بين الصلاة السابقة والتالية على الشريط
+    if (prevIdx >= 0 && nextIdx >= 0) {
+      const prevPct = ((prayers[prevIdx].mins - first) / totalSpan) * 100;
+      const nextPct = ((prayers[nextIdx].mins - first) / totalSpan) * 100;
+      const elapsed = nowMin - prayers[prevIdx].mins;
+      const remaining = prayers[nextIdx].mins - nowMin;
+
+      // المدة من السابقة للآن (على الجزء الممتلئ)
+      const elapsedLeft = prevPct;
+      const elapsedWidth = progressPct - prevPct;
+      if (elapsedWidth > 5) {
+        barHtml += `<div class="pp-seg-label pp-seg-elapsed" style="right:${elapsedLeft}%; width:${elapsedWidth}%">`;
+        barHtml += `<span>${formatDuration(elapsed)}</span>`;
+        barHtml += `</div>`;
+      }
+
+      // المدة من الآن للتالية (على الجزء الفارغ)
+      const remainLeft = progressPct;
+      const remainWidth = nextPct - progressPct;
+      if (remainWidth > 5) {
+        barHtml += `<div class="pp-seg-label pp-seg-remain" style="right:${remainLeft}%; width:${remainWidth}%">`;
+        barHtml += `<span>${formatDuration(remaining)}</span>`;
+        barHtml += `</div>`;
+      }
+    }
+
+    // نقاط الصلوات على الشريط
+    prayers.forEach((p, i) => {
+      const pPct = totalSpan > 0 ? ((p.mins - first) / totalSpan) * 100 : 0;
+      const passed = p.mins <= nowMin;
+      const isNext = i === nextIdx;
+      const dotCls = isNext ? 'pp-dot-next' : passed ? 'pp-dot-done' : 'pp-dot-future';
+      barHtml += `<div class="pp-point ${dotCls}" style="right:${pPct}%">`;
+      barHtml += `<div class="pp-point-dot"></div>`;
+      barHtml += `<div class="pp-point-label">`;
+      barHtml += `<span class="pp-point-name">${p.name}</span>`;
+      barHtml += `<span class="pp-point-time">${displayTime(p.mins)}</span>`;
+      barHtml += `</div></div>`;
+    });
+
+    barHtml += '</div></div></div>';
+    grid.innerHTML += barHtml;
+  }
 }
 
 // ─── المخمس (Pentagon) ───
@@ -912,6 +1032,49 @@ function closeSettings() {
   document.getElementById('settings-overlay').classList.remove('active');
   document.body.style.overflow = '';
   renderDay();
+}
+
+// ─── العد التنازلي في الوقت الحقيقي ───
+
+let countdownInterval = null;
+
+function startCountdownTimer() {
+  if (countdownInterval) clearInterval(countdownInterval);
+  countdownInterval = setInterval(updateCountdown, 30000); // كل 30 ثانية
+}
+
+function updateCountdown() {
+  const cdEl = document.getElementById('pp-countdown');
+  if (!cdEl) return;
+
+  const target = parseInt(cdEl.dataset.target, 10);
+  const prev = parseInt(cdEl.dataset.prev, 10);
+  if (isNaN(target)) return;
+
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const remaining = target - nowMin;
+  const elapsed = nowMin - prev;
+
+  if (remaining <= 0) {
+    renderDay();
+    return;
+  }
+
+  // تحديث النصوص
+  const remEl = document.getElementById('pp-cd-remaining');
+  const elaEl = document.getElementById('pp-cd-elapsed');
+  if (remEl) remEl.textContent = 'بعد ' + formatDuration(remaining);
+  if (elaEl) elaEl.textContent = 'منذ ' + formatDuration(elapsed);
+
+  // تحديث الدائرة
+  const totalBetween = target - prev;
+  const pct = totalBetween > 0 ? (elapsed / totalBetween) * 100 : 0;
+  const angle = (pct / 100) * 360;
+  const pieEl = cdEl.querySelector('.pp-pie-chart');
+  if (pieEl) {
+    pieEl.style.background = `conic-gradient(var(--gold) 0deg, var(--gold) ${angle}deg, rgba(78,205,196,0.2) ${angle}deg, rgba(78,205,196,0.2) 360deg)`;
+  }
 }
 
 // ─── النجوم المتلألئة ───
