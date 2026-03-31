@@ -1177,6 +1177,26 @@
   transform: scale(1.1);
 }
 
+.btn-clear-day {
+  width: 30px;
+  height: 30px;
+  background: rgba(255, 107, 107, 0.08);
+  border: 1px solid rgba(255, 107, 107, 0.15);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+
+.btn-clear-day:hover {
+  background: rgba(255, 107, 107, 0.15);
+  color: var(--danger);
+}
+
 .wt-period-name {
   padding: 0 14px 6px;
   font-size: 0.72rem;

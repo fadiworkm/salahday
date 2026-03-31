@@ -17,7 +17,7 @@ let scheduleSettings = {
     isha:    { before: 10, after: 20 }
   },
   bedtimeAfterIsha: 120,
-  timeFormat: '24'
+  timeFormat: '12'
 };
 
 // ─── التهيئة ───
@@ -79,14 +79,9 @@ function displayTime(mins) {
   const totalMins = ((mins % 1440) + 1440) % 1440;
   const h = Math.floor(totalMins / 60);
   const m = totalMins % 60;
-
-  if (scheduleSettings.timeFormat === '12') {
-    const period = h >= 12 ? 'م' : 'ص';
-    const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
-    return `${h12}:${String(m).padStart(2, '0')} ${period}`;
-  }
-
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  const period = h >= 12 ? 'PM' : 'AM';
+  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return `${h12}:${String(m).padStart(2, '0')} ${period}`;
 }
 
 /** عرض نطاق زمني بتنسيق RTL: البداية على اليمين */

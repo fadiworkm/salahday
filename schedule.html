@@ -85,6 +85,7 @@
         <div class="card-header-row">
           <h2><span class="icon">&#9881;</span> فترات العمل المتاحة</h2>
           <button class="btn-planner" id="open-planner">&#9997; إدارة الوقت</button>
+          <button class="btn-clear-day" id="clear-day-btn" title="مسح أنشطة اليوم">&#128465;</button>
         </div>
         <div class="work-blocks" id="work-blocks">
           <!-- Filled by JS -->
@@ -224,8 +225,8 @@
       <div class="setting-item">
         <label>تنسيق الوقت</label>
         <div class="toggle-group" id="time-format-toggle">
-          <button type="button" class="toggle-btn active" data-value="24">24 ساعة</button>
-          <button type="button" class="toggle-btn" data-value="12">12 ص/م</button>
+          <button type="button" class="toggle-btn" data-value="24">24 ساعة</button>
+          <button type="button" class="toggle-btn active" data-value="12">12 ص/م</button>
         </div>
       </div>
 
@@ -259,18 +260,18 @@
       </div>
       <div class="af-body">
         <div class="af-presets" id="af-presets">
-          <button class="af-preset" data-name="عمل" data-icon="💼" data-color="#4ecdc4">💼 عمل</button>
-          <button class="af-preset" data-name="رياضة" data-icon="🏃" data-color="#ff6b6b">🏃 رياضة</button>
-          <button class="af-preset" data-name="اجتماع" data-icon="🤝" data-color="#4a6cf7">🤝 اجتماع</button>
-          <button class="af-preset" data-name="استراحة" data-icon="☕" data-color="#ffa366">☕ استراحة</button>
-          <button class="af-preset" data-name="دراسة" data-icon="📚" data-color="#7c6aef">📚 دراسة</button>
-          <button class="af-preset" data-name="مهمة" data-icon="📋" data-color="#f4c430">📋 مهمة</button>
-          <button class="af-preset" data-name="أخرى" data-icon="📌" data-color="#38bdf8">📌 أخرى</button>
+          <!-- يتم ملؤها بالـ JS -->
         </div>
         <input type="text" id="af-custom-name" class="af-input" placeholder="اسم النشاط (اختياري)">
-        <div class="af-field">
-          <label>وقت البدء</label>
-          <input type="time" id="af-start-time" class="af-input" step="300">
+        <div class="af-times-row">
+          <div class="af-field af-field-half">
+            <label>البدء</label>
+            <input type="time" id="af-start-time" class="af-input" step="300">
+          </div>
+          <div class="af-field af-field-half">
+            <label>الانتهاء</label>
+            <input type="time" id="af-end-time" class="af-input" step="300">
+          </div>
         </div>
         <div class="af-field">
           <label>المدة (دقيقة)</label>
@@ -281,6 +282,75 @@
         </div>
         <button class="btn-primary" id="af-add-btn">إضافة</button>
         <button class="btn-delete" id="af-delete-btn" style="display:none">&#128465; حذف النشاط</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── إضافة نشاط مخصص ─── -->
+  <div class="custom-preset-overlay" id="custom-preset-overlay">
+    <div class="custom-preset-modal">
+      <div class="af-header">
+        <h3>إضافة نشاط جديد</h3>
+        <button class="planner-close" id="cp-close">&times;</button>
+      </div>
+      <div class="af-body">
+        <div class="af-field">
+          <label>اسم النشاط</label>
+          <input type="text" id="cp-name" class="af-input" placeholder="مثال: تسوق" style="direction:rtl">
+        </div>
+        <div class="af-field">
+          <label>الأيقونة</label>
+          <div class="cp-icons" id="cp-icons">
+            <span class="cp-icon-btn" data-icon="🎯">🎯</span>
+            <span class="cp-icon-btn" data-icon="🛒">🛒</span>
+            <span class="cp-icon-btn" data-icon="🏠">🏠</span>
+            <span class="cp-icon-btn" data-icon="🚗">🚗</span>
+            <span class="cp-icon-btn" data-icon="📱">📱</span>
+            <span class="cp-icon-btn" data-icon="🎮">🎮</span>
+            <span class="cp-icon-btn" data-icon="🧹">🧹</span>
+            <span class="cp-icon-btn" data-icon="🍳">🍳</span>
+            <span class="cp-icon-btn" data-icon="💪">💪</span>
+            <span class="cp-icon-btn" data-icon="🧘">🧘</span>
+            <span class="cp-icon-btn" data-icon="📞">📞</span>
+            <span class="cp-icon-btn" data-icon="✏️">✏️</span>
+            <span class="cp-icon-btn" data-icon="🎵">🎵</span>
+            <span class="cp-icon-btn" data-icon="🎨">🎨</span>
+            <span class="cp-icon-btn" data-icon="⭐">⭐</span>
+            <span class="cp-icon-btn" data-icon="🔥">🔥</span>
+          </div>
+        </div>
+        <div class="af-field">
+          <label>اللون</label>
+          <div class="cp-colors" id="cp-colors">
+            <span class="cp-color-btn" data-color="#e74c3c" style="background:#e74c3c"></span>
+            <span class="cp-color-btn" data-color="#ff6b6b" style="background:#ff6b6b"></span>
+            <span class="cp-color-btn" data-color="#e67e22" style="background:#e67e22"></span>
+            <span class="cp-color-btn" data-color="#ffa366" style="background:#ffa366"></span>
+            <span class="cp-color-btn" data-color="#f1c40f" style="background:#f1c40f"></span>
+            <span class="cp-color-btn" data-color="#2ecc71" style="background:#2ecc71"></span>
+            <span class="cp-color-btn" data-color="#4ecdc4" style="background:#4ecdc4"></span>
+            <span class="cp-color-btn" data-color="#1abc9c" style="background:#1abc9c"></span>
+            <span class="cp-color-btn" data-color="#3498db" style="background:#3498db"></span>
+            <span class="cp-color-btn" data-color="#4a6cf7" style="background:#4a6cf7"></span>
+            <span class="cp-color-btn" data-color="#7c6aef" style="background:#7c6aef"></span>
+            <span class="cp-color-btn" data-color="#9b59b6" style="background:#9b59b6"></span>
+            <span class="cp-color-btn" data-color="#e84393" style="background:#e84393"></span>
+            <span class="cp-color-btn" data-color="#00cec9" style="background:#00cec9"></span>
+          </div>
+        </div>
+        <button class="btn-primary" id="cp-save">حفظ النشاط</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── تأكيد المسح ─── -->
+  <div class="confirm-overlay" id="confirm-overlay">
+    <div class="confirm-modal">
+      <div class="confirm-icon">&#128465;</div>
+      <div class="confirm-text" id="confirm-text">هل تريد مسح جميع الأنشطة لهذا اليوم؟</div>
+      <div class="confirm-btns">
+        <button class="confirm-yes" id="confirm-yes">نعم، مسح</button>
+        <button class="confirm-no" id="confirm-no">إلغاء</button>
       </div>
     </div>
   </div>

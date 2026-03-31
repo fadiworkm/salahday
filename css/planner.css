@@ -426,6 +426,13 @@
 .af-preset:hover { border-color: rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.06); }
 .af-preset.af-preset-selected { border-color: var(--success); background: rgba(78, 205, 196, 0.1); color: var(--success); }
 
+.af-preset-add {
+  border-style: dashed !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  color: var(--text-muted) !important;
+}
+.af-preset-add:hover { border-color: var(--success) !important; color: var(--success) !important; }
+
 .af-input {
   width: 100%;
   padding: 10px 14px;
@@ -442,6 +449,15 @@
   text-align: center;
 }
 .af-input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px var(--purple-glow); }
+
+.af-times-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.af-field-half { flex: 1; }
+.af-field-half .af-input { margin-bottom: 0; }
 
 .af-field { margin-bottom: 14px; }
 .af-field label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
@@ -480,6 +496,142 @@
   font-size: 1rem;
   color: var(--success);
 }
+
+/* ─── إضافة نشاط مخصص ─── */
+.custom-preset-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 450;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+  padding: 20px;
+}
+.custom-preset-overlay.active { opacity: 1; pointer-events: all; }
+
+.custom-preset-modal {
+  background: var(--bg-mid);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius);
+  max-width: 360px;
+  width: 100%;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.cp-icons, .cp-colors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cp-icon-btn {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  background: rgba(255, 255, 255, 0.04);
+  border: 2px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.cp-icon-btn:hover { border-color: rgba(255, 255, 255, 0.2); }
+.cp-icon-btn.cp-selected { border-color: var(--success); background: rgba(78, 205, 196, 0.1); }
+
+.cp-color-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 3px solid transparent;
+  transition: all 0.2s;
+}
+.cp-color-btn:hover { transform: scale(1.15); }
+.cp-color-btn.cp-selected { border-color: #fff; box-shadow: 0 0 10px rgba(255,255,255,0.3); }
+
+/* ─── تأكيد المسح ─── */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 500;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s;
+  padding: 20px;
+}
+.confirm-overlay.active { opacity: 1; pointer-events: all; }
+
+.confirm-modal {
+  background: var(--bg-mid);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius);
+  padding: 28px 24px;
+  max-width: 320px;
+  width: 100%;
+  text-align: center;
+  transform: scale(0.9);
+  transition: transform 0.25s;
+}
+.confirm-overlay.active .confirm-modal { transform: scale(1); }
+
+.confirm-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+}
+
+.confirm-text {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 20px;
+  line-height: 1.6;
+}
+
+.confirm-btns {
+  display: flex;
+  gap: 10px;
+}
+
+.confirm-yes {
+  flex: 1;
+  padding: 10px;
+  background: rgba(255, 107, 107, 0.15);
+  border: 1px solid rgba(255, 107, 107, 0.3);
+  border-radius: var(--radius-sm);
+  color: var(--danger);
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.confirm-yes:hover { background: rgba(255, 107, 107, 0.25); }
+
+.confirm-no {
+  flex: 1;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.confirm-no:hover { background: rgba(255, 255, 255, 0.08); }
 
 /* ─── تجاوب ─── */
 @media (max-width: 600px) {
