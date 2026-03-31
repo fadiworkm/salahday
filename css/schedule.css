@@ -1023,6 +1023,75 @@
   font-weight: 600;
 }
 
+/* ─── شريط تقدم العمل ─── */
+#work-progress-top {
+  margin-bottom: 16px;
+}
+
+.work-progress {
+  padding: 16px 20px;
+  background: var(--bg-card);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(78, 205, 196, 0.15);
+  border-radius: var(--radius);
+}
+
+.wp-bar {
+  height: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.wp-fill {
+  height: 100%;
+  background: linear-gradient(to left, var(--gold), var(--fajr));
+  border-radius: 6px;
+  transition: width 0.5s ease;
+}
+
+.wp-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.wp-gone, .wp-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.wp-gone b { color: var(--gold); font-size: 1.05rem; }
+.wp-left b { color: var(--success); font-size: 1.05rem; }
+
+.wp-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.wp-dot-gone { background: var(--gold); }
+.wp-dot-left { background: var(--success); }
+
+@media (max-width: 600px) {
+  .work-progress { padding: 14px 14px; }
+  .wp-labels {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px 20px;
+  }
+  .wp-gone, .wp-left { font-size: 0.82rem; }
+  .wp-gone b, .wp-left b { font-size: 1.1rem; }
+}
+
 .no-work-msg {
   text-align: center;
   color: var(--text-muted);

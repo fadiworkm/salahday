@@ -766,6 +766,59 @@ function renderWorkBlocks(segments, prayerMins) {
 
   const totalAll = allPeriods.reduce((sum, s) => sum + s.duration, 0);
 
+  // حساب وقت العمل المنقضي والمتبقي حسب الآن
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const isToday = document.getElementById('schedule-date').value === now.toISOString().split('T')[0];
+
+  let workGone = 0, workLeft = 0;
+  if (isToday) {
+    allPeriods.forEach(seg => {
+      const pKey = 'work:' + seg.start + '-' + seg.end;
+      if (disabledPeriods.indexOf(pKey) !== -1) return;
+      const pActs = planActivities.filter(a => a.start >= seg.start && a.end <= seg.end);
+      const used = pActs.reduce((s, a) => s + (a.end - a.start), 0);
+      // حساب الوقت الحر الفعلي لهذه الفترة
+      let cursor = seg.start;
+      pActs.sort((a, b) => a.start - b.start).forEach(act => {
+        if (act.start > cursor) {
+          const freeStart = cursor, freeEnd = act.start;
+          if (nowMin >= freeEnd) workGone += freeEnd - freeStart;
+          else if (nowMin > freeStart) { workGone += nowMin - freeStart; workLeft += freeEnd - nowMin; }
+          else workLeft += freeEnd - freeStart;
+        }
+        cursor = act.end;
+      });
+      if (cursor < seg.end) {
+        const freeStart = cursor, freeEnd = seg.end;
+        if (nowMin >= freeEnd) workGone += freeEnd - freeStart;
+        else if (nowMin > freeStart) { workGone += nowMin - freeStart; workLeft += freeEnd - nowMin; }
+        else workLeft += freeEnd - freeStart;
+      }
+    });
+  }
+
+  const workProgressPct = totalAvail > 0 ? ((workGone / totalAvail) * 100).toFixed(1) : 0;
+
+  // شريط تقدم العمل في أعلى الصفحة
+  const topProgress = document.getElementById('work-progress-top');
+  if (topProgress) {
+    if (isToday && totalAvail > 0) {
+      topProgress.innerHTML = `
+      <div class="work-progress" id="work-progress">
+        <div class="wp-bar">
+          <div class="wp-fill" style="width:${workProgressPct}%"></div>
+        </div>
+        <div class="wp-labels">
+          <div class="wp-gone"><span class="wp-dot wp-dot-gone"></span> انتهى <b id="wp-gone-val">${formatDuration(workGone)}</b></div>
+          <div class="wp-left"><span class="wp-dot wp-dot-left"></span> متبقي <b id="wp-left-val">${formatDuration(workLeft)}</b></div>
+        </div>
+      </div>`;
+    } else {
+      topProgress.innerHTML = '';
+    }
+  }
+
   container.innerHTML = html + `
     <div class="work-total-bar">
       <span class="wtb-label">وقت العمل المتاح:</span>
@@ -996,7 +1049,67 @@ let countdownInterval = null;
 
 function startCountdownTimer() {
   if (countdownInterval) clearInterval(countdownInterval);
-  countdownInterval = setInterval(updateCountdown, 30000); // كل 30 ثانية
+  countdownInterval = setInterval(function() {
+    updateCountdown();
+    updateWorkProgress();
+  }, 30000);
+}
+
+function updateWorkProgress() {
+  const wpEl = document.getElementById('work-progress');
+  if (!wpEl) return;
+
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const allSegments = window._allSegments || [];
+  const workSegs = allSegments.filter(s => s.type === 'work');
+
+  let savedPlan = null;
+  try {
+    const raw = localStorage.getItem('workPlannerData');
+    if (raw) {
+      const all = JSON.parse(raw);
+      const dateStr = document.getElementById('schedule-date').value;
+      savedPlan = all[dateStr];
+      if (Array.isArray(savedPlan)) savedPlan = { activities: savedPlan, disabledPeriods: [] };
+    }
+  } catch (e) {}
+
+  const planActs = savedPlan ? savedPlan.activities || [] : [];
+  const disabled = savedPlan ? savedPlan.disabledPeriods || [] : [];
+
+  let workGone = 0, workLeft = 0;
+  workSegs.forEach(seg => {
+    const pKey = 'work:' + seg.start + '-' + seg.end;
+    if (disabled.indexOf(pKey) !== -1) return;
+    const pActs = planActs.filter(a => a.start >= seg.start && a.end <= seg.end).sort((a, b) => a.start - b.start);
+    let cursor = seg.start;
+    pActs.forEach(act => {
+      if (act.start > cursor) {
+        const fs = cursor, fe = act.start;
+        if (nowMin >= fe) workGone += fe - fs;
+        else if (nowMin > fs) { workGone += nowMin - fs; workLeft += fe - nowMin; }
+        else workLeft += fe - fs;
+      }
+      cursor = act.end;
+    });
+    if (cursor < seg.end) {
+      const fs = cursor, fe = seg.end;
+      if (nowMin >= fe) workGone += fe - fs;
+      else if (nowMin > fs) { workGone += nowMin - fs; workLeft += fe - nowMin; }
+      else workLeft += fe - fs;
+    }
+  });
+
+  const total = workGone + workLeft;
+  const pct = total > 0 ? ((workGone / total) * 100).toFixed(1) : 0;
+
+  const fill = wpEl.querySelector('.wp-fill');
+  const goneVal = document.getElementById('wp-gone-val');
+  const leftVal = document.getElementById('wp-left-val');
+  if (fill) fill.style.width = pct + '%';
+  if (goneVal) goneVal.textContent = formatDuration(workGone);
+  if (leftVal) leftVal.textContent = formatDuration(workLeft);
 }
 
 function updateCountdown() {
