@@ -987,6 +987,9 @@ function attachEvents() {
     renderDay();
   });
 
+  // نسخ من يوم آخر
+  document.getElementById('copy-day-btn').addEventListener('click', copyFromDay);
+
   document.getElementById('settings-toggle').addEventListener('click', openSettings);
   document.getElementById('close-settings').addEventListener('click', closeSettings);
   document.getElementById('settings-overlay').addEventListener('click', (e) => {

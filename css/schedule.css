@@ -152,6 +152,46 @@
   box-shadow: 0 0 0 3px var(--purple-glow);
 }
 
+/* ─── نسخ من يوم ─── */
+.copy-day-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: rgba(78, 205, 196, 0.04);
+  border: 1px solid rgba(78, 205, 196, 0.1);
+  border-radius: var(--radius-sm);
+}
+
+.copy-day-row label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--success);
+  white-space: nowrap;
+}
+
+.copy-day-row input[type="date"] {
+  flex: 1;
+  max-width: 150px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(78, 205, 196, 0.2);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  outline: none;
+  direction: ltr;
+  text-align: center;
+}
+
+.copy-day-row input[type="date"]:focus {
+  border-color: var(--success);
+  box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.15);
+}
+
 .btn-today {
   display: block;
   margin: 8px auto 20px;
