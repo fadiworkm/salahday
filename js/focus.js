@@ -44,7 +44,8 @@ var FocusMode = {
       pauseIcon:    document.querySelector('#focus-btn-pause .focus-pause-icon'),
       wave:         document.getElementById('focus-wave'),
       timerLabel:   document.querySelector('.focus-timer-label'),
-      deleteBtn:    document.getElementById('focus-delete-btn')
+      deleteBtn:    document.getElementById('focus-delete-btn'),
+      note:         document.getElementById('focus-note')
     };
     return this._els;
   },
@@ -88,6 +89,22 @@ var FocusMode = {
     // Activity info
     els.icon.textContent = actInfo.icon || '';
     els.actName.textContent = actInfo.name || '';
+
+    // Activity note — look up from ScheduleData
+    var actNote = '';
+    if (typeof ScheduleData !== 'undefined') {
+      var dayData = ScheduleData.getDay(date);
+      var acts = dayData ? dayData.activities || [] : [];
+      for (var ni = 0; ni < acts.length; ni++) {
+        if (acts[ni].start === segStart && acts[ni].end === segEnd && acts[ni].note) {
+          actNote = acts[ni].note;
+          break;
+        }
+      }
+    }
+    if (els.note) {
+      els.note.textContent = actNote || '';
+    }
 
     // Time range
     els.segRange.textContent =

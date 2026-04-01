@@ -146,6 +146,24 @@
   letter-spacing: 0.05em;
 }
 
+/* ─── 4b. Activity Note (inline next to title) ─── */
+.focus-note {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.45);
+  direction: rtl;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+.focus-note:not(:empty)::before {
+  content: '·';
+  margin: 0 6px;
+  color: rgba(255, 255, 255, 0.25);
+}
+
 /* ─── 5. Activity Info Grid ─── */
 .focus-activity-info {
   display: grid;
