@@ -46,12 +46,12 @@ function defaultSettings() {
 function readData() {
     global $DATA_FILE;
     if (!file_exists($DATA_FILE)) {
-        return ['days' => new stdClass(), 'customPresets' => []];
+        return ['days' => [], 'customPresets' => []];
     }
     $raw  = file_get_contents($DATA_FILE);
     $data = json_decode($raw, true);
     if (!$data) {
-        return ['days' => new stdClass(), 'customPresets' => []];
+        return ['days' => [], 'customPresets' => []];
     }
     // Migrate old format
     if (isset($data['workPlannerData']) && !isset($data['days'])) {
