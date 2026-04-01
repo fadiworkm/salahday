@@ -248,10 +248,11 @@ var FocusMode = {
   _calcWaveBounds: function () {
     var els = this._getEls();
     if (!els.timerLabel || !els.overlay) return;
-    var labelRect = els.timerLabel.getBoundingClientRect();
+    var activityInfo = document.querySelector('.focus-activity-info');
     var overlayRect = els.overlay.getBoundingClientRect();
-    this._waveBottom = overlayRect.bottom - labelRect.bottom;
-    this._waveMaxHeight = labelRect.bottom - overlayRect.top;
+    var anchorTop = activityInfo ? activityInfo.getBoundingClientRect().top : els.timerLabel.getBoundingClientRect().bottom;
+    this._waveBottom = overlayRect.bottom - anchorTop;
+    this._waveMaxHeight = anchorTop - overlayRect.top;
     if (els.wave) {
       els.wave.style.setProperty('--wave-bottom', this._waveBottom + 'px');
     }
@@ -374,10 +375,12 @@ var FocusMode = {
       els.elapsedTimer.textContent = LiveTimer.format(total);
       els.totalTime.textContent = LiveTimer.format(total);
 
-      // Wave: fills from timer-label bottom upward based on focus progress
+      // Wave: fills from activity-info top upward based on focus progress
       var totalSegDur = (sE - sS) * 60;
       var rawPct = totalSegDur > 0 ? Math.min(1, total / totalSegDur) : 0;
-      var waveHeight = total > 0 ? rawPct * self._waveMaxHeight : 0;
+      // Minimum 30px when any focus time exists so crests/bubbles are visible
+      var minH = total > 0 ? 30 : 0;
+      var waveHeight = Math.max(minH, rawPct * self._waveMaxHeight);
       if (els.wave) els.wave.style.setProperty('--wave-height', waveHeight + 'px');
 
       return { gone: total, left: Math.max(0, (sE - sS) * 60 - total) };
