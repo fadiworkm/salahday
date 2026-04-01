@@ -450,6 +450,21 @@
 }
 .af-input:focus { border-color: var(--purple); box-shadow: 0 0 0 3px var(--purple-glow); }
 
+.af-note {
+  direction: rtl;
+  text-align: right;
+  resize: vertical;
+  min-height: 44px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.chip-note {
+  margin-right: 4px;
+  font-size: 0.75rem;
+  opacity: 0.85;
+}
+
 .af-times-row {
   display: flex;
   gap: 10px;

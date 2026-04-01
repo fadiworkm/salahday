@@ -205,6 +205,9 @@ function _mtBuildAct(act, isToday, nowMin, lastLabel) {
   html += '<div class="mt-timerange">' + displayTime(act.start) + ' - ' + displayTime(act.end) + '</div>';
   html += '<div class="mt-name">' + (act.name || '') + '</div>';
   html += '<div class="mt-dur">' + formatDuration(dur) + '</div>';
+  if (act.note && act.note.trim()) {
+    html += '<div class="mt-note">' + act.note.replace(/</g,'&lt;').replace(/\n/g,'<br>') + '</div>';
+  }
   html += '</div>';
   if (st === 'mt-active') {
     var dateStr = document.getElementById('schedule-date').value;

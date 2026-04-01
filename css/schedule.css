@@ -1297,6 +1297,66 @@
   color: #fff;
 }
 
+/* ─── Activity cards in work periods ─── */
+.wt-act-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 4px 12px 10px;
+}
+
+.wt-act-card {
+  background: color-mix(in srgb, var(--act-color) 12%, transparent);
+  border-right: 3px solid var(--act-color);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.wt-act-card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  direction: rtl;
+}
+
+.wt-act-card-icon {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.wt-act-card-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  flex: 1;
+}
+
+.wt-act-card-time {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  direction: ltr;
+  font-variant-numeric: tabular-nums;
+}
+
+.wt-act-card-dur {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--act-color);
+  background: color-mix(in srgb, var(--act-color) 15%, transparent);
+  padding: 1px 7px;
+  border-radius: 10px;
+}
+
+.wt-act-card-note {
+  margin-top: 5px;
+  padding-top: 5px;
+  border-top: 1px solid color-mix(in srgb, var(--act-color) 15%, transparent);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  direction: rtl;
+}
+
 .wt-period-progress {
   margin: 6px 14px 10px;
   padding: 10px 12px;

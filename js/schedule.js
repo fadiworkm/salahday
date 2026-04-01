@@ -862,9 +862,20 @@ function renderWorkBlocks(segments, prayerMins) {
         html += `</div>`;
 
         // شرائح الأنشطة
-        html += `<div class="wt-act-chips">`;
+        html += `<div class="wt-act-list">`;
         periodActs.forEach(act => {
-          html += `<span class="wt-act-chip" style="background:${act.color}">${act.icon} ${act.name} (${formatDuration(act.end - act.start)})</span>`;
+          const hasNote = act.note && act.note.trim();
+          html += `<div class="wt-act-card" style="--act-color:${act.color}">`;
+          html += `<div class="wt-act-card-header">`;
+          html += `<span class="wt-act-card-icon">${act.icon}</span>`;
+          html += `<span class="wt-act-card-name">${act.name}</span>`;
+          html += `<span class="wt-act-card-time">${displayTime(act.start)} - ${displayTime(act.end)}</span>`;
+          html += `<span class="wt-act-card-dur">${formatDuration(act.end - act.start)}</span>`;
+          html += `</div>`;
+          if (hasNote) {
+            html += `<div class="wt-act-card-note">${act.note.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>`;
+          }
+          html += `</div>`;
         });
         html += `</div>`;
 

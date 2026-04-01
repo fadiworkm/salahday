@@ -83,7 +83,7 @@ function buildBarSegments(period, activities) {
     if (act.start > cursor) {
       segments.push({ type: 'free', start: cursor, end: act.start, duration: act.start - cursor });
     }
-    segments.push({ type: 'activity', name: act.name, icon: act.icon, color: act.color, start: act.start, end: act.end, actIndex: i, duration: act.end - act.start });
+    segments.push({ type: 'activity', name: act.name, icon: act.icon, color: act.color, start: act.start, end: act.end, actIndex: i, duration: act.end - act.start, note: act.note });
     cursor = act.end;
   });
   if (cursor < period.end) {
@@ -179,6 +179,7 @@ function renderPlanner(onlyPeriodIdx) {
           var actGlobalIdx = activities.indexOf(act);
           html += '<span class="pl-activity-chip" style="background:' + act.color + '" onclick="editActivity(' + pIdx + ', ' + actGlobalIdx + ')">';
           html += act.icon + ' ' + act.name + ' (' + formatDuration(act.end - act.start) + ')';
+          if (act.note) html += '<span class="chip-note" title="' + act.note.replace(/"/g, '&quot;') + '">📝</span>';
           html += '<span class="chip-edit">&#9998;</span></span>';
         });
         html += '</div>';
@@ -440,6 +441,7 @@ function showActivityForm(pIdx) {
   var smartStart = getSmartStartTime(pIdx);
   document.getElementById('af-start-time').value = minutesToTimeStr(smartStart);
   document.getElementById('af-custom-name').value = '';
+  document.getElementById('af-note').value = '';
 
   // "Start from now" checkbox — show only when adding, and current time is within this period
   var nowChk = document.getElementById('af-start-now');
@@ -481,6 +483,7 @@ function setFullPeriod(pIdx) {
   document.getElementById('af-start-time').value = minutesToTimeStr(period.start);
   document.getElementById('af-end-time').value = minutesToTimeStr(period.end);
   document.getElementById('af-custom-name').value = '';
+  document.getElementById('af-note').value = '';
 
   var fullDur = period.duration;
   var slider = document.getElementById('af-duration');
@@ -515,6 +518,7 @@ function editActivity(pIdx, globalIdx) {
   document.getElementById('af-start-time').value = minutesToTimeStr(act.start);
   document.getElementById('af-end-time').value = minutesToTimeStr(act.end);
   document.getElementById('af-custom-name').value = act.name;
+  document.getElementById('af-note').value = act.note || '';
   var duration = act.end - act.start;
   var slider = document.getElementById('af-duration');
   slider.step = 1;
@@ -550,6 +554,7 @@ function addActivity() {
   if (!period) return;
 
   var customName = document.getElementById('af-custom-name').value.trim();
+  var note = document.getElementById('af-note').value.trim();
   var preset = selectedPreset;
   if (!preset) {
     var name = customName || 'نشاط';
@@ -603,9 +608,9 @@ function addActivity() {
         FocusData.save(dateStr, s);
       });
     }
-    activities[editingActivityIndex] = { name: name, icon: preset.icon, color: preset.color, start: startMin, end: endMin };
+    activities[editingActivityIndex] = { name: name, icon: preset.icon, color: preset.color, start: startMin, end: endMin, note: note };
   } else {
-    activities.push({ name: name, icon: preset.icon, color: preset.color, start: startMin, end: endMin });
+    activities.push({ name: name, icon: preset.icon, color: preset.color, start: startMin, end: endMin, note: note });
   }
 
   savePlannerData();
