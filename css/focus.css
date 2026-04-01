@@ -255,11 +255,11 @@
 /* ─── 8. Wave Animation ─── */
 .focus-wave {
   position: absolute;
-  bottom: 0;
   left: 0;
   right: 0;
   z-index: 1;
-  height: var(--wave-pct, 0%);
+  bottom: var(--wave-bottom, 0px);
+  height: var(--wave-height, 0px);
   background: var(--wave-color, #e74c3c);
   opacity: 0.35;
   transition: height 1s ease;

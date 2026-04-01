@@ -26,6 +26,8 @@ var FocusMode = {
   // ── DOM references (cached on first use) ────────────────────────────────
 
   _els: null,
+  _waveBottom: 0,       // px from overlay bottom to timer-label bottom
+  _waveMaxHeight: 0,    // px from timer-label bottom to overlay top
 
   _getEls: function () {
     if (this._els) return this._els;
@@ -41,6 +43,7 @@ var FocusMode = {
       btnPause:     document.getElementById('focus-btn-pause'),
       pauseIcon:    document.querySelector('#focus-btn-pause .focus-pause-icon'),
       wave:         document.getElementById('focus-wave'),
+      timerLabel:   document.querySelector('.focus-timer-label'),
       deleteBtn:    document.getElementById('focus-delete-btn')
     };
     return this._els;
@@ -104,6 +107,12 @@ var FocusMode = {
     // Show the overlay
     els.overlay.classList.add('active');
     document.body.style.overflow = 'hidden';
+
+    // Calculate wave bounds after layout is ready
+    var self = this;
+    requestAnimationFrame(function () {
+      self._calcWaveBounds();
+    });
 
     // Behaviour depends on whether we are resuming or starting fresh
     if (existingSession) {
@@ -234,6 +243,21 @@ var FocusMode = {
   // ── Private methods ─────────────────────────────────────────────────────
 
   /**
+   * Calculate the wave bottom offset and max height from the timer label position.
+   */
+  _calcWaveBounds: function () {
+    var els = this._getEls();
+    if (!els.timerLabel || !els.overlay) return;
+    var labelRect = els.timerLabel.getBoundingClientRect();
+    var overlayRect = els.overlay.getBoundingClientRect();
+    this._waveBottom = overlayRect.bottom - labelRect.bottom;
+    this._waveMaxHeight = labelRect.bottom - overlayRect.top;
+    if (els.wave) {
+      els.wave.style.setProperty('--wave-bottom', this._waveBottom + 'px');
+    }
+  },
+
+  /**
    * Called every second when the timer is running.
    * Updates all display elements and the wave height.
    */
@@ -258,10 +282,11 @@ var FocusMode = {
     var segRemaining = Math.max(0, segEndSec - nowSecMidnight);
     var totalSegDur = segEndSec - segStartSec;
 
-    // Wave = focus time / segment duration
-    var wavePct = totalSegDur > 0
-      ? Math.min(100, (totalElapsed / totalSegDur) * 100)
+    // Wave height in pixels
+    var rawPct = totalSegDur > 0
+      ? Math.min(1, totalElapsed / totalSegDur)
       : 0;
+    var waveHeight = totalElapsed > 0 ? rawPct * this._waveMaxHeight : 0;
 
     // Auto-pause when segment time is up
     if (segRemaining <= 0) {
@@ -284,7 +309,7 @@ var FocusMode = {
 
     // Wave height via CSS custom property
     if (els.wave) {
-      els.wave.style.setProperty('--wave-pct', wavePct + '%');
+      els.wave.style.setProperty('--wave-height', waveHeight + 'px');
     }
   },
 
@@ -303,10 +328,11 @@ var FocusMode = {
     var segRemaining = Math.max(0, segEndSec - nowSecMidnight);
     var totalSegDur = segEndSec - segStartSec;
 
-    // Wave height percentage
-    var wavePct = totalSegDur > 0
-      ? Math.min(100, (totalElapsed / totalSegDur) * 100)
+    // Wave height in pixels
+    var rawPct = totalSegDur > 0
+      ? Math.min(1, totalElapsed / totalSegDur)
       : 0;
+    var waveHeight = totalElapsed > 0 ? rawPct * this._waveMaxHeight : 0;
 
     // Update DOM
     els.elapsedTimer.textContent = LiveTimer.format(totalElapsed);
@@ -315,7 +341,8 @@ var FocusMode = {
     els.totalTime.textContent = LiveTimer.format(totalElapsed);
 
     if (els.wave) {
-      els.wave.style.setProperty('--wave-pct', wavePct + '%');
+      els.wave.style.setProperty('--wave-bottom', this._waveBottom + 'px');
+      els.wave.style.setProperty('--wave-height', waveHeight + 'px');
     }
   },
 
@@ -347,11 +374,11 @@ var FocusMode = {
       els.elapsedTimer.textContent = LiveTimer.format(total);
       els.totalTime.textContent = LiveTimer.format(total);
 
-      // Wave: starts at 45% (top of info cards), grows to 80% max
+      // Wave: fills from timer-label bottom upward based on focus progress
       var totalSegDur = (sE - sS) * 60;
       var rawPct = totalSegDur > 0 ? Math.min(1, total / totalSegDur) : 0;
-      var wavePct = total > 0 ? 45 + rawPct * 35 : 0;
-      if (els.wave) els.wave.style.setProperty('--wave-pct', wavePct + '%');
+      var waveHeight = total > 0 ? rawPct * self._waveMaxHeight : 0;
+      if (els.wave) els.wave.style.setProperty('--wave-height', waveHeight + 'px');
 
       return { gone: total, left: Math.max(0, (sE - sS) * 60 - total) };
     });
