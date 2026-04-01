@@ -423,6 +423,11 @@ function syncFromStartTime() {
 
 // ─── نموذج إضافة نشاط ───
 
+function _getNowMin() {
+  var d = new Date();
+  return d.getHours() * 60 + d.getMinutes();
+}
+
 function showActivityForm(pIdx) {
   var periods = getPlannerPeriods();
   var period = periods[pIdx];
@@ -436,9 +441,17 @@ function showActivityForm(pIdx) {
   document.getElementById('af-start-time').value = minutesToTimeStr(smartStart);
   document.getElementById('af-custom-name').value = '';
 
+  // "Start from now" checkbox — show only when adding, and current time is within this period
+  var nowChk = document.getElementById('af-start-now');
+  var nowWrap = document.getElementById('af-now-check-wrap');
+  var nowMin = _getNowMin();
+  var canStartNow = nowMin >= period.start && nowMin < period.end && nowMin >= smartStart;
+  nowWrap.style.display = canStartNow ? '' : 'none';
+  nowChk.checked = false;
+
   var maxEnd = getMaxEndForStart(pIdx, smartStart);
   var maxDur = Math.max(5, maxEnd - smartStart);
-  var defaultDur = Math.min(30, maxDur);
+  var defaultDur = maxDur;
 
   var slider = document.getElementById('af-duration');
   slider.step = 5;
@@ -495,6 +508,10 @@ function editActivity(pIdx, globalIdx) {
   currentFormWorkIndex = pIdx;
   editingActivityIndex = globalIdx;
 
+  // Hide "start from now" checkbox when editing
+  document.getElementById('af-now-check-wrap').style.display = 'none';
+  document.getElementById('af-start-now').checked = false;
+
   document.getElementById('af-start-time').value = minutesToTimeStr(act.start);
   document.getElementById('af-end-time').value = minutesToTimeStr(act.end);
   document.getElementById('af-custom-name').value = act.name;
@@ -520,6 +537,8 @@ function editActivity(pIdx, globalIdx) {
 
 function closeActivityForm() {
   document.getElementById('activity-form-overlay').classList.remove('active');
+  document.getElementById('af-start-time').disabled = false;
+  document.getElementById('af-start-now').checked = false;
   currentFormWorkIndex = null;
   editingActivityIndex = null;
 }
@@ -540,6 +559,12 @@ function addActivity() {
 
   var sParts = document.getElementById('af-start-time').value.split(':').map(Number);
   var startMin = sParts[0] * 60 + sParts[1];
+
+  // If "start from now" is checked, override start with current time
+  if (document.getElementById('af-start-now').checked && editingActivityIndex === null) {
+    startMin = _getNowMin();
+  }
+
   var eParts = document.getElementById('af-end-time').value.split(':').map(Number);
   var endMin = eParts[0] * 60 + eParts[1];
 
@@ -692,6 +717,20 @@ document.addEventListener('DOMContentLoaded', async function () {
   document.getElementById('af-duration').addEventListener('input', syncFromStartAndDuration);
   document.getElementById('af-start-time').addEventListener('change', syncFromStartTime);
   document.getElementById('af-end-time').addEventListener('change', syncFromEndTime);
+
+  // "البدء من الوقت الحالي" checkbox
+  document.getElementById('af-start-now').addEventListener('change', function () {
+    if (this.checked) {
+      var nowMin = _getNowMin();
+      document.getElementById('af-start-time').value = minutesToTimeStr(nowMin);
+      document.getElementById('af-start-time').disabled = true;
+    } else {
+      document.getElementById('af-start-time').disabled = false;
+      var smartStart = getSmartStartTime(currentFormWorkIndex);
+      document.getElementById('af-start-time').value = minutesToTimeStr(smartStart);
+    }
+    syncFromStartTime();
+  });
 
   // عرض الأنشطة المسبقة
   renderPresetButtons();

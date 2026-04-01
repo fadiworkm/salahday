@@ -136,7 +136,6 @@ var FocusData = {
       segStart: opts.segStart,
       segEnd: opts.segEnd,
       startedAt: Math.floor(Date.now() / 1000),
-      periods: [],
       totalFocusSec: 0
     };
   }

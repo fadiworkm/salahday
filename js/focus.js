@@ -146,13 +146,8 @@ var FocusMode = {
     var now = Math.floor(Date.now() / 1000);
     var periodDuration = now - this._currentPeriodStart;
 
-    // Record the period
+    // Add to total focus time
     if (periodDuration > 0 && this._session) {
-      this._session.periods.push({
-        start: this._currentPeriodStart,
-        end: now,
-        duration: periodDuration
-      });
       this._session.totalFocusSec += periodDuration;
 
       // Save to server
