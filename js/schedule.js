@@ -750,23 +750,32 @@ function renderWorkBlocks(segments, prayerMins) {
         periodActs.forEach(act => {
           if (act.start > cursor) {
             const freeDur = act.start - cursor;
-            html += `<div class="wt-vb-seg wt-vb-free" style="flex:${freeDur}">`;
+            const fState = isToday2 ? (nowMin2 >= act.start ? 'done' : nowMin2 > cursor ? 'active' : '') : '';
+            html += `<div class="wt-vb-seg wt-vb-free${fState ? ' vb-' + fState : ''}" style="flex:${freeDur}" data-seg-s="${cursor}" data-seg-e="${act.start}">`;
+            html += `<div class="vb-fill"></div>`;
             if (freeDur >= 15) html += `<span class="vb-dur">${formatDuration(freeDur)}</span>`;
             html += `<span class="vb-range">${displayTime(cursor)} - ${displayTime(act.start)}</span>`;
+            if (fState === 'active') html += `<span class="vb-timer"></span>`;
             html += `</div>`;
           }
           const actDur = act.end - act.start;
-          html += `<div class="wt-vb-seg wt-vb-act" style="flex:${actDur}; background:${act.color}">`;
+          const aState = isToday2 ? (nowMin2 >= act.end ? 'done' : nowMin2 >= act.start ? 'active' : '') : '';
+          html += `<div class="wt-vb-seg wt-vb-act${aState ? ' vb-' + aState : ''}" style="flex:${actDur}; background:${act.color}" data-seg-s="${act.start}" data-seg-e="${act.end}">`;
+          html += `<div class="vb-fill"></div>`;
           html += `<span class="vb-dur">${act.icon}</span>`;
           html += `<span class="vb-range">${displayTime(act.start)} - ${displayTime(act.end)}</span>`;
+          if (aState === 'active') html += `<span class="vb-timer"></span>`;
           html += `</div>`;
           cursor = act.end;
         });
         if (cursor < seg.end) {
           const freeDur = seg.end - cursor;
-          html += `<div class="wt-vb-seg wt-vb-free" style="flex:${freeDur}">`;
+          const fState = isToday2 ? (nowMin2 >= seg.end ? 'done' : nowMin2 > cursor ? 'active' : '') : '';
+          html += `<div class="wt-vb-seg wt-vb-free${fState ? ' vb-' + fState : ''}" style="flex:${freeDur}" data-seg-s="${cursor}" data-seg-e="${seg.end}">`;
+          html += `<div class="vb-fill"></div>`;
           if (freeDur >= 15) html += `<span class="vb-dur">${formatDuration(freeDur)}</span>`;
           html += `<span class="vb-range">${displayTime(cursor)} - ${displayTime(seg.end)}</span>`;
+          if (fState === 'active') html += `<span class="vb-timer"></span>`;
           html += `</div>`;
         }
         html += `</div>`;
@@ -1231,6 +1240,31 @@ function registerTimers() {
       ppEl.querySelector('.wp-left b'),
       function (nowSec) { return computePeriodProgress(nowSec, segStart, segEnd); }
     );
+  });
+
+  // 4. شرائح الشريط المرئي الحالية (تعبئة + مؤقت)
+  document.querySelectorAll('.wt-vb-seg.vb-active').forEach(function (segEl) {
+    const sMin = parseInt(segEl.dataset.segS, 10);
+    const eMin = parseInt(segEl.dataset.segE, 10);
+    if (isNaN(sMin) || isNaN(eMin)) return;
+    const fillEl = segEl.querySelector('.vb-fill');
+    const timerEl = segEl.querySelector('.vb-timer');
+    if (!fillEl) return;
+
+    LiveTimer.progress(fillEl, null, null, function (nowSec) {
+      const fs = sMin * 60, fe = eMin * 60;
+      const gone = Math.max(0, Math.min(nowSec - fs, fe - fs));
+      const left = Math.max(0, fe - nowSec);
+      var pct = (fe - fs) > 0 ? ((gone / (fe - fs)) * 100).toFixed(1) : 0;
+      fillEl.style.width = pct + '%';
+      if (timerEl) timerEl.textContent = LiveTimer.format(left);
+      if (nowSec >= fe && !segEl.classList.contains('vb-done')) {
+        segEl.classList.remove('vb-active');
+        segEl.classList.add('vb-done');
+        if (timerEl) timerEl.style.display = 'none';
+      }
+      return { gone: gone, left: left };
+    });
   });
 
   LiveTimer.start();

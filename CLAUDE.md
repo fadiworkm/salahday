@@ -12,6 +12,7 @@ Arabic (RTL) prayer-times-based daily planner and sleep calculator for Daraa, Sy
 - make code divided by multi files to be easy to read and maintain
 - create three layers : data - logic - view
 - create team to add or edit code if need with many models (sonnet, opus )
+- do not use chrome-devtools until I ask in prompt
 
 ## Development
 
