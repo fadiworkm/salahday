@@ -167,10 +167,15 @@ function _mtBuildFree(start, end, isToday, nowMin, lastLabel) {
   html += '<div class="mt-rail"><div class="mt-line" style="height:' + h + 'px"><div class="mt-line-fill"></div></div></div>';
   html += '<div class="mt-body mt-body-free">';
   html += '<span class="mt-free-dur">' + formatDuration(dur) + '</span>';
-  if (st === 'mt-active') html += '<span class="mt-timer"></span>';
   if (st === 'mt-active') {
     var dateStr = document.getElementById('schedule-date').value;
-    html += '<button class="mt-focus-btn" onclick="openFocusMode(\'' + dateStr + '\',' + start + ',' + end + ',\'وقت عمل\',\'🎯\',\'#7c6aef\')">&#127919; ابدأ التركيز</button>';
+    html += '<div class="mt-focus-row">';
+    html += '<span class="mt-focus-act-label">🎯 ركز</span>';
+    html += '<div class="mt-focus-actions">';
+    html += '<button class="mt-focus-btn" onclick="openFocusMode(\'' + dateStr + '\',' + start + ',' + end + ',\'وقت عمل\',\'🎯\',\'#7c6aef\')">&#127919; ركز</button>';
+    html += '<span class="mt-timer"></span>';
+    html += '</div>';
+    html += '</div>';
   }
   html += '</div>';
   html += '</div>';
@@ -201,11 +206,14 @@ function _mtBuildAct(act, isToday, nowMin, lastLabel) {
   html += '<div class="mt-name">' + (act.name || '') + '</div>';
   html += '<div class="mt-dur">' + formatDuration(dur) + '</div>';
   html += '</div>';
-  if (st === 'mt-active') html += '<span class="mt-timer"></span>';
-  // Focus button for active activities
   if (st === 'mt-active') {
     var dateStr = document.getElementById('schedule-date').value;
-    html += '<button class="mt-focus-btn" style="--focus-btn-bg:' + color + '88;--focus-btn-bg2:' + color + '55" onclick="openFocusMode(\'' + dateStr + '\',' + act.start + ',' + act.end + ',\'' + (act.name||'').replace(/'/g,"\\'") + '\',\'' + (act.icon||'') + '\',\'' + color + '\')">' + (act.icon || '&#127919;') + ' ابدأ التركيز</button>';
+    html += '<div class="mt-focus-row">';
+    html += '<div class="mt-focus-actions">';
+    html += '<button class="mt-focus-btn" style="--focus-btn-bg:' + color + '88;--focus-btn-bg2:' + color + '55" onclick="openFocusMode(\'' + dateStr + '\',' + act.start + ',' + act.end + ',\'' + (act.name||'').replace(/'/g,"\\'") + '\',\'' + (act.icon||'') + '\',\'' + color + '\')">&#127919; ركز</button>';
+    html += '<span class="mt-timer"></span>';
+    html += '</div>';
+    html += '</div>';
   }
   // Focus progress for this activity
   var actDateStr = document.getElementById('schedule-date').value;

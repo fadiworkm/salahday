@@ -347,9 +347,10 @@ var FocusMode = {
       els.elapsedTimer.textContent = LiveTimer.format(total);
       els.totalTime.textContent = LiveTimer.format(total);
 
-      // Wave
+      // Wave: starts at 45% (top of info cards), grows to 80% max
       var totalSegDur = (sE - sS) * 60;
-      var wavePct = totalSegDur > 0 ? Math.min(100, (total / totalSegDur) * 100) : 0;
+      var rawPct = totalSegDur > 0 ? Math.min(1, total / totalSegDur) : 0;
+      var wavePct = total > 0 ? 45 + rawPct * 35 : 0;
       if (els.wave) els.wave.style.setProperty('--wave-pct', wavePct + '%');
 
       return { gone: total, left: Math.max(0, (sE - sS) * 60 - total) };
