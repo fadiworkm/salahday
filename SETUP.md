@@ -1,5 +1,6 @@
 # Setup
-
+start app 
+`php -S localhost:3000`
 ## Requirements
 - PHP hosting (Hostinger, any shared hosting with PHP 7.4+)
 
