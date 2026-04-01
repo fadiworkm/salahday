@@ -121,8 +121,8 @@
 }
 
 .focus-elapsed-timer {
-  font-size: clamp(4rem, 15vw, 8rem);
-  font-weight: 200;
+  font-size: clamp(5rem, 18vw, 10rem);
+  font-weight: 800;
   color: #fff;
   letter-spacing: 0.05em;
   font-variant-numeric: tabular-nums;
@@ -130,8 +130,13 @@
   text-shadow:
     0 2px 24px rgba(0, 0, 0, 0.4),
     0 0 80px rgba(255, 255, 255, 0.06);
-  transition: opacity 0.3s;
+  transition: opacity 0.3s, transform 0.15s;
   user-select: none;
+  cursor: pointer;
+}
+
+.focus-elapsed-timer:active {
+  transform: scale(0.96);
 }
 
 .focus-timer-label {
@@ -415,7 +420,7 @@
 /* ─── 13. Responsive ─── */
 @media (max-width: 768px) {
   .focus-elapsed-timer {
-    font-size: clamp(3.2rem, 13vw, 6rem);
+    font-size: clamp(4rem, 16vw, 7rem);
   }
 
   .focus-timer-label {
@@ -470,7 +475,7 @@
 
 @media (max-width: 380px) {
   .focus-elapsed-timer {
-    font-size: clamp(2.8rem, 12vw, 5rem);
+    font-size: clamp(3.2rem, 14vw, 5.5rem);
   }
 
   .focus-activity-info {

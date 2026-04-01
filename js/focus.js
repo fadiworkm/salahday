@@ -98,6 +98,9 @@ var FocusMode = {
     // Initial display of accumulated time
     this._updateDisplay();
 
+    // Register LiveTimer entries for segment remaining/gone (ticks even when focus is paused)
+    this._registerLiveTimers();
+
     // Show the overlay
     els.overlay.classList.add('active');
     document.body.style.overflow = 'hidden';
@@ -124,12 +127,7 @@ var FocusMode = {
     this._paused = false;
     this._currentPeriodStart = Math.floor(Date.now() / 1000);
 
-    // Start the 1-second tick
-    var self = this;
-    this._interval = setInterval(function () { self._tick(); }, 1000);
-
-    // Run an immediate tick
-    this._tick();
+    // LiveTimer handles all display updates via _registerLiveTimers()
 
     // Show pause icon (‖)
     this._showPauseIcon();
@@ -163,14 +161,7 @@ var FocusMode = {
 
     this._currentPeriodStart = null;
 
-    // Clear the interval
-    if (this._interval) {
-      clearInterval(this._interval);
-      this._interval = null;
-    }
-
-    // Update display one last time
-    this._updateDisplay();
+    // LiveTimer continues to tick, but with _running=false the elapsed won't increase
 
     // Show play icon (▶)
     this._showPlayIcon();
@@ -225,10 +216,6 @@ var FocusMode = {
     if (this._running) {
       this._running = false;
       this._paused = false;
-      if (this._interval) {
-        clearInterval(this._interval);
-        this._interval = null;
-      }
     }
 
     // Delete from data store
@@ -338,6 +325,43 @@ var FocusMode = {
   },
 
   /**
+   * Register LiveTimer entries for segment remaining/gone cards.
+   * These tick every second via the global LiveTimer regardless of focus running state.
+   */
+  _registerLiveTimers: function () {
+    var els = this._getEls();
+    var sS = this._segStart;
+    var sE = this._segEnd;
+    var self = this;
+
+    // Segment remaining & gone — always ticking based on wall clock
+    LiveTimer.progress(null, els.segGone, els.segRemaining, function (nowSec) {
+      var segStartSec = sS * 60;
+      var segEndSec = sE * 60;
+      var gone = Math.max(0, nowSec - segStartSec);
+      var left = Math.max(0, segEndSec - nowSec);
+      return { gone: gone, left: left };
+    });
+
+    // Total focus time & big timer — also live via LiveTimer for when focus IS running
+    LiveTimer.progress(null, null, null, function (nowSec) {
+      if (!self._session) return { gone: 0, left: 0 };
+      var currentElapsed = (self._running && self._currentPeriodStart)
+        ? Math.floor(Date.now() / 1000) - self._currentPeriodStart : 0;
+      var total = self._session.totalFocusSec + currentElapsed;
+      els.elapsedTimer.textContent = LiveTimer.format(total);
+      els.totalTime.textContent = LiveTimer.format(total);
+
+      // Wave
+      var totalSegDur = (sE - sS) * 60;
+      var wavePct = totalSegDur > 0 ? Math.min(100, (total / totalSegDur) * 100) : 0;
+      if (els.wave) els.wave.style.setProperty('--wave-pct', wavePct + '%');
+
+      return { gone: total, left: Math.max(0, (sE - sS) * 60 - total) };
+    });
+  },
+
+  /**
    * Show the pause icon (‖) on the control button.
    */
   _showPauseIcon: function () {
@@ -391,6 +415,11 @@ document.getElementById('focus-close').addEventListener('click', function () {
 });
 
 document.getElementById('focus-btn-pause').addEventListener('click', function () {
+  FocusMode.togglePause();
+});
+
+// Tap on the big timer to toggle pause/resume
+document.getElementById('focus-elapsed-timer').addEventListener('click', function () {
   FocusMode.togglePause();
 });
 

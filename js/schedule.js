@@ -625,10 +625,34 @@ function renderDayStats(segments) {
   // ترتيب حسب المدة تنازلياً
   categories.sort((a, b) => b.duration - a.duration);
 
+  // Build focus data: map sessions to categories
+  const focusSessions = typeof FocusData !== 'undefined' ? FocusData.get(dateStr) : [];
+  let totalDayFocusSec = 0;
+  let totalDayFocusSessions = 0;
+
+  // Group focus by category: focus in work periods → "عمل", focus on planned activities → that activity
+  const focusByCat = {};
+  focusSessions.forEach(function(s) {
+    if ((s.totalFocusSec || 0) <= 0) return;
+    totalDayFocusSec += s.totalFocusSec;
+    totalDayFocusSessions += 1;
+
+    // Check if this focus matches a planned activity by name
+    const matchedCat = categories.find(function(c) { return c.name === s.activityName; });
+    // If matched to a planned activity, assign there; otherwise assign to "عمل" (work time)
+    const catName = matchedCat ? matchedCat.name : 'عمل';
+
+    if (!focusByCat[catName]) focusByCat[catName] = { totalSec: 0, sessions: 0, details: [] };
+    focusByCat[catName].totalSec += s.totalFocusSec;
+    focusByCat[catName].sessions += 1;
+    focusByCat[catName].details.push({ name: s.activityName, icon: s.activityIcon, sec: s.totalFocusSec });
+  });
+
   // بناء HTML
   let html = '<div class="day-stats-grid">';
   for (const cat of categories) {
     const pct = ((cat.duration / TOTAL_DAY) * 100).toFixed(1);
+    const focus = focusByCat[cat.name];
     html += `
       <div class="ds-item ${cat.itemClass || ''}">
         <div class="ds-bar" style="width: ${pct}%; background: ${cat.color}"></div>
@@ -637,49 +661,39 @@ function renderDayStats(segments) {
           <span class="ds-name">${cat.name}</span>
           <span class="ds-time">${formatDuration(cat.duration)}</span>
           <span class="ds-pct">${pct}%</span>
-        </div>
-      </div>`;
+        </div>`;
+    if (focus && focus.totalSec > 0) {
+      const focusPct = Math.min(100, (focus.totalSec / (cat.duration * 60)) * 100).toFixed(0);
+      html += `<div class="ds-focus-row">`;
+      html += `<span class="ds-focus-icon">🎯</span>`;
+      html += `<span class="ds-focus-label">تركيز</span>`;
+      html += `<span class="ds-focus-time">${_formatFocusTime(focus.totalSec)}</span>`;
+      html += `<div class="ds-focus-bar"><div class="ds-focus-fill" style="width:${focusPct}%;background:${cat.color}"></div></div>`;
+      html += `<span class="ds-focus-pct">${focusPct}%</span>`;
+      html += `</div>`;
+      // Show detail breakdown if multiple focus sessions in this category
+      if (focus.details.length > 1) {
+        focus.details.forEach(function(d) {
+          html += `<div class="ds-focus-detail">`;
+          html += `<span class="ds-focus-detail-icon">${d.icon || '🎯'}</span>`;
+          html += `<span class="ds-focus-detail-name">${d.name}</span>`;
+          html += `<span class="ds-focus-detail-time">${_formatFocusTime(d.sec)}</span>`;
+          html += `</div>`;
+        });
+      }
+    }
+    html += `</div>`;
   }
   html += '</div>';
 
-  // ─── إحصائيات التركيز ───
-  const focusSessions = typeof FocusData !== 'undefined' ? FocusData.get(dateStr) : [];
-  if (focusSessions.length > 0) {
-    const focusByActivity = {};
-    let totalFocusSec = 0;
-    focusSessions.forEach(function(s) {
-      const name = s.activityName || 'تركيز';
-      if (!focusByActivity[name]) {
-        focusByActivity[name] = { name: name, icon: s.activityIcon || '🎯', color: s.activityColor || '#7c6aef', totalSec: 0, sessions: 0 };
-      }
-      focusByActivity[name].totalSec += (s.totalFocusSec || 0);
-      focusByActivity[name].sessions += 1;
-      totalFocusSec += (s.totalFocusSec || 0);
-    });
-
-    html += '<div class="focus-stats-section">';
-    html += '<div class="focus-stats-header">';
-    html += '<span class="focus-stats-icon">🎯</span>';
-    html += '<span class="focus-stats-title">إحصائيات التركيز</span>';
-    html += '<span class="focus-stats-total">' + _formatFocusTime(totalFocusSec) + '</span>';
-    html += '</div>';
-
-    html += '<div class="focus-stats-grid">';
-    const activities = Object.values(focusByActivity).sort(function(a, b) { return b.totalSec - a.totalSec; });
-    activities.forEach(function(act) {
-      const pct = totalFocusSec > 0 ? ((act.totalSec / totalFocusSec) * 100).toFixed(0) : 0;
-      html += '<div class="focus-stat-item" style="--fs-color:' + act.color + '">';
-      html += '<div class="focus-stat-item-header">';
-      html += '<span class="focus-stat-item-icon" style="background:' + act.color + '">' + act.icon + '</span>';
-      html += '<span class="focus-stat-item-name">' + act.name + '</span>';
-      html += '</div>';
-      html += '<div class="focus-stat-item-time">' + _formatFocusTime(act.totalSec) + '</div>';
-      html += '<div class="focus-stat-item-bar"><div class="focus-stat-item-fill" style="width:' + pct + '%;background:' + act.color + '"></div></div>';
-      html += '<div class="focus-stat-item-meta">' + act.sessions + ' جلسة · ' + pct + '%</div>';
-      html += '</div>';
-    });
-    html += '</div>';
-    html += '</div>';
+  // Total day focus summary
+  if (totalDayFocusSec > 0) {
+    html += `<div class="ds-focus-summary">`;
+    html += `<span class="ds-focus-summary-icon">🎯</span>`;
+    html += `<span class="ds-focus-summary-label">إجمالي التركيز اليوم</span>`;
+    html += `<span class="ds-focus-summary-time">${_formatFocusTime(totalDayFocusSec)}</span>`;
+    html += `<span class="ds-focus-summary-sessions">${totalDayFocusSessions} جلسة</span>`;
+    html += `</div>`;
   }
 
   container.innerHTML = html;
@@ -783,12 +797,30 @@ function renderWorkBlocks(segments, prayerMins) {
       }
       const pPct = freeTime > 0 ? ((pGone / freeTime) * 100).toFixed(1) : 0;
 
+      // Focus progress overlaid on same bar
+      const periodFocusSec = typeof FocusData !== 'undefined' ? FocusData.getTotalForSegment(dateStr, seg.start, seg.end) : 0;
+      const periodDurSec = freeTime * 60;
+      const fPct = periodDurSec > 0 ? Math.min(100, (periodFocusSec / periodDurSec) * 100).toFixed(1) : 0;
+
       html += `<div class="wt-period-progress" data-seg-start="${seg.start}" data-seg-end="${seg.end}">`;
-      html += `<div class="wp-bar"><div class="wp-fill" style="width:${pPct}%"></div></div>`;
+      html += `<div class="wp-bar">`;
+      html += `<div class="wp-fill" style="width:${pPct}%"></div>`;
+      if (periodFocusSec > 0) {
+        html += `<div class="wp-focus-fill" style="width:${fPct}%"></div>`;
+      }
+      html += `</div>`;
       html += `<div class="wp-labels">`;
       html += `<div class="wp-gone"><span class="wp-dot wp-dot-gone"></span> انتهى <b>${formatDuration(pGone)}</b></div>`;
       html += `<div class="wp-left"><span class="wp-dot wp-dot-left"></span> متبقي <b>${formatDuration(pLeft)}</b></div>`;
-      html += `</div></div>`;
+      html += `</div>`;
+      if (periodFocusSec > 0) {
+        html += `<div class="wp-focus-label">`;
+        html += `<span>🎯 تركيز</span>`;
+        html += `<b>${_formatFocusTime(periodFocusSec)}</b>`;
+        html += `<span class="wp-focus-pct">${fPct}%</span>`;
+        html += `</div>`;
+      }
+      html += `</div>`;
     }
 
     if (!disabled) {

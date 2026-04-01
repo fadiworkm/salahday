@@ -90,12 +90,24 @@ function renderMobileTimeline() {
       var pTotal = pResult.gone + pResult.left;
       var pPct = pTotal > 0 ? ((pResult.gone / pTotal) * 100).toFixed(1) : 0;
 
+      // Focus progress overlaid on same bar
+      var periodFocusSec = typeof FocusData !== 'undefined' ? FocusData.getTotalForSegment(dateStr, seg.start, seg.end) : 0;
+      var periodDurSec = free * 60;
+      var fPct = periodDurSec > 0 ? Math.min(100, (periodFocusSec / periodDurSec) * 100).toFixed(1) : 0;
+
       html += '<div class="mt-period-progress" data-seg-start="' + seg.start + '" data-seg-end="' + seg.end + '">';
-      html += '<div class="wp-bar"><div class="wp-fill" style="width:' + pPct + '%"></div></div>';
+      html += '<div class="wp-bar"><div class="wp-fill" style="width:' + pPct + '%"></div>';
+      if (periodFocusSec > 0) {
+        html += '<div class="wp-focus-fill" style="width:' + fPct + '%"></div>';
+      }
+      html += '</div>';
       html += '<div class="wp-labels">';
       html += '<div class="wp-gone"><span class="wp-dot wp-dot-gone"></span> انتهى <b>' + LiveTimer.format(pResult.gone) + '</b></div>';
       html += '<div class="wp-left"><span class="wp-dot wp-dot-left"></span> متبقي <b>' + LiveTimer.format(pResult.left) + '</b></div>';
-      html += '</div></div>';
+      html += '</div>';
+      if (periodFocusSec > 0) {
+        html += '<div class="wp-focus-label"><span>🎯 تركيز</span><b>' + _formatFocusTime(periodFocusSec) + '</b><span class="wp-focus-pct">' + fPct + '%</span></div>';
+      }
     }
 
     // track
@@ -194,6 +206,17 @@ function _mtBuildAct(act, isToday, nowMin, lastLabel) {
   if (st === 'mt-active') {
     var dateStr = document.getElementById('schedule-date').value;
     html += '<button class="mt-focus-btn" style="--focus-btn-bg:' + color + '88;--focus-btn-bg2:' + color + '55" onclick="openFocusMode(\'' + dateStr + '\',' + act.start + ',' + act.end + ',\'' + (act.name||'').replace(/'/g,"\\'") + '\',\'' + (act.icon||'') + '\',\'' + color + '\')">' + (act.icon || '&#127919;') + ' ابدأ التركيز</button>';
+  }
+  // Focus progress for this activity
+  var actDateStr = document.getElementById('schedule-date').value;
+  var actFocusSec = typeof FocusData !== 'undefined' ? FocusData.getTotalForSegment(actDateStr, act.start, act.end) : 0;
+  if (actFocusSec > 0) {
+    var actDurSec = dur * 60;
+    var actFPct = actDurSec > 0 ? Math.min(100, (actFocusSec / actDurSec) * 100).toFixed(1) : 0;
+    html += '<div class="mt-focus-progress">';
+    html += '<div class="mt-focus-bar"><div class="mt-focus-fill" style="width:' + actFPct + '%;background:' + color + '"></div></div>';
+    html += '<span class="mt-focus-text">🎯 ' + _formatFocusTime(actFocusSec) + ' (' + actFPct + '%)</span>';
+    html += '</div>';
   }
   html += '</div>';
   html += '</div>';

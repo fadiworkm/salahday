@@ -564,6 +564,20 @@ function addActivity() {
   });
 
   if (editingActivityIndex !== null) {
+    var oldAct = activities[editingActivityIndex];
+    // Update associated focus sessions if time range or name changed
+    if (typeof FocusData !== 'undefined' && oldAct) {
+      var dateStr = getPlannerDate();
+      var sessions = FocusData.getForSegment(dateStr, oldAct.start, oldAct.end);
+      sessions.forEach(function(s) {
+        s.segStart = startMin;
+        s.segEnd = endMin;
+        s.activityName = name;
+        s.activityIcon = preset.icon;
+        s.activityColor = preset.color;
+        FocusData.save(dateStr, s);
+      });
+    }
     activities[editingActivityIndex] = { name: name, icon: preset.icon, color: preset.color, start: startMin, end: endMin };
   } else {
     activities.push({ name: name, icon: preset.icon, color: preset.color, start: startMin, end: endMin });
@@ -583,6 +597,13 @@ function deleteActivityFromForm() {
 function removeActivity(globalIndex) {
   var activities = getDayActivities();
   if (globalIndex >= 0 && globalIndex < activities.length) {
+    var act = activities[globalIndex];
+    // Delete associated focus sessions
+    if (typeof FocusData !== 'undefined' && act) {
+      var dateStr = getPlannerDate();
+      var sessions = FocusData.getForSegment(dateStr, act.start, act.end);
+      sessions.forEach(function(s) { FocusData.delete(dateStr, s.id); });
+    }
     activities.splice(globalIndex, 1);
     savePlannerData();
     renderPlanner(currentPlannerFilter);
@@ -606,6 +627,13 @@ function clearDayPlan() {
   showConfirm('هل تريد مسح جميع الأنشطة لهذا اليوم؟', function() {
     var dateStr = getPlannerDate();
     var dayData = ScheduleData.getDay(dateStr);
+    // Delete all focus sessions for this day's activities
+    if (typeof FocusData !== 'undefined' && dayData && dayData.activities) {
+      dayData.activities.forEach(function(act) {
+        var sessions = FocusData.getForSegment(dateStr, act.start, act.end);
+        sessions.forEach(function(s) { FocusData.delete(dateStr, s.id); });
+      });
+    }
     if (dayData) {
       dayData.activities = [];
       dayData.disabledPeriods = [];
