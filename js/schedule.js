@@ -1021,6 +1021,18 @@ function attachEvents() {
   // نسخ من يوم آخر
   document.getElementById('copy-day-btn').addEventListener('click', copyFromDay);
 
+  // تصدير / استيراد
+  document.getElementById('export-btn').addEventListener('click', openExportDialog);
+  document.getElementById('export-confirm').addEventListener('click', doExport);
+  document.getElementById('export-cancel').addEventListener('click', closeExportDialog);
+  document.getElementById('export-overlay').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeExportDialog();
+  });
+  document.getElementById('import-btn').addEventListener('click', () => {
+    document.getElementById('import-file').click();
+  });
+  document.getElementById('import-file').addEventListener('change', handleImport);
+
   document.getElementById('settings-toggle').addEventListener('click', openSettings);
   document.getElementById('close-settings').addEventListener('click', closeSettings);
   document.getElementById('settings-overlay').addEventListener('click', (e) => {
@@ -1035,6 +1047,76 @@ function attachEvents() {
     });
   });
 
+}
+
+// ─── تصدير / استيراد ───
+
+function openExportDialog() {
+  const dateStr = document.getElementById('schedule-date').value;
+  document.getElementById('export-from').value = dateStr;
+  document.getElementById('export-to').value = dateStr;
+  document.getElementById('export-overlay').classList.add('active');
+}
+
+function closeExportDialog() {
+  document.getElementById('export-overlay').classList.remove('active');
+}
+
+async function doExport() {
+  const from = document.getElementById('export-from').value;
+  const to = document.getElementById('export-to').value;
+  if (!from || !to) return;
+
+  await ScheduleData.refresh();
+  const allDays = ScheduleData.getAllDays();
+  const exportDays = {};
+
+  for (const date of Object.keys(allDays).sort()) {
+    if (date >= from && date <= to) {
+      exportDays[date] = allDays[date];
+    }
+  }
+
+  const payload = { days: exportDays, customPresets: ScheduleData.getPresets() };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = from === to ? 'schedule-' + from + '.json' : 'schedule-' + from + '_' + to + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  closeExportDialog();
+}
+
+async function handleImport(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    if (!data.days) return;
+
+    for (const date of Object.keys(data.days)) {
+      ScheduleData.saveDay(date, data.days[date]);
+    }
+
+    if (data.customPresets && data.customPresets.length > 0) {
+      ScheduleData.savePresets(data.customPresets);
+    }
+
+    // تحديث اليوم الحالي
+    const dateStr = document.getElementById('schedule-date').value;
+    await ScheduleData.loadDay(dateStr);
+    loadSettingsFromDay();
+    const bi = document.getElementById('manual-bedtime');
+    if (bi) bi.dataset.manual = '';
+    renderDay();
+  } catch (err) {
+    console.error('فشل الاستيراد:', err);
+  }
+
+  e.target.value = '';
 }
 
 // ─── الإعدادات ───
@@ -1111,12 +1193,19 @@ function closeSettings() {
 
 let countdownInterval = null;
 
+let _lastTickMin = -1;
+
 function startCountdownTimer() {
   if (countdownInterval) clearInterval(countdownInterval);
+  // تحديث كل ثانية للعرض الحي
   countdownInterval = setInterval(function() {
+    const now = new Date();
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    if (nowMin === _lastTickMin) return; // لم تتغير الدقيقة
+    _lastTickMin = nowMin;
     updateCountdown();
     updateWorkProgress();
-  }, 30000);
+  }, 1000);
 }
 
 function updateWorkProgress() {
