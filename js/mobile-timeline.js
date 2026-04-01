@@ -156,6 +156,10 @@ function _mtBuildFree(start, end, isToday, nowMin, lastLabel) {
   html += '<div class="mt-body mt-body-free">';
   html += '<span class="mt-free-dur">' + formatDuration(dur) + '</span>';
   if (st === 'mt-active') html += '<span class="mt-timer"></span>';
+  if (st === 'mt-active') {
+    var dateStr = document.getElementById('schedule-date').value;
+    html += '<button class="mt-focus-btn" onclick="openFocusMode(\'' + dateStr + '\',' + start + ',' + end + ',\'وقت عمل\',\'🎯\',\'#7c6aef\')">&#127919; ابدأ التركيز</button>';
+  }
   html += '</div>';
   html += '</div>';
 
@@ -186,6 +190,11 @@ function _mtBuildAct(act, isToday, nowMin, lastLabel) {
   html += '<div class="mt-dur">' + formatDuration(dur) + '</div>';
   html += '</div>';
   if (st === 'mt-active') html += '<span class="mt-timer"></span>';
+  // Focus button for active activities
+  if (st === 'mt-active') {
+    var dateStr = document.getElementById('schedule-date').value;
+    html += '<button class="mt-focus-btn" style="--focus-btn-bg:' + color + '88;--focus-btn-bg2:' + color + '55" onclick="openFocusMode(\'' + dateStr + '\',' + act.start + ',' + act.end + ',\'' + (act.name||'').replace(/'/g,"\\'") + '\',\'' + (act.icon||'') + '\',\'' + color + '\')">' + (act.icon || '&#127919;') + ' ابدأ التركيز</button>';
+  }
   html += '</div>';
   html += '</div>';
 

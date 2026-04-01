@@ -18,7 +18,8 @@ header('Pragma: no-cache');
 header('Expires: 0');
 
 $DATA_DIR  = __DIR__ . '/data';
-$DATA_FILE = $DATA_DIR . '/schedule-data.json';
+$DATA_FILE  = $DATA_DIR . '/schedule-data.json';
+$FOCUS_FILE = $DATA_DIR . '/focus-data.json';
 
 if (!is_dir($DATA_DIR)) {
     mkdir($DATA_DIR, 0755, true);
@@ -93,6 +94,28 @@ function migrateOldFormat($old) {
 
 function getBody() {
     return json_decode(file_get_contents('php://input'), true);
+}
+
+function readFocus() {
+    global $FOCUS_FILE;
+    if (!file_exists($FOCUS_FILE)) {
+        return ['sessions' => []];
+    }
+    $raw  = file_get_contents($FOCUS_FILE);
+    $data = json_decode($raw, true);
+    if (!$data) {
+        return ['sessions' => []];
+    }
+    if (!isset($data['sessions'])) $data['sessions'] = [];
+    return $data;
+}
+
+function writeFocus($data) {
+    global $FOCUS_FILE;
+    // Ensure sessions is object (not empty array) for consistent JSON
+    if (empty($data['sessions'])) $data['sessions'] = new stdClass();
+    $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    file_put_contents($FOCUS_FILE, $json, LOCK_EX);
 }
 
 // ─── Routing ───
@@ -173,6 +196,77 @@ switch ($action) {
             writeData($data);
             echo json_encode(['ok' => true]);
         }
+        break;
+
+    // Focus session CRUD (per date)
+    case 'focus':
+        if (!$date) {
+            http_response_code(400);
+            echo json_encode(['error' => 'date required']);
+            break;
+        }
+
+        if ($method === 'GET') {
+            $data = readFocus();
+            $sessions = $data['sessions'][$date] ?? [];
+            echo json_encode($sessions, JSON_UNESCAPED_UNICODE);
+
+        } elseif ($method === 'POST') {
+            $session = getBody();
+            if (!$session || !isset($session['id'])) {
+                http_response_code(400);
+                echo json_encode(['error' => 'session with id required']);
+                break;
+            }
+            $data = readFocus();
+            if (!isset($data['sessions'][$date])) {
+                $data['sessions'][$date] = [];
+            }
+            // Replace existing session with same id, or append
+            $found = false;
+            foreach ($data['sessions'][$date] as $i => $existing) {
+                if ($existing['id'] === $session['id']) {
+                    $data['sessions'][$date][$i] = $session;
+                    $found = true;
+                    break;
+                }
+            }
+            if (!$found) {
+                $data['sessions'][$date][] = $session;
+            }
+            writeFocus($data);
+            echo json_encode(['ok' => true]);
+
+        } elseif ($method === 'DELETE') {
+            $id = $_GET['id'] ?? '';
+            if (!$id) {
+                http_response_code(400);
+                echo json_encode(['error' => 'id required']);
+                break;
+            }
+            $data = readFocus();
+            if (isset($data['sessions'][$date])) {
+                $data['sessions'][$date] = array_values(
+                    array_filter($data['sessions'][$date], function($s) use ($id) {
+                        return $s['id'] !== $id;
+                    })
+                );
+                // Remove date key if no sessions left
+                if (empty($data['sessions'][$date])) {
+                    unset($data['sessions'][$date]);
+                }
+            }
+            writeFocus($data);
+            echo json_encode(['ok' => true]);
+        }
+        break;
+
+    // All focus data (all dates)
+    case 'focus-all':
+        $data = readFocus();
+        $sessions = $data['sessions'];
+        if (empty($sessions)) $sessions = new stdClass();
+        echo json_encode($sessions, JSON_UNESCAPED_UNICODE);
         break;
 
     default:

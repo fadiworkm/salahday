@@ -541,6 +541,15 @@ function renderPentagon(prayerMins) {
   container.innerHTML = svg;
 }
 
+function _formatFocusTime(sec) {
+  if (sec < 60) return sec + ' ثانية';
+  if (sec < 3600) return Math.floor(sec / 60) + ' دقيقة';
+  var h = Math.floor(sec / 3600);
+  var m = Math.floor((sec % 3600) / 60);
+  if (m === 0) return h + ' ساعة';
+  return h + ' ساعة و ' + m + ' دقيقة';
+}
+
 function renderDayStats(segments) {
   const container = document.getElementById('day-stats');
   if (!container) return;
@@ -632,6 +641,46 @@ function renderDayStats(segments) {
       </div>`;
   }
   html += '</div>';
+
+  // ─── إحصائيات التركيز ───
+  const focusSessions = typeof FocusData !== 'undefined' ? FocusData.get(dateStr) : [];
+  if (focusSessions.length > 0) {
+    const focusByActivity = {};
+    let totalFocusSec = 0;
+    focusSessions.forEach(function(s) {
+      const name = s.activityName || 'تركيز';
+      if (!focusByActivity[name]) {
+        focusByActivity[name] = { name: name, icon: s.activityIcon || '🎯', color: s.activityColor || '#7c6aef', totalSec: 0, sessions: 0 };
+      }
+      focusByActivity[name].totalSec += (s.totalFocusSec || 0);
+      focusByActivity[name].sessions += 1;
+      totalFocusSec += (s.totalFocusSec || 0);
+    });
+
+    html += '<div class="focus-stats-section">';
+    html += '<div class="focus-stats-header">';
+    html += '<span class="focus-stats-icon">🎯</span>';
+    html += '<span class="focus-stats-title">إحصائيات التركيز</span>';
+    html += '<span class="focus-stats-total">' + _formatFocusTime(totalFocusSec) + '</span>';
+    html += '</div>';
+
+    html += '<div class="focus-stats-grid">';
+    const activities = Object.values(focusByActivity).sort(function(a, b) { return b.totalSec - a.totalSec; });
+    activities.forEach(function(act) {
+      const pct = totalFocusSec > 0 ? ((act.totalSec / totalFocusSec) * 100).toFixed(0) : 0;
+      html += '<div class="focus-stat-item" style="--fs-color:' + act.color + '">';
+      html += '<div class="focus-stat-item-header">';
+      html += '<span class="focus-stat-item-icon" style="background:' + act.color + '">' + act.icon + '</span>';
+      html += '<span class="focus-stat-item-name">' + act.name + '</span>';
+      html += '</div>';
+      html += '<div class="focus-stat-item-time">' + _formatFocusTime(act.totalSec) + '</div>';
+      html += '<div class="focus-stat-item-bar"><div class="focus-stat-item-fill" style="width:' + pct + '%;background:' + act.color + '"></div></div>';
+      html += '<div class="focus-stat-item-meta">' + act.sessions + ' جلسة · ' + pct + '%</div>';
+      html += '</div>';
+    });
+    html += '</div>';
+    html += '</div>';
+  }
 
   container.innerHTML = html;
 }
@@ -786,6 +835,33 @@ function renderWorkBlocks(segments, prayerMins) {
           html += `<span class="wt-act-chip" style="background:${act.color}">${act.icon} ${act.name} (${formatDuration(act.end - act.start)})</span>`;
         });
         html += `</div>`;
+
+        // Focus indicator for each activity
+        periodActs.forEach(act => {
+          const focusTotal = typeof FocusData !== 'undefined' ? FocusData.getTotalForSegment(dateStr, act.start, act.end) : 0;
+          if (focusTotal > 0) {
+            const actDurSec = (act.end - act.start) * 60;
+            const focusPct = Math.min(100, (focusTotal / actDurSec) * 100).toFixed(1);
+            html += `<div class="focus-indicator" style="width:${focusPct}%; background:${act.color}"></div>`;
+          }
+        });
+      }
+
+      // Focus button for active period (outside periodActs check so it shows even with no activities)
+      if (isToday2 && nowMin2 >= seg.start && nowMin2 < seg.end) {
+        const dateStr2 = document.getElementById('schedule-date').value;
+        const activeAct = periodActs.find(a => nowMin2 >= a.start && nowMin2 < a.end);
+        if (activeAct) {
+          html += `<div style="padding: 4px 12px 12px;">`;
+          html += `<button class="focus-btn" style="--focus-btn-bg:${activeAct.color}88;--focus-btn-bg2:${activeAct.color}55" onclick="openFocusMode('${dateStr2}', ${activeAct.start}, ${activeAct.end}, '${(activeAct.name||'').replace(/'/g,"\\'")}', '${activeAct.icon||''}', '${activeAct.color}')">`;
+          html += `${activeAct.icon || '&#127919;'} ابدأ التركيز — ${activeAct.name || 'تركيز'}</button>`;
+          html += `</div>`;
+        } else {
+          html += `<div style="padding: 4px 12px 12px;">`;
+          html += `<button class="focus-btn" onclick="openFocusMode('${dateStr2}', ${seg.start}, ${seg.end}, 'وقت عمل', '🎯', '#7c6aef')">`;
+          html += `&#127919; ابدأ التركيز</button>`;
+          html += `</div>`;
+        }
       }
     } else {
       html += `<div class="wt-disabled-label">معطّلة</div>`;
@@ -932,6 +1008,13 @@ function renderDay() {
   renderDayStats(segments);
   renderWorkBlocks(segments, prayerMins);
   registerTimers();
+
+  // تحميل بيانات التركيز وإعادة عرض الإحصائيات بعد وصول البيانات
+  if (typeof FocusData !== 'undefined') {
+    FocusData.load(dateStr).then(function() {
+      renderDayStats(segments);
+    });
+  }
 }
 
 // ─── التاريخ والتنقل ───
