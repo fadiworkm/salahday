@@ -30,7 +30,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   loadSettingsFromDay();
   attachEvents();
   renderDay();
-  startCountdownTimer();
 });
 
 // ─── تحميل بيانات الصلاة ───
@@ -735,7 +734,7 @@ function renderWorkBlocks(segments, prayerMins) {
       }
       const pPct = freeTime > 0 ? ((pGone / freeTime) * 100).toFixed(1) : 0;
 
-      html += `<div class="wt-period-progress">`;
+      html += `<div class="wt-period-progress" data-seg-start="${seg.start}" data-seg-end="${seg.end}">`;
       html += `<div class="wp-bar"><div class="wp-fill" style="width:${pPct}%"></div></div>`;
       html += `<div class="wp-labels">`;
       html += `<div class="wp-gone"><span class="wp-dot wp-dot-gone"></span> انتهى <b>${formatDuration(pGone)}</b></div>`;
@@ -923,6 +922,7 @@ function renderDay() {
   renderPentagon(prayerMins);
   renderDayStats(segments);
   renderWorkBlocks(segments, prayerMins);
+  registerTimers();
 }
 
 // ─── التاريخ والتنقل ───
@@ -1189,107 +1189,92 @@ function closeSettings() {
   renderDay();
 }
 
-// ─── العد التنازلي في الوقت الحقيقي ───
+// ─── العد التنازلي في الوقت الحقيقي (LiveTimer) ───
 
-let countdownInterval = null;
+function registerTimers() {
+  LiveTimer.clear();
+  LiveTimer.stop();
 
-let _lastTickMin = -1;
+  const isToday = document.getElementById('schedule-date').value === new Date().toISOString().split('T')[0];
+  if (!isToday) return;
 
-function startCountdownTimer() {
-  if (countdownInterval) clearInterval(countdownInterval);
-  // تحديث كل ثانية للعرض الحي
-  countdownInterval = setInterval(function() {
-    const now = new Date();
-    const nowMin = now.getHours() * 60 + now.getMinutes();
-    if (nowMin === _lastTickMin) return; // لم تتغير الدقيقة
-    _lastTickMin = nowMin;
-    updateCountdown();
-    updateWorkProgress();
-  }, 1000);
-}
-
-function updateWorkProgress() {
-  const wpEl = document.getElementById('work-progress');
-  if (!wpEl) return;
-
-  const now = new Date();
-  const nowMin = now.getHours() * 60 + now.getMinutes();
-  const allSegments = window._allSegments || [];
-  const workSegs = allSegments.filter(s => s.type === 'work');
-
-  const dateStr = document.getElementById('schedule-date').value;
-  let savedPlan = ScheduleData.getDay(dateStr);
-  if (Array.isArray(savedPlan)) savedPlan = { activities: savedPlan, disabledPeriods: [] };
-
-  const planActs = savedPlan ? savedPlan.activities || [] : [];
-  const disabled = savedPlan ? savedPlan.disabledPeriods || [] : [];
-
-  let workGone = 0, workLeft = 0;
-  workSegs.forEach(seg => {
-    const pKey = 'work:' + seg.start + '-' + seg.end;
-    if (disabled.indexOf(pKey) !== -1) return;
-    const pActs = planActs.filter(a => a.start >= seg.start && a.end <= seg.end).sort((a, b) => a.start - b.start);
-    let cursor = seg.start;
-    pActs.forEach(act => {
-      if (act.start > cursor) {
-        const fs = cursor, fe = act.start;
-        if (nowMin >= fe) workGone += fe - fs;
-        else if (nowMin > fs) { workGone += nowMin - fs; workLeft += fe - nowMin; }
-        else workLeft += fe - fs;
-      }
-      cursor = act.end;
-    });
-    if (cursor < seg.end) {
-      const fs = cursor, fe = seg.end;
-      if (nowMin >= fe) workGone += fe - fs;
-      else if (nowMin > fs) { workGone += nowMin - fs; workLeft += fe - nowMin; }
-      else workLeft += fe - fs;
+  // 1. عد تنازلي للصلاة + دائرة
+  const cdEl = document.getElementById('pp-countdown');
+  if (cdEl) {
+    const target = parseInt(cdEl.dataset.target, 10);
+    const prev = parseInt(cdEl.dataset.prev, 10);
+    if (!isNaN(target) && !isNaN(prev)) {
+      LiveTimer.countdown(document.getElementById('pp-cd-remaining'), target, 'بعد', function () { renderDay(); });
+      LiveTimer.elapsed(document.getElementById('pp-cd-elapsed'), prev, 'منذ');
+      LiveTimer.pie(cdEl.querySelector('.pp-pie-chart'), prev, target);
     }
+  }
+
+  // 2. شريط تقدم العمل الإجمالي
+  const wpEl = document.getElementById('work-progress');
+  if (wpEl) {
+    LiveTimer.progress(
+      wpEl.querySelector('.wp-fill'),
+      document.getElementById('wp-gone-val'),
+      document.getElementById('wp-left-val'),
+      computeWorkProgress
+    );
+  }
+
+  // 3. شريط تقدم كل فترة
+  document.querySelectorAll('.wt-period-progress[data-seg-start]').forEach(function (ppEl) {
+    const segStart = parseInt(ppEl.dataset.segStart, 10);
+    const segEnd = parseInt(ppEl.dataset.segEnd, 10);
+    LiveTimer.progress(
+      ppEl.querySelector('.wp-fill'),
+      ppEl.querySelector('.wp-gone b'),
+      ppEl.querySelector('.wp-left b'),
+      function (nowSec) { return computePeriodProgress(nowSec, segStart, segEnd); }
+    );
   });
 
-  const total = workGone + workLeft;
-  const pct = total > 0 ? ((workGone / total) * 100).toFixed(1) : 0;
-
-  const fill = wpEl.querySelector('.wp-fill');
-  const goneVal = document.getElementById('wp-gone-val');
-  const leftVal = document.getElementById('wp-left-val');
-  if (fill) fill.style.width = pct + '%';
-  if (goneVal) goneVal.textContent = formatDuration(workGone);
-  if (leftVal) leftVal.textContent = formatDuration(workLeft);
+  LiveTimer.start();
 }
 
-function updateCountdown() {
-  const cdEl = document.getElementById('pp-countdown');
-  if (!cdEl) return;
-
-  const target = parseInt(cdEl.dataset.target, 10);
-  const prev = parseInt(cdEl.dataset.prev, 10);
-  if (isNaN(target)) return;
-
-  const now = new Date();
-  const nowMin = now.getHours() * 60 + now.getMinutes();
-  const remaining = target - nowMin;
-  const elapsed = nowMin - prev;
-
-  if (remaining <= 0) {
-    renderDay();
-    return;
+function computeWorkProgress(nowSec) {
+  const workSegs = (window._allSegments || []).filter(function (s) { return s.type === 'work'; });
+  const dateStr = document.getElementById('schedule-date').value;
+  let sp = ScheduleData.getDay(dateStr);
+  if (Array.isArray(sp)) sp = { activities: sp, disabledPeriods: [] };
+  const acts = sp ? sp.activities || [] : [];
+  const dis = sp ? sp.disabledPeriods || [] : [];
+  var gone = 0, left = 0;
+  workSegs.forEach(function (seg) {
+    if (dis.indexOf('work:' + seg.start + '-' + seg.end) !== -1) return;
+    var pa = acts.filter(function (a) { return a.start >= seg.start && a.end <= seg.end; }).sort(function (a, b) { return a.start - b.start; });
+    var c = seg.start;
+    pa.forEach(function (a) { if (a.start > c) { acc(c * 60, a.start * 60); } c = a.end; });
+    if (c < seg.end) acc(c * 60, seg.end * 60);
+  });
+  function acc(fs, fe) {
+    if (nowSec >= fe) gone += fe - fs;
+    else if (nowSec > fs) { gone += nowSec - fs; left += fe - nowSec; }
+    else left += fe - fs;
   }
+  return { gone: gone, left: left };
+}
 
-  // تحديث النصوص
-  const remEl = document.getElementById('pp-cd-remaining');
-  const elaEl = document.getElementById('pp-cd-elapsed');
-  if (remEl) remEl.textContent = 'بعد ' + formatDuration(remaining);
-  if (elaEl) elaEl.textContent = 'منذ ' + formatDuration(elapsed);
-
-  // تحديث الدائرة
-  const totalBetween = target - prev;
-  const pct = totalBetween > 0 ? (elapsed / totalBetween) * 100 : 0;
-  const angle = (pct / 100) * 360;
-  const pieEl = cdEl.querySelector('.pp-pie-chart');
-  if (pieEl) {
-    pieEl.style.background = `conic-gradient(var(--gold) 0deg, var(--gold) ${angle}deg, rgba(78,205,196,0.2) ${angle}deg, rgba(78,205,196,0.2) 360deg)`;
+function computePeriodProgress(nowSec, segStart, segEnd) {
+  const dateStr = document.getElementById('schedule-date').value;
+  let sp = ScheduleData.getDay(dateStr);
+  if (Array.isArray(sp)) sp = { activities: sp, disabledPeriods: [] };
+  const pa = (sp ? sp.activities || [] : [])
+    .filter(function (a) { return a.start >= segStart && a.end <= segEnd; })
+    .sort(function (a, b) { return a.start - b.start; });
+  var gone = 0, left = 0, c = segStart;
+  pa.forEach(function (a) { if (a.start > c) { acc(c * 60, a.start * 60); } c = a.end; });
+  if (c < segEnd) acc(c * 60, segEnd * 60);
+  function acc(fs, fe) {
+    if (nowSec >= fe) gone += fe - fs;
+    else if (nowSec > fs) { gone += nowSec - fs; left += fe - nowSec; }
+    else left += fe - fs;
   }
+  return { gone: gone, left: left };
 }
 
 // ─── النجوم المتلألئة ───
