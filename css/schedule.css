@@ -3,37 +3,7 @@
    Requires: style.css (base variables, card, header, etc.)
    ═══════════════════════════════════════════════════ */
 
-/* ─── 1. Page Navigation ─── */
-.page-nav {
-  display: flex;
-  justify-content: center;
-  gap: 8px;
-  margin-bottom: 20px;
-}
-
-.nav-link {
-  padding: 10px 20px;
-  background: var(--bg-card);
-  border: 1px solid var(--border-card);
-  border-radius: var(--radius-sm);
-  color: var(--text-secondary);
-  text-decoration: none;
-  font-family: 'Cairo', sans-serif;
-  font-size: 0.88rem;
-  font-weight: 600;
-  transition: all 0.2s;
-}
-
-.nav-link:hover {
-  background: var(--bg-card-hover);
-  color: var(--text-primary);
-}
-
-.nav-link.active {
-  background: rgba(124, 106, 239, 0.15);
-  border-color: rgba(124, 106, 239, 0.3);
-  color: var(--purple);
-}
+/* Navigation styles moved to style.css (shared) */
 
 /* ─── 2. Date Row ─── */
 .date-row {
@@ -1477,15 +1447,6 @@
 @media (max-width: 380px) {
   .prayer-times-grid {
     grid-template-columns: 1fr;
-  }
-
-  .page-nav {
-    flex-wrap: wrap;
-  }
-
-  .nav-link {
-    padding: 7px 12px;
-    font-size: 0.78rem;
   }
 
   .pt-time {

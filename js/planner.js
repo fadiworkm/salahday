@@ -3,23 +3,20 @@
  * يعتمد على schedule.js: displayTime, displayTimeRange, formatDuration, minutesToTimeStr, window._workSegments
  */
 
-let plannerData = {};
 let currentFormWorkIndex = null;
 let selectedPreset = null;
 let editingActivityIndex = null;
 let currentPlannerFilter = null; // null = عرض الكل, رقم = فترة واحدة
 
-// ─── استمرارية البيانات ───
+// ─── استمرارية البيانات (عبر ScheduleData) ───
 
 function loadPlannerData() {
-  const saved = localStorage.getItem('workPlannerData');
-  if (saved) {
-    try { plannerData = JSON.parse(saved); } catch (e) { plannerData = {}; }
-  }
+  // البيانات تُحمّل عبر ScheduleData — لا حاجة لعمل شيء
 }
 
 function savePlannerData() {
-  localStorage.setItem('workPlannerData', JSON.stringify(plannerData));
+  const dateStr = getPlannerDate();
+  ScheduleData.saveDay(dateStr);
 }
 
 function getPlannerDate() {
@@ -28,12 +25,7 @@ function getPlannerDate() {
 
 function getDayPlan() {
   const dateStr = getPlannerDate();
-  if (!plannerData[dateStr]) plannerData[dateStr] = { activities: [], disabledPeriods: [] };
-  // ترقية من الشكل القديم (مصفوفة فقط)
-  if (Array.isArray(plannerData[dateStr])) {
-    plannerData[dateStr] = { activities: plannerData[dateStr], disabledPeriods: [] };
-  }
-  return plannerData[dateStr];
+  return ScheduleData.getDayOrDefault(dateStr);
 }
 
 function getDayActivities() {
@@ -254,18 +246,14 @@ var DEFAULT_PRESETS = [
 ];
 
 function loadCustomPresets() {
-  try {
-    var raw = localStorage.getItem('customPresets');
-    return raw ? JSON.parse(raw) : [];
-  } catch(e) { return []; }
+  return ScheduleData.getPresets();
 }
 
 function saveCustomPreset(preset) {
-  var customs = loadCustomPresets();
-  // لا تكرار
+  var customs = loadCustomPresets().slice();
   customs = customs.filter(function(p) { return p.name !== preset.name; });
   customs.push(preset);
-  localStorage.setItem('customPresets', JSON.stringify(customs));
+  ScheduleData.savePresets(customs);
 }
 
 function getAllPresets() {
@@ -358,21 +346,16 @@ function getPresetOrRandom(name) {
     }
   }
   // ثالثاً: البحث في كل الأيام المحفوظة
-  try {
-    var raw = localStorage.getItem('workPlannerData');
-    if (raw) {
-      var all = JSON.parse(raw);
-      for (var dateKey in all) {
-        var dayPlan = all[dateKey];
-        var acts = Array.isArray(dayPlan) ? dayPlan : (dayPlan.activities || []);
-        for (var k = 0; k < acts.length; k++) {
-          if (acts[k].name === name) {
-            return { name: name, icon: acts[k].icon, color: acts[k].color };
-          }
-        }
+  var allDays = ScheduleData.getAllDays();
+  for (var dateKey in allDays) {
+    var dayPlan = allDays[dateKey];
+    var acts = Array.isArray(dayPlan) ? dayPlan : (dayPlan.activities || []);
+    for (var k = 0; k < acts.length; k++) {
+      if (acts[k].name === name) {
+        return { name: name, icon: acts[k].icon, color: acts[k].color };
       }
     }
-  } catch(e) {}
+  }
   return { name: name, icon: getRandomIcon(), color: getRandomColor() };
 }
 
@@ -622,12 +605,12 @@ function updateMainWorkBlocks() {
 function clearDayPlan() {
   showConfirm('هل تريد مسح جميع الأنشطة لهذا اليوم؟', function() {
     var dateStr = getPlannerDate();
-    try {
-      var raw = localStorage.getItem('workPlannerData');
-      var all = raw ? JSON.parse(raw) : {};
-      delete all[dateStr];
-      localStorage.setItem('workPlannerData', JSON.stringify(all));
-    } catch(e) {}
+    var dayData = ScheduleData.getDay(dateStr);
+    if (dayData) {
+      dayData.activities = [];
+      dayData.disabledPeriods = [];
+      ScheduleData.saveDay(dateStr);
+    }
     if (typeof renderDay === 'function') renderDay();
   });
 }
@@ -654,7 +637,8 @@ function showConfirm(message, onYes) {
 
 // ─── ربط الأحداث ───
 
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
+  await ScheduleData.whenReady();
   loadPlannerData();
 
   document.getElementById('open-planner').addEventListener('click', openPlanner);

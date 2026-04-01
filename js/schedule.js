@@ -23,9 +23,11 @@ let scheduleSettings = {
 // ─── التهيئة ───
 document.addEventListener('DOMContentLoaded', async () => {
   generateStars();
-  loadSettings();
+  await ScheduleData.whenReady();
   await loadPrayerData();
   initDateInput();
+  await loadDayFromServer();
+  loadSettingsFromDay();
   attachEvents();
   renderDay();
   startCountdownTimer();
@@ -163,40 +165,44 @@ const PREP_NAMES = {
 };
 
 function getSavedBedtime() {
-  try {
-    const raw = localStorage.getItem('workPlannerData');
-    if (!raw) return null;
-    const all = JSON.parse(raw);
-    const dateStr = document.getElementById('schedule-date').value;
-    const dayPlan = all[dateStr];
-    if (dayPlan && dayPlan.manualBedtime != null) return dayPlan.manualBedtime;
-  } catch (e) {}
+  const dateStr = document.getElementById('schedule-date').value;
+  const dayData = ScheduleData.getDay(dateStr);
+  if (dayData && dayData.manualBedtime != null) return dayData.manualBedtime;
   return null;
 }
 
 function saveManualBedtime(bedtimeMin) {
-  try {
-    const raw = localStorage.getItem('workPlannerData');
-    const all = raw ? JSON.parse(raw) : {};
-    const dateStr = document.getElementById('schedule-date').value;
-    if (!all[dateStr]) all[dateStr] = { activities: [], disabledPeriods: [] };
-    if (Array.isArray(all[dateStr])) all[dateStr] = { activities: all[dateStr], disabledPeriods: [] };
-    all[dateStr].manualBedtime = bedtimeMin;
-    localStorage.setItem('workPlannerData', JSON.stringify(all));
-  } catch (e) {}
+  const dateStr = document.getElementById('schedule-date').value;
+  const dayData = ScheduleData.getDayOrDefault(dateStr);
+  dayData.manualBedtime = bedtimeMin;
+  ScheduleData.saveDay(dateStr);
 }
 
 function clearSavedBedtime() {
-  try {
-    const raw = localStorage.getItem('workPlannerData');
-    if (!raw) return;
-    const all = JSON.parse(raw);
-    const dateStr = document.getElementById('schedule-date').value;
-    if (all[dateStr]) {
-      delete all[dateStr].manualBedtime;
-      localStorage.setItem('workPlannerData', JSON.stringify(all));
+  const dateStr = document.getElementById('schedule-date').value;
+  const dayData = ScheduleData.getDay(dateStr);
+  if (dayData) {
+    delete dayData.manualBedtime;
+    ScheduleData.saveDay(dateStr);
+  }
+}
+
+async function loadDayFromServer() {
+  const dateStr = document.getElementById('schedule-date').value;
+  await ScheduleData.loadDay(dateStr);
+}
+
+function loadSettingsFromDay() {
+  const dateStr = document.getElementById('schedule-date').value;
+  const dayData = ScheduleData.getDay(dateStr);
+  if (dayData && dayData.settings) {
+    const parsed = dayData.settings;
+    scheduleSettings = { ...scheduleSettings, ...parsed };
+    if (parsed.buffers) {
+      scheduleSettings.buffers = { ...scheduleSettings.buffers, ...parsed.buffers };
     }
-  } catch (e) {}
+  }
+  applySettingsToUI();
 }
 
 function getManualBedtime(prayerMins) {
@@ -544,16 +550,9 @@ function renderDayStats(segments) {
 
   // تحميل أنشطة المخطط المحفوظة
   let planActivities = [];
-  try {
-    const raw = localStorage.getItem('workPlannerData');
-    if (raw) {
-      const all = JSON.parse(raw);
-      const dateStr = document.getElementById('schedule-date').value;
-      let savedPlan = all[dateStr] || null;
-      if (Array.isArray(savedPlan)) savedPlan = { activities: savedPlan, disabledPeriods: [] };
-      if (savedPlan) planActivities = savedPlan.activities || [];
-    }
-  } catch (e) {}
+  const dateStr = document.getElementById('schedule-date').value;
+  const savedPlanStats = ScheduleData.getDay(dateStr);
+  if (savedPlanStats) planActivities = savedPlanStats.activities || [];
 
   // حساب الأوقات حسب النوع
   const typeTotals = { sleep: 0, prayer: 0, prep: 0, work: 0 };
@@ -674,16 +673,9 @@ function renderWorkBlocks(segments, prayerMins) {
   }
 
   // تحميل أنشطة المخطط المحفوظة
-  let savedPlan = null;
-  try {
-    const raw = localStorage.getItem('workPlannerData');
-    if (raw) {
-      const all = JSON.parse(raw);
-      const dateStr = document.getElementById('schedule-date').value;
-      savedPlan = all[dateStr] || null;
-      if (Array.isArray(savedPlan)) savedPlan = { activities: savedPlan, disabledPeriods: [] };
-    }
-  } catch (e) {}
+  const dateStr = document.getElementById('schedule-date').value;
+  let savedPlan = ScheduleData.getDay(dateStr);
+  if (Array.isArray(savedPlan)) savedPlan = { activities: savedPlan, disabledPeriods: [] };
 
   const planActivities = savedPlan ? savedPlan.activities || [] : [];
   const disabledPeriods = savedPlan ? savedPlan.disabledPeriods || [] : [];
@@ -940,63 +932,72 @@ function initDateInput() {
   dateInput.value = new Date().toISOString().split('T')[0];
 }
 
-function changeDate(delta) {
+async function changeDate(delta) {
   const dateInput = document.getElementById('schedule-date');
   const current = new Date(dateInput.value + 'T12:00:00');
   current.setDate(current.getDate() + delta);
   dateInput.value = current.toISOString().split('T')[0];
-  // إعادة تعيين وقت النوم للافتراضي عند تغيير اليوم
   const bedtimeInput = document.getElementById('manual-bedtime');
   if (bedtimeInput) bedtimeInput.dataset.manual = '';
+  await loadDayFromServer();
+  loadSettingsFromDay();
   renderDay();
 }
 
 // ─── نسخ من يوم ───
 
-function copyFromDay() {
+async function copyFromDay() {
   const fromDate = document.getElementById('copy-from-date').value;
   const toDate = document.getElementById('schedule-date').value;
   if (!fromDate || !toDate || fromDate === toDate) return;
 
-  try {
-    const raw = localStorage.getItem('workPlannerData');
-    const all = raw ? JSON.parse(raw) : {};
-    let source = all[fromDate];
-    if (!source) return;
-
-    if (Array.isArray(source)) source = { activities: source, disabledPeriods: [] };
-
-    // نسخ عميق
-    const copy = {
-      activities: JSON.parse(JSON.stringify(source.activities || [])),
-      disabledPeriods: JSON.parse(JSON.stringify(source.disabledPeriods || []))
-    };
-    if (source.manualBedtime != null) copy.manualBedtime = source.manualBedtime;
-
-    all[toDate] = copy;
-    localStorage.setItem('workPlannerData', JSON.stringify(all));
-
-    // تحديث وقت النوم
-    const bi = document.getElementById('manual-bedtime');
-    if (bi) bi.dataset.manual = '';
-    renderDay();
-  } catch (e) {
-    console.error('فشل النسخ:', e);
+  // تحميل يوم المصدر من الخادم إن لم يكن محملاً
+  let source = ScheduleData.getDay(fromDate);
+  if (!source) {
+    await ScheduleData.loadDay(fromDate);
+    source = ScheduleData.getDay(fromDate);
   }
+  if (!source) return;
+
+  if (Array.isArray(source)) source = { activities: source, disabledPeriods: [] };
+
+  // نسخ عميق
+  const copy = JSON.parse(JSON.stringify(source));
+  ScheduleData.saveDay(toDate, copy);
+
+  const bi = document.getElementById('manual-bedtime');
+  if (bi) bi.dataset.manual = '';
+  loadSettingsFromDay();
+  renderDay();
 }
 
 // ─── الأحداث ───
 
 function attachEvents() {
-  document.getElementById('schedule-date').addEventListener('change', () => {
+  document.getElementById('schedule-date').addEventListener('change', async () => {
     const bi = document.getElementById('manual-bedtime');
     if (bi) bi.dataset.manual = '';
+    await loadDayFromServer();
+    loadSettingsFromDay();
     renderDay();
   });
   document.getElementById('prev-day').addEventListener('click', () => changeDate(-1));
   document.getElementById('next-day').addEventListener('click', () => changeDate(1));
-  document.getElementById('today-btn').addEventListener('click', () => {
+  document.getElementById('today-btn').addEventListener('click', async () => {
     document.getElementById('schedule-date').value = new Date().toISOString().split('T')[0];
+    const bi = document.getElementById('manual-bedtime');
+    if (bi) bi.dataset.manual = '';
+    await loadDayFromServer();
+    loadSettingsFromDay();
+    renderDay();
+  });
+
+  // تحديث البيانات من الخادم
+  document.getElementById('refresh-btn').addEventListener('click', async () => {
+    await ScheduleData.refresh();
+    const dateStr = document.getElementById('schedule-date').value;
+    await ScheduleData.loadDay(dateStr);
+    loadSettingsFromDay();
     const bi = document.getElementById('manual-bedtime');
     if (bi) bi.dataset.manual = '';
     renderDay();
@@ -1039,16 +1040,7 @@ function attachEvents() {
 // ─── الإعدادات ───
 
 function loadSettings() {
-  const saved = localStorage.getItem('scheduleSettings');
-  if (saved) {
-    try {
-      const parsed = JSON.parse(saved);
-      scheduleSettings = { ...scheduleSettings, ...parsed };
-      if (parsed.buffers) {
-        scheduleSettings.buffers = { ...scheduleSettings.buffers, ...parsed.buffers };
-      }
-    } catch (e) { /* تجاهل */ }
-  }
+  // Settings now loaded per-day via loadSettingsFromDay()
   applySettingsToUI();
 }
 
@@ -1095,7 +1087,12 @@ function saveSettings() {
     isha:    { before: getInputValue('buf-isha-before', 10),     after: getInputValue('buf-isha-after', 20) }
   };
   scheduleSettings.bedtimeAfterIsha = getInputValue('bedtime-after-isha-schedule', 120);
-  localStorage.setItem('scheduleSettings', JSON.stringify(scheduleSettings));
+
+  // حفظ الإعدادات في بيانات اليوم
+  const dateStr = document.getElementById('schedule-date').value;
+  const dayData = ScheduleData.getDayOrDefault(dateStr);
+  dayData.settings = JSON.parse(JSON.stringify(scheduleSettings));
+  ScheduleData.saveDay(dateStr);
 }
 
 function openSettings() {
@@ -1131,16 +1128,9 @@ function updateWorkProgress() {
   const allSegments = window._allSegments || [];
   const workSegs = allSegments.filter(s => s.type === 'work');
 
-  let savedPlan = null;
-  try {
-    const raw = localStorage.getItem('workPlannerData');
-    if (raw) {
-      const all = JSON.parse(raw);
-      const dateStr = document.getElementById('schedule-date').value;
-      savedPlan = all[dateStr];
-      if (Array.isArray(savedPlan)) savedPlan = { activities: savedPlan, disabledPeriods: [] };
-    }
-  } catch (e) {}
+  const dateStr = document.getElementById('schedule-date').value;
+  let savedPlan = ScheduleData.getDay(dateStr);
+  if (Array.isArray(savedPlan)) savedPlan = { activities: savedPlan, disabledPeriods: [] };
 
   const planActs = savedPlan ? savedPlan.activities || [] : [];
   const disabled = savedPlan ? savedPlan.disabledPeriods || [] : [];

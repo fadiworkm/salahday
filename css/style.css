@@ -1542,3 +1542,45 @@ footer .city-info {
 .fade-in {
   animation: fade-in-up 0.5s ease forwards;
 }
+
+/* ─── Page Navigation (shared) ─── */
+.page-nav {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.nav-link {
+  padding: 10px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.nav-link:hover {
+  background: var(--bg-card-hover);
+  color: var(--text-primary);
+}
+
+.nav-link.active {
+  background: rgba(124, 106, 239, 0.15);
+  border-color: rgba(124, 106, 239, 0.3);
+  color: var(--purple);
+}
+
+@media (max-width: 380px) {
+  .page-nav {
+    flex-wrap: wrap;
+  }
+  .nav-link {
+    padding: 7px 12px;
+    font-size: 0.78rem;
+  }
+}
