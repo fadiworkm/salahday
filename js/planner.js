@@ -221,7 +221,7 @@ function updatePlannerSummary() {
   periods.forEach(function (p) {
     if (isPeriodDisabled(p)) return;
     var pActs = activities.filter(function (a) { return a.start >= p.start && a.end <= p.end; });
-    var used = pActs.reduce(function (sum, a) { return sum + (a.end - a.start); }, 0);
+    var used = pActs.filter(function (a) { return a.name !== 'عمل'; }).reduce(function (sum, a) { return sum + (a.end - a.start); }, 0);
     totalFree += p.duration;
     totalUsed += used;
   });

@@ -752,7 +752,7 @@ function renderWorkBlocks(segments, prayerMins) {
     const disabledClass = disabled ? ' wt-block-unchecked' : '';
 
     const periodActs = planActivities.filter(a => a.start >= seg.start && a.end <= seg.end).sort((a, b) => a.start - b.start);
-    const usedTime = periodActs.reduce((sum, a) => sum + (a.end - a.start), 0);
+    const usedTime = periodActs.filter(a => a.name !== 'عمل').reduce((sum, a) => sum + (a.end - a.start), 0);
     const freeTime = seg.duration - usedTime;
 
     if (!disabled) totalAvail += freeTime;
@@ -777,10 +777,11 @@ function renderWorkBlocks(segments, prayerMins) {
 
     // شريط التقدم للفترة الحالية
     if (isCurrent && !disabled && freeTime > 0) {
-      // حساب الوقت المنقضي والمتبقي لهذه الفترة فقط
+      // حساب الوقت المنقضي والمتبقي لهذه الفترة فقط (أنشطة "عمل" تُعتبر وقت عمل)
+      const nonWorkActs = periodActs.filter(a => a.name !== 'عمل');
       let pGone = 0, pLeft = 0;
       let cursor2 = seg.start;
-      periodActs.forEach(act => {
+      nonWorkActs.forEach(act => {
         if (act.start > cursor2) {
           const fs = cursor2, fe = act.start;
           if (nowMin2 >= fe) pGone += fe - fs;
@@ -925,8 +926,7 @@ function renderWorkBlocks(segments, prayerMins) {
     allPeriods.forEach(seg => {
       const pKey = 'work:' + seg.start + '-' + seg.end;
       if (disabledPeriods.indexOf(pKey) !== -1) return;
-      const pActs = planActivities.filter(a => a.start >= seg.start && a.end <= seg.end);
-      const used = pActs.reduce((s, a) => s + (a.end - a.start), 0);
+      const pActs = planActivities.filter(a => a.start >= seg.start && a.end <= seg.end && a.name !== 'عمل');
       // حساب الوقت الحر الفعلي لهذه الفترة
       let cursor = seg.start;
       pActs.sort((a, b) => a.start - b.start).forEach(act => {
