@@ -351,6 +351,20 @@
   background: transparent;
 }
 
+/* ── Add box ── */
+.focus-pomo-box--add {
+  border-style: dashed;
+  border-color: rgba(255, 255, 255, 0.2);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.35);
+  cursor: pointer;
+}
+.focus-pomo-box--add:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+  color: rgba(255, 255, 255, 0.6);
+}
+
 @keyframes pomo-glow {
 
   0%,
@@ -634,6 +648,24 @@
 
 .focus-pomo-dialog-cancel:hover {
   background: rgba(255, 255, 255, 0.08);
+}
+
+.focus-pomo-dialog-delete {
+  width: 100%;
+  margin-top: 10px;
+  padding: 8px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255, 107, 107, 0.1);
+  color: #ff6b6b;
+  font-size: 0.75rem;
+  font-family: 'Cairo', 'Segoe UI', sans-serif;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.focus-pomo-dialog-delete:hover {
+  background: rgba(255, 107, 107, 0.2);
 }
 
 /* ─── 6. Controls ─── */

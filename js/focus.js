@@ -34,12 +34,38 @@ var FocusMode = {
   _audioCtx: null,
   _tickInterval: null,
 
-  _getPomoFocus: function () {
-    return (typeof scheduleSettings !== 'undefined' && scheduleSettings.pomoDuration
-      ? scheduleSettings.pomoDuration : 45) * 60;
+  _editingPomoIdx: null, // which box is being edited (null = adding new)
+
+  _getPomoKey: function () {
+    return this._actInfo ? 'pomo_' + this._actInfo.name : null;
   },
-  _getPomoCycle: function () {
-    return this._getPomoFocus() + 15 * 60; // focus + 15 min break
+
+  _getDefaultPomoDur: function () {
+    return (typeof scheduleSettings !== 'undefined' && scheduleSettings.pomoDuration
+      ? scheduleSettings.pomoDuration : 45);
+  },
+
+  // Get array of per-box durations in minutes, e.g. [50, 20, 45]
+  _getPomoList: function () {
+    var key = this._getPomoKey();
+    if (key) {
+      var raw = localStorage.getItem(key);
+      if (raw) {
+        try { var arr = JSON.parse(raw); if (Array.isArray(arr) && arr.length) return arr; } catch (e) {}
+      }
+    }
+    // Auto-generate from segment duration using default
+    var def = this._getDefaultPomoDur();
+    var totalMin = (this._segEnd - this._segStart);
+    var count = Math.max(1, Math.floor(totalMin / (def + 15)));
+    var list = [];
+    for (var i = 0; i < count; i++) list.push(def);
+    return list;
+  },
+
+  _savePomoList: function (list) {
+    var key = this._getPomoKey();
+    if (key) localStorage.setItem(key, JSON.stringify(list));
   },
 
   _getEls: function () {
@@ -86,7 +112,14 @@ var FocusMode = {
 
     // Initialize pomodoro tracking (set to current done count so celebration doesn't fire on open)
     var initFocus = existingSession ? existingSession.totalFocusSec : 0;
-    this._lastDonePomos = Math.floor(initFocus / this._getPomoFocus());
+    var initList = this._getPomoList();
+    var cum = 0;
+    this._lastDonePomos = 0;
+    for (var pi = 0; pi < initList.length; pi++) {
+      cum += initList[pi] * 60;
+      if (initFocus >= cum) this._lastDonePomos = pi + 1;
+      else break;
+    }
 
     // Create or resume session
     if (existingSession) {
@@ -349,9 +382,9 @@ var FocusMode = {
       : 0;
     var waveHeight = totalElapsed > 0 ? rawPct * this._waveMaxHeight : 0;
 
-    // Auto-pause when segment time is up
+    // Auto-close when segment time is up
     if (segRemaining <= 0) {
-      this.pause();
+      this.close();
       return;
     }
 
@@ -426,6 +459,10 @@ var FocusMode = {
       var segEndSec = sE * 60;
       var gone = Math.max(0, nowSec - segStartSec);
       var left = Math.max(0, segEndSec - nowSec);
+      // Auto-close when segment ends (even if paused)
+      if (left <= 0 && self._session) {
+        self.close();
+      }
       return { gone: gone, left: left };
     });
 
@@ -461,31 +498,46 @@ var FocusMode = {
     var els = this._getEls();
     if (!els.pomoBoxes) return;
 
-    var pomoFocus = this._getPomoFocus();
-    var pomoCycle = this._getPomoCycle();
-    var totalSegSec = (this._segEnd - this._segStart) * 60;
-    var totalPomos = Math.max(1, Math.floor(totalSegSec / pomoCycle));
-    var donePomos = Math.floor(focusSec / pomoFocus);
-    var inCurrent = focusSec - donePomos * pomoFocus;
-    var activePct = donePomos < totalPomos ? Math.min(100, (inCurrent / pomoFocus) * 100) : 0;
+    var list = this._getPomoList();
+    var totalPomos = list.length;
     var color = (this._actInfo && this._actInfo.color) || '#f39c12';
+
+    // Find which box is active based on cumulative durations
+    var cumulative = 0;
+    var donePomos = 0;
+    var inCurrent = 0;
+    var activeDur = list[0] * 60;
+    for (var p = 0; p < totalPomos; p++) {
+      var boxSec = list[p] * 60;
+      if (focusSec >= cumulative + boxSec) {
+        cumulative += boxSec;
+        donePomos = p + 1;
+      } else {
+        inCurrent = focusSec - cumulative;
+        activeDur = boxSec;
+        break;
+      }
+    }
+    var activePct = donePomos < totalPomos ? Math.min(100, (inCurrent / activeDur) * 100) : 0;
 
     var html = '';
     for (var i = 0; i < totalPomos; i++) {
-      var num = '<span class="focus-pomo-num">' + (i + 1) + '</span>';
+      var num = '<span class="focus-pomo-num">' + list[i] + '</span>';
       if (i < donePomos) {
-        html += '<div class="focus-pomo-box focus-pomo-box--done" onclick="FocusMode._openPomoDialog()">' + num + '</div>';
+        html += '<div class="focus-pomo-box focus-pomo-box--done" onclick="FocusMode._openPomoDialog(' + i + ')">' + num + '</div>';
       } else if (i === donePomos) {
-        html += '<div class="focus-pomo-box focus-pomo-box--active" style="--pomo-color:' + color + '" onclick="FocusMode._openPomoDialog()">'
+        html += '<div class="focus-pomo-box focus-pomo-box--active" style="--pomo-color:' + color + '" onclick="FocusMode._openPomoDialog(' + i + ')">'
           + '<div class="focus-pomo-fill" style="height:' + activePct + '%;--pomo-color:' + color + '"></div>' + num + '</div>';
       } else {
-        html += '<div class="focus-pomo-box focus-pomo-box--pending" onclick="FocusMode._openPomoDialog()">' + num + '</div>';
+        html += '<div class="focus-pomo-box focus-pomo-box--pending" onclick="FocusMode._openPomoDialog(' + i + ')">' + num + '</div>';
       }
     }
+    // Add "+" button
+    html += '<div class="focus-pomo-box focus-pomo-box--add" onclick="FocusMode._openPomoDialog(null)">+</div>';
     els.pomoBoxes.innerHTML = html;
 
     // Update pomo countdown card
-    var remainSec = donePomos < totalPomos ? Math.max(0, pomoFocus - inCurrent) : 0;
+    var remainSec = donePomos < totalPomos ? Math.max(0, activeDur - inCurrent) : 0;
     var rm = Math.floor(remainSec / 60);
     var rs = Math.floor(remainSec % 60);
     var countdown = (rm < 10 ? '0' : '') + rm + ':' + (rs < 10 ? '0' : '') + rs;
@@ -493,7 +545,7 @@ var FocusMode = {
     var countdownLabel = document.getElementById('focus-pomo-countdown-label');
     var countdownFill = document.getElementById('focus-pomo-countdown-fill');
     if (countdownVal) countdownVal.textContent = countdown;
-    if (countdownLabel) countdownLabel.textContent = '🍅 ' + (donePomos + 1) + ' / ' + totalPomos;
+    if (countdownLabel) countdownLabel.textContent = '🍅 ' + donePomos + ' / ' + totalPomos;
     if (countdownFill) {
       countdownFill.style.height = activePct + '%';
       countdownFill.style.background = 'linear-gradient(to top, ' + color + ', ' + color + '60)';
@@ -509,12 +561,26 @@ var FocusMode = {
   /**
    * Open the pomodoro duration dialog.
    */
-  _openPomoDialog: function () {
-    var current = typeof scheduleSettings !== 'undefined' ? scheduleSettings.pomoDuration : 45;
+  _openPomoDialog: function (idx) {
+    // idx = box index to edit, null = add new
+    this._editingPomoIdx = idx;
+    var list = this._getPomoList();
+    var current = (idx !== null && idx < list.length) ? list[idx] : this._getDefaultPomoDur();
     this._pomoDialogValue = current;
+
     var valEl = document.getElementById('focus-pomo-dialog-value');
     if (valEl) valEl.textContent = current;
-    // Highlight matching preset
+
+    var titleEl = document.querySelector('.focus-pomo-dialog-title');
+    var delBtn = document.getElementById('focus-pomo-delete');
+    if (idx !== null) {
+      if (titleEl) titleEl.textContent = 'بومودورو ' + (idx + 1);
+      if (delBtn) delBtn.style.display = '';
+    } else {
+      if (titleEl) titleEl.textContent = 'إضافة بومودورو';
+      if (delBtn) delBtn.style.display = 'none';
+    }
+
     document.querySelectorAll('.focus-pomo-preset').forEach(function (btn) {
       btn.classList.toggle('active', parseInt(btn.dataset.val) === current);
     });
@@ -523,24 +589,49 @@ var FocusMode = {
 
   _closePomoDialog: function () {
     document.getElementById('focus-pomo-dialog').classList.remove('active');
+    this._editingPomoIdx = null;
   },
 
   _savePomoDialog: function () {
     var val = this._pomoDialogValue;
-    if (val < 10) val = 10;
-    if (val > 90) val = 90;
-    scheduleSettings.pomoDuration = val;
-    // Persist to day settings
-    var dateStr = this._date || document.getElementById('schedule-date').value;
-    var dayData = ScheduleData.getDayOrDefault(dateStr);
-    dayData.settings = JSON.parse(JSON.stringify(scheduleSettings));
-    ScheduleData.saveDay(dateStr);
-    // Update settings UI input if visible
-    var inp = document.getElementById('pomo-duration-schedule');
-    if (inp) inp.value = val;
-    // Reset pomodoro tracking for new duration
+    if (val < 5) val = 5;
+    if (val > 120) val = 120;
+
+    var list = this._getPomoList();
+    if (this._editingPomoIdx !== null && this._editingPomoIdx < list.length) {
+      list[this._editingPomoIdx] = val;
+    } else {
+      list.push(val);
+    }
+    this._savePomoList(list);
+
+    // Reset celebration tracking
     var focusSec = this._session ? this._session.totalFocusSec : 0;
-    this._lastDonePomos = Math.floor(focusSec / this._getPomoFocus());
+    var cum = 0;
+    this._lastDonePomos = 0;
+    for (var i = 0; i < list.length; i++) {
+      cum += list[i] * 60;
+      if (focusSec >= cum) this._lastDonePomos = i + 1;
+      else break;
+    }
+    this._closePomoDialog();
+  },
+
+  _deletePomoBox: function () {
+    if (this._editingPomoIdx === null) return;
+    var list = this._getPomoList();
+    if (list.length <= 1) return; // keep at least one
+    list.splice(this._editingPomoIdx, 1);
+    this._savePomoList(list);
+
+    var focusSec = this._session ? this._session.totalFocusSec : 0;
+    var cum = 0;
+    this._lastDonePomos = 0;
+    for (var i = 0; i < list.length; i++) {
+      cum += list[i] * 60;
+      if (focusSec >= cum) this._lastDonePomos = i + 1;
+      else break;
+    }
     this._closePomoDialog();
   },
 
@@ -1215,6 +1306,10 @@ document.getElementById('focus-pomo-save').addEventListener('click', function ()
 
 document.getElementById('focus-pomo-cancel').addEventListener('click', function () {
   FocusMode._closePomoDialog();
+});
+
+document.getElementById('focus-pomo-delete').addEventListener('click', function () {
+  FocusMode._deletePomoBox();
 });
 
 document.getElementById('focus-pomo-dialog').addEventListener('click', function (e) {
