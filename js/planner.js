@@ -443,14 +443,6 @@ function showActivityForm(pIdx) {
   document.getElementById('af-custom-name').value = '';
   document.getElementById('af-note').value = '';
 
-  // "Start from now" checkbox — show only when adding, and current time is within this period
-  var nowChk = document.getElementById('af-start-now');
-  var nowWrap = document.getElementById('af-now-check-wrap');
-  var nowMin = _getNowMin();
-  var canStartNow = nowMin >= period.start && nowMin < period.end && nowMin >= smartStart;
-  nowWrap.style.display = canStartNow ? '' : 'none';
-  nowChk.checked = false;
-
   var maxEnd = getMaxEndForStart(pIdx, smartStart);
   var maxDur = Math.max(5, maxEnd - smartStart);
   var defaultDur = maxDur;
@@ -511,10 +503,6 @@ function editActivity(pIdx, globalIdx) {
   currentFormWorkIndex = pIdx;
   editingActivityIndex = globalIdx;
 
-  // Hide "start from now" checkbox when editing
-  document.getElementById('af-now-check-wrap').style.display = 'none';
-  document.getElementById('af-start-now').checked = false;
-
   document.getElementById('af-start-time').value = minutesToTimeStr(act.start);
   document.getElementById('af-end-time').value = minutesToTimeStr(act.end);
   document.getElementById('af-custom-name').value = act.name;
@@ -542,7 +530,6 @@ function editActivity(pIdx, globalIdx) {
 function closeActivityForm() {
   document.getElementById('activity-form-overlay').classList.remove('active');
   document.getElementById('af-start-time').disabled = false;
-  document.getElementById('af-start-now').checked = false;
   currentFormWorkIndex = null;
   editingActivityIndex = null;
 }
@@ -564,11 +551,6 @@ function addActivity() {
 
   var sParts = document.getElementById('af-start-time').value.split(':').map(Number);
   var startMin = sParts[0] * 60 + sParts[1];
-
-  // If "start from now" is checked, override start with current time
-  if (document.getElementById('af-start-now').checked && editingActivityIndex === null) {
-    startMin = _getNowMin();
-  }
 
   var eParts = document.getElementById('af-end-time').value.split(':').map(Number);
   var endMin = eParts[0] * 60 + eParts[1];
@@ -723,18 +705,47 @@ document.addEventListener('DOMContentLoaded', async function () {
   document.getElementById('af-start-time').addEventListener('change', syncFromStartTime);
   document.getElementById('af-end-time').addEventListener('change', syncFromEndTime);
 
-  // "البدء من الوقت الحالي" checkbox
-  document.getElementById('af-start-now').addEventListener('change', function () {
-    if (this.checked) {
-      var nowMin = _getNowMin();
-      document.getElementById('af-start-time').value = minutesToTimeStr(nowMin);
-      document.getElementById('af-start-time').disabled = true;
-    } else {
-      document.getElementById('af-start-time').disabled = false;
-      var smartStart = getSmartStartTime(currentFormWorkIndex);
-      document.getElementById('af-start-time').value = minutesToTimeStr(smartStart);
+  // زر "ابدأ الآن": تعيين وقت البدء للوقت الحالي وإزاحة النشاط السابق
+  document.getElementById('af-start-now-btn').addEventListener('click', function () {
+    if (currentFormWorkIndex === null) return;
+    var periods = getPlannerPeriods();
+    var period = periods[currentFormWorkIndex];
+    if (!period) return;
+
+    var nowMin = _getNowMin();
+    if (nowMin < period.start) nowMin = period.start;
+    if (nowMin >= period.end) return;
+
+    // إزاحة النشاط السابق إن وُجد (تقليص نهايته إلى الآن)
+    var activities = getDayActivities();
+    var periodActs = activities.filter(function (a) {
+      return a.start >= period.start && a.end <= period.end;
+    });
+    periodActs.forEach(function (a) {
+      if (editingActivityIndex !== null && activities.indexOf(a) === editingActivityIndex) return;
+      if (a.start < nowMin && a.end > nowMin) {
+        a.end = nowMin;
+      }
+    });
+
+    // حساب نهاية النشاط: بداية النشاط التالي أو نهاية الفترة
+    var endMin = period.end;
+    periodActs.sort(function (a, b) { return a.start - b.start; });
+    for (var i = 0; i < periodActs.length; i++) {
+      if (editingActivityIndex !== null && activities.indexOf(periodActs[i]) === editingActivityIndex) continue;
+      if (periodActs[i].start >= nowMin) {
+        endMin = periodActs[i].start;
+        break;
+      }
     }
-    syncFromStartTime();
+
+    document.getElementById('af-start-time').value = minutesToTimeStr(nowMin);
+    var dur = endMin - nowMin;
+    var slider = document.getElementById('af-duration');
+    slider.max = dur;
+    slider.value = dur;
+    document.getElementById('af-duration-value').textContent = dur;
+    document.getElementById('af-end-time').value = minutesToTimeStr(endMin);
   });
 
   // عرض الأنشطة المسبقة

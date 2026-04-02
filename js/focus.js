@@ -125,11 +125,13 @@ var FocusMode = {
     els.overlay.classList.add('active');
     document.body.style.overflow = 'hidden';
 
-    // Calculate wave bounds after layout is ready
+    // Calculate wave bounds after layout is ready (and on resize)
     var self = this;
     requestAnimationFrame(function () {
       self._calcWaveBounds();
     });
+    this._onResize = function () { self._calcWaveBounds(); };
+    window.addEventListener('resize', this._onResize);
 
     // Behaviour depends on whether we are resuming or starting fresh
     if (existingSession) {
@@ -206,6 +208,12 @@ var FocusMode = {
     // If running, pause first (saves the current period)
     if (this._running) {
       this.pause();
+    }
+
+    // Remove resize listener
+    if (this._onResize) {
+      window.removeEventListener('resize', this._onResize);
+      this._onResize = null;
     }
 
     // Hide overlay

@@ -474,22 +474,23 @@
 .af-field-half { flex: 1; }
 .af-field-half .af-input { margin-bottom: 0; }
 
-.af-now-check {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.78rem;
-  color: var(--text-secondary);
-  cursor: pointer;
+.btn-start-now {
+  display: block;
+  width: 100%;
+  padding: 8px 0;
   margin-bottom: 10px;
-  padding: 4px 0;
-}
-
-.af-now-check input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  accent-color: #7c6aef;
+  background: rgba(76, 205, 196, 0.12);
+  color: #4ecdc4;
+  border: 1px solid rgba(76, 205, 196, 0.3);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
   cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.btn-start-now:hover {
+  background: rgba(76, 205, 196, 0.22);
+  border-color: rgba(76, 205, 196, 0.5);
 }
 
 .af-field { margin-bottom: 14px; }

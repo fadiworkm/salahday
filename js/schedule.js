@@ -500,13 +500,19 @@ function renderPentagon(prayerMins) {
     // تسميات المدة على المنتصف
     const mx = (v1.x + v2.x) / 2;
     const my = (v1.y + v2.y) / 2;
-    const angle = Math.atan2(my - cy, mx - cx);
-    const lx = mx + 20 * Math.cos(angle);
-    const ly = my + 20 * Math.sin(angle);
+    const outAngle = Math.atan2(my - cy, mx - cx);
+    const lx = mx + 20 * Math.cos(outAngle);
+    const ly = my + 20 * Math.sin(outAngle);
+
+    // زاوية الضلع لمحاذاة النص
+    let edgeDeg = Math.atan2(v2.y - v1.y, v2.x - v1.x) * 180 / Math.PI;
+    // keep text upright: flip if upside-down
+    if (edgeDeg > 90) edgeDeg -= 180;
+    if (edgeDeg < -90) edgeDeg += 180;
 
     // عرض وقت العمل المتاح فقط
     if (e.workTime > 0) {
-      svg += `<text x="${lx}" y="${ly}" class="pent-duration pent-work-dur" text-anchor="middle" dominant-baseline="middle">${formatDuration(e.workTime)}</text>`;
+      svg += `<text x="${lx}" y="${ly}" class="pent-duration pent-work-dur" text-anchor="middle" dominant-baseline="middle" transform="rotate(${edgeDeg}, ${lx}, ${ly})">${formatDuration(e.workTime)}</text>`;
     }
   }
 
