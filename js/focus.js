@@ -45,22 +45,22 @@ var FocusMode = {
   _getEls: function () {
     if (this._els) return this._els;
     this._els = {
-      overlay:      document.getElementById('focus-overlay'),
-      icon:         document.getElementById('focus-icon'),
-      actName:      document.getElementById('focus-act-name'),
+      overlay: document.getElementById('focus-overlay'),
+      icon: document.getElementById('focus-icon'),
+      actName: document.getElementById('focus-act-name'),
       elapsedTimer: document.getElementById('focus-elapsed-timer'),
       segRemaining: document.getElementById('focus-seg-remaining'),
-      segGone:      document.getElementById('focus-seg-gone'),
-      segRange:     document.getElementById('focus-seg-range'),
-      totalTime:    document.getElementById('focus-total-time'),
-      btnPause:     document.getElementById('focus-btn-pause'),
-      pauseIcon:    document.querySelector('#focus-btn-pause .focus-pause-icon'),
-      wave:         document.getElementById('focus-wave'),
-      timerLabel:   document.querySelector('.focus-timer-label'),
-      deleteBtn:    document.getElementById('focus-delete-btn'),
-      note:         document.getElementById('focus-note'),
-      pomoBoxes:    document.getElementById('focus-pomo-boxes'),
-      celebrate:    document.getElementById('focus-celebrate')
+      segGone: document.getElementById('focus-seg-gone'),
+      segRange: document.getElementById('focus-seg-range'),
+      totalTime: document.getElementById('focus-total-time'),
+      btnPause: document.getElementById('focus-btn-pause'),
+      pauseIcon: document.querySelector('#focus-btn-pause .focus-pause-icon'),
+      wave: document.getElementById('focus-wave'),
+      timerLabel: document.querySelector('.focus-timer-label'),
+      deleteBtn: document.getElementById('focus-delete-btn'),
+      note: document.getElementById('focus-note'),
+      pomoBoxes: document.getElementById('focus-pomo-boxes'),
+      celebrate: document.getElementById('focus-celebrate')
     };
     return this._els;
   },
@@ -476,7 +476,7 @@ var FocusMode = {
         html += '<div class="focus-pomo-box focus-pomo-box--done" onclick="FocusMode._openPomoDialog()">' + num + '</div>';
       } else if (i === donePomos) {
         html += '<div class="focus-pomo-box focus-pomo-box--active" style="--pomo-color:' + color + '" onclick="FocusMode._openPomoDialog()">'
-              + '<div class="focus-pomo-fill" style="height:' + activePct + '%;--pomo-color:' + color + '"></div>' + num + '</div>';
+          + '<div class="focus-pomo-fill" style="height:' + activePct + '%;--pomo-color:' + color + '"></div>' + num + '</div>';
       } else {
         html += '<div class="focus-pomo-box focus-pomo-box--pending" onclick="FocusMode._openPomoDialog()">' + num + '</div>';
       }
@@ -560,11 +560,11 @@ var FocusMode = {
       var delay = Math.random() * 0.8;
       var size = 1.2 + Math.random() * 1.2;
       html += '<span class="focus-celebrate-particle" style="'
-            + 'left:' + left + '%;'
-            + 'font-size:' + size + 'rem;'
-            + 'animation-duration:' + dur + 's;'
-            + 'animation-delay:' + delay + 's;'
-            + '">' + emoji + '</span>';
+        + 'left:' + left + '%;'
+        + 'font-size:' + size + 'rem;'
+        + 'animation-duration:' + dur + 's;'
+        + 'animation-delay:' + delay + 's;'
+        + '">' + emoji + '</span>';
     }
     els.celebrate.innerHTML = html;
     els.celebrate.classList.add('active');
@@ -623,7 +623,55 @@ var FocusMode = {
     src.start(t);
   },
 
+  _nudgeMessages: [
+    ['😤', 'ارجع للشغل!'],
+    ['🫵', 'أنت! نعم أنت!'],
+    ['💀', 'الوقت يضيع...'],
+    ['🏃', 'يلا يلا يلا!'],
+    ['😴', 'نايم؟!'],
+    ['👀', 'شو عم تعمل؟'],
+    ['🔥', 'حماسك وين راح؟'],
+    ['😡', 'كفى كسل!'],
+    ['🐌', 'أسرع من هيك!'],
+    ['⏰', 'تيك توك تيك توك'],
+    ['💪', 'قوم اشتغل!'],
+    ['🧠', 'دماغك بيصدي!'],
+    ['☕', 'خلصت القهوة؟ يلا!'],
+    ['🚀', 'أطلق نفسك!'],
+    ['💸', 'الفقر عم يناديك!'],
+    ['📱', 'التيك توك ما بيطعمي خبز!'],
+    ['🧟', 'صرت تشبه الزومبي، تحرك!'],
+    ['📉', 'رصيدك بالبنك عم يبكي بالزاوية!'],
+    ['🚶‍♂️', 'حتى السلحفاة سبقتك!'],
+    ['🤡', 'شكلك وأنت مأجل الشغل بضحّك!'],
+    ['🧗', 'القمة بدها تعب، مو سدحة!'],
+    ['🪑', 'الكرسي مَلّ منك، قوم انجز!'],
+    ['🍟', 'بدك تاكل؟ اشتغل أول!'],
+    ['👑', 'المجد ما بيجي وأنت نايم!'],
+    ['🧼', 'قوم غسل وجهك وصحصح!'],
+    ['🦁', 'خليك أسد وانقضّ على المهام!'],
+    ['🛰️', 'ناسا عم تنتظرك.. أو يمكن لا!'],
+    ['🍕', 'البيتزا بدها فلوس، والفلوس بدها شغل!'],
+    ['🌪️', 'خليك إعصار، لا تكن غبار!'],
+    ['🥊', 'اضرب الكسل بالضربة القاضية!'],
+    ['🎯', 'الهدف عم يهرب منك، الحقه!'],
+    ['🧛', 'الوقت عم يمص دمك، انتبه!'],
+    ['🏋️', 'شغل عضلات مخك شوي!'],
+    ['🏁', 'الكل وصل للنهاية وأنت لسه عم تسخن!'],
+  ],
+  _lastNudgeIdx: -1,
+
   _playNudge: function () {
+    // Pick a random message (avoid repeating the last one)
+    var idx;
+    do {
+      idx = Math.floor(Math.random() * this._nudgeMessages.length);
+    } while (idx === this._lastNudgeIdx && this._nudgeMessages.length > 1);
+    this._lastNudgeIdx = idx;
+    var msg = this._nudgeMessages[idx];
+
+    this._showNudgeAnimation(msg[0], msg[1]);
+
     if (this._muted) return;
     var ctx = this._ensureAudioCtx();
     var t = ctx.currentTime;
@@ -641,6 +689,39 @@ var FocusMode = {
       osc.start(t + i * 0.15);
       osc.stop(t + i * 0.15 + 0.18);
     });
+  },
+
+  _showNudgeAnimation: function (emoji, text) {
+    var els = this._getEls();
+    if (!els.celebrate) return;
+
+    var html = '<div class="focus-nudge-msg">'
+      + '<span class="focus-nudge-emoji">' + emoji + '</span>'
+      + '<span class="focus-nudge-text">' + text + '</span>'
+      + '</div>';
+    els.celebrate.innerHTML = html;
+    els.celebrate.classList.add('active', 'nudge-active');
+    els.celebrate.style.pointerEvents = 'auto';
+    els.celebrate.style.cursor = 'pointer';
+
+    var self = this;
+    var nudgeTimeout = setTimeout(function () {
+      els.celebrate.classList.remove('active', 'nudge-active');
+      els.celebrate.style.pointerEvents = '';
+      els.celebrate.style.cursor = '';
+      els.celebrate.innerHTML = '';
+      els.celebrate.onclick = null;
+    }, 8000);
+
+    els.celebrate.onclick = function () {
+      clearTimeout(nudgeTimeout);
+      els.celebrate.classList.remove('active', 'nudge-active');
+      els.celebrate.style.pointerEvents = '';
+      els.celebrate.style.cursor = '';
+      els.celebrate.innerHTML = '';
+      els.celebrate.onclick = null;
+      self.start();
+    };
   },
 
   _playPause: function () {
@@ -699,13 +780,13 @@ var FocusMode = {
       this._tickInterval = null;
     }
   },
-
+  // While stopped
   _startNudge: function () {
     this._stopNudge();
     var self = this;
     this._nudgeInterval = setInterval(function () {
       if (self._paused && !self._muted) self._playNudge();
-    }, 5000);
+    }, 30000);
   },
 
   _stopNudge: function () {
