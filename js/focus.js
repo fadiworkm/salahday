@@ -570,10 +570,79 @@ var FocusMode = {
     els.celebrate.innerHTML = html;
     els.celebrate.classList.add('active');
 
+    // Play celebration fanfare
+    this._playCelebration();
+
     setTimeout(function () {
       els.celebrate.classList.remove('active');
       els.celebrate.innerHTML = '';
     }, 4000);
+  },
+
+  _playCelebration: function () {
+    if (this._muted) return;
+    var ctx = this._ensureAudioCtx();
+    var t = ctx.currentTime;
+
+    // ── Fanfare melody: rising triumphant notes ──
+    var melody = [
+      { f: 523, t: 0,    d: 0.15 },  // C5
+      { f: 659, t: 0.12, d: 0.15 },  // E5
+      { f: 784, t: 0.24, d: 0.15 },  // G5
+      { f: 1047,t: 0.36, d: 0.4  },  // C6 (hold)
+      { f: 784, t: 0.7,  d: 0.12 },  // G5
+      { f: 1047,t: 0.82, d: 0.5  },  // C6 (final hold)
+    ];
+
+    melody.forEach(function (n) {
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(n.f, t + n.t);
+      gain.gain.setValueAtTime(0.15, t + n.t);
+      gain.gain.setValueAtTime(0.15, t + n.t + n.d * 0.7);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + n.t + n.d);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t + n.t);
+      osc.stop(t + n.t + n.d + 0.05);
+    });
+
+    // ── Sparkle layer: high shimmering notes ──
+    var sparkles = [
+      { f: 2093, t: 0.4,  d: 0.2 },
+      { f: 2637, t: 0.6,  d: 0.2 },
+      { f: 3136, t: 0.8,  d: 0.15 },
+      { f: 2093, t: 1.0,  d: 0.15 },
+      { f: 2637, t: 1.15, d: 0.15 },
+      { f: 3520, t: 1.3,  d: 0.3 },
+    ];
+
+    sparkles.forEach(function (n) {
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(n.f, t + n.t);
+      gain.gain.setValueAtTime(0.06, t + n.t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + n.t + n.d);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t + n.t);
+      osc.stop(t + n.t + n.d + 0.05);
+    });
+
+    // ── Bass boom ──
+    var bass = ctx.createOscillator();
+    var bassGain = ctx.createGain();
+    bass.type = 'sine';
+    bass.frequency.setValueAtTime(130, t + 0.35);
+    bass.frequency.exponentialRampToValueAtTime(65, t + 0.9);
+    bassGain.gain.setValueAtTime(0.2, t + 0.35);
+    bassGain.gain.exponentialRampToValueAtTime(0.001, t + 1.2);
+    bass.connect(bassGain);
+    bassGain.connect(ctx.destination);
+    bass.start(t + 0.35);
+    bass.stop(t + 1.3);
   },
 
   // ── Sound System (Web Audio API) ──────────────────────────────────────
