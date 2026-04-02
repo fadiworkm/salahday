@@ -465,6 +465,21 @@ var FocusMode = {
     }
     els.pomoBoxes.innerHTML = html;
 
+    // Update pomo countdown card
+    var remainSec = donePomos < totalPomos ? Math.max(0, pomoFocus - inCurrent) : 0;
+    var rm = Math.floor(remainSec / 60);
+    var rs = Math.floor(remainSec % 60);
+    var countdown = (rm < 10 ? '0' : '') + rm + ':' + (rs < 10 ? '0' : '') + rs;
+    var countdownVal = document.getElementById('focus-pomo-countdown-value');
+    var countdownLabel = document.getElementById('focus-pomo-countdown-label');
+    var countdownFill = document.getElementById('focus-pomo-countdown-fill');
+    if (countdownVal) countdownVal.textContent = countdown;
+    if (countdownLabel) countdownLabel.textContent = '🍅 ' + (donePomos + 1) + ' / ' + totalPomos;
+    if (countdownFill) {
+      countdownFill.style.height = activePct + '%';
+      countdownFill.style.background = 'linear-gradient(to top, ' + color + ', ' + color + '60)';
+    }
+
     // Celebrate when a new pomodoro completes
     if (donePomos > this._lastDonePomos && this._lastDonePomos >= 0) {
       this._celebrate();
