@@ -29,6 +29,10 @@ var FocusMode = {
   _waveBottom: 0,       // px from overlay bottom to timer-label bottom
   _waveMaxHeight: 0,    // px from timer-label bottom to overlay top
 
+  POMO_FOCUS: 45 * 60,   // 45 min focus in seconds
+  POMO_CYCLE: 60 * 60,   // 60 min total cycle
+  _lastDonePomos: 0,     // track completed pomos for celebration trigger
+
   _getEls: function () {
     if (this._els) return this._els;
     this._els = {
@@ -45,7 +49,9 @@ var FocusMode = {
       wave:         document.getElementById('focus-wave'),
       timerLabel:   document.querySelector('.focus-timer-label'),
       deleteBtn:    document.getElementById('focus-delete-btn'),
-      note:         document.getElementById('focus-note')
+      note:         document.getElementById('focus-note'),
+      pomoBoxes:    document.getElementById('focus-pomo-boxes'),
+      celebrate:    document.getElementById('focus-celebrate')
     };
     return this._els;
   },
@@ -68,6 +74,10 @@ var FocusMode = {
     this._segStart = segStart;
     this._segEnd = segEnd;
     this._actInfo = actInfo;
+
+    // Initialize pomodoro tracking (set to current done count so celebration doesn't fire on open)
+    var initFocus = existingSession ? existingSession.totalFocusSec : 0;
+    this._lastDonePomos = Math.floor(initFocus / this.POMO_FOCUS);
 
     // Create or resume session
     if (existingSession) {
@@ -366,6 +376,9 @@ var FocusMode = {
     els.segGone.textContent = LiveTimer.format(segGone);
     els.totalTime.textContent = LiveTimer.format(totalElapsed);
 
+    // Pomodoro boxes
+    this._updatePomodoro(totalElapsed);
+
     if (els.wave) {
       els.wave.style.setProperty('--wave-bottom', this._waveBottom + 'px');
       els.wave.style.setProperty('--wave-height', waveHeight + 'px');
@@ -408,8 +421,79 @@ var FocusMode = {
       var waveHeight = Math.max(minH, rawPct * self._waveMaxHeight);
       if (els.wave) els.wave.style.setProperty('--wave-height', waveHeight + 'px');
 
+      // Update pomodoro boxes
+      self._updatePomodoro(total);
+
       return { gone: total, left: Math.max(0, (sE - sS) * 60 - total) };
     });
+  },
+
+  /**
+   * Render pomodoro progress boxes.
+   * @param {number} focusSec — total focus seconds accumulated
+   */
+  _updatePomodoro: function (focusSec) {
+    var els = this._getEls();
+    if (!els.pomoBoxes) return;
+
+    var totalSegSec = (this._segEnd - this._segStart) * 60;
+    var totalPomos = Math.max(1, Math.floor(totalSegSec / this.POMO_CYCLE));
+    var donePomos = Math.floor(focusSec / this.POMO_FOCUS);
+    var inCurrent = focusSec - donePomos * this.POMO_FOCUS;
+    var activePct = donePomos < totalPomos ? Math.min(100, (inCurrent / this.POMO_FOCUS) * 100) : 0;
+    var color = (this._actInfo && this._actInfo.color) || '#f39c12';
+
+    var html = '';
+    for (var i = 0; i < totalPomos; i++) {
+      var num = '<span class="focus-pomo-num">' + (i + 1) + '</span>';
+      if (i < donePomos) {
+        html += '<div class="focus-pomo-box focus-pomo-box--done">' + num + '</div>';
+      } else if (i === donePomos) {
+        html += '<div class="focus-pomo-box focus-pomo-box--active" style="--pomo-color:' + color + '">'
+              + '<div class="focus-pomo-fill" style="height:' + activePct + '%;--pomo-color:' + color + '"></div>' + num + '</div>';
+      } else {
+        html += '<div class="focus-pomo-box focus-pomo-box--pending">' + num + '</div>';
+      }
+    }
+    els.pomoBoxes.innerHTML = html;
+
+    // Celebrate when a new pomodoro completes
+    if (donePomos > this._lastDonePomos && this._lastDonePomos >= 0) {
+      this._celebrate();
+    }
+    this._lastDonePomos = donePomos;
+  },
+
+  /**
+   * Fire a celebration burst of stars and emoji particles.
+   */
+  _celebrate: function () {
+    var els = this._getEls();
+    if (!els.celebrate) return;
+
+    var emojis = ['🌟', '⭐', '✨', '🎉', '🥳', '💪', '🔥', '👏', '💫', '🏆'];
+    var count = 30;
+    var html = '';
+    for (var i = 0; i < count; i++) {
+      var emoji = emojis[Math.floor(Math.random() * emojis.length)];
+      var left = Math.random() * 100;
+      var dur = 1.5 + Math.random() * 2;
+      var delay = Math.random() * 0.8;
+      var size = 1.2 + Math.random() * 1.2;
+      html += '<span class="focus-celebrate-particle" style="'
+            + 'left:' + left + '%;'
+            + 'font-size:' + size + 'rem;'
+            + 'animation-duration:' + dur + 's;'
+            + 'animation-delay:' + delay + 's;'
+            + '">' + emoji + '</span>';
+    }
+    els.celebrate.innerHTML = html;
+    els.celebrate.classList.add('active');
+
+    setTimeout(function () {
+      els.celebrate.classList.remove('active');
+      els.celebrate.innerHTML = '';
+    }, 4000);
   },
 
   /**

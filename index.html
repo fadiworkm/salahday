@@ -393,23 +393,22 @@
   <div class="focus-overlay" id="focus-overlay">
     <div class="focus-screen" id="focus-screen">
       <div class="focus-header">
-        <div class="focus-activity">
-          <span class="focus-icon" id="focus-icon"></span>
-          <span class="focus-act-name" id="focus-act-name"></span>
-          <span class="focus-note" id="focus-note"></span>
+        <div class="focus-header-top">
+          <div class="focus-pomo-boxes" id="focus-pomo-boxes"></div>
+          <div class="focus-activity">
+            <span class="focus-icon" id="focus-icon"></span>
+            <span class="focus-act-name" id="focus-act-name"></span>
+          </div>
+          <button class="focus-close" id="focus-close">&times;</button>
         </div>
-        <button class="focus-close" id="focus-close">&times;</button>
+        <div class="focus-note" id="focus-note"></div>
       </div>
       <div class="focus-timer-area">
         <div class="focus-elapsed-timer" id="focus-elapsed-timer">0:00:00</div>
         <div class="focus-timer-label">وقت التركيز</div>
       </div>
       <div class="focus-activity-info">
-        <div class="focus-stat-card focus-stat-card--wide">
-          <div class="focus-stat-value" id="focus-seg-range"></div>
-          <div class="focus-stat-label">الفترة</div>
-        </div>
-        <div class="focus-stat-card">
+            <div class="focus-stat-card">
           <div class="focus-stat-value" id="focus-seg-remaining">0:00:00</div>
           <div class="focus-stat-label">المتبقي من الفترة</div>
         </div>
@@ -418,10 +417,16 @@
           <div class="focus-stat-label">مضى من الفترة</div>
         </div>
         <div class="focus-stat-card focus-stat-card--wide">
+          <div class="focus-stat-value" id="focus-seg-range"></div>
+          <div class="focus-stat-label">الفترة</div>
+        </div>
+    
+        <div class="focus-stat-card focus-stat-card--wide">
           <div class="focus-stat-value" id="focus-total-time">0:00:00</div>
           <div class="focus-stat-label">وقت التركيز الكلي</div>
         </div>
       </div>
+      <div class="focus-celebrate" id="focus-celebrate"></div>
       <div class="focus-controls">
         <button class="focus-btn-pause" id="focus-btn-pause">
           <span class="focus-pause-icon" id="focus-pause-icon">&#9646;&#9646;</span>
