@@ -201,8 +201,8 @@
 .focus-activity-info {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
-  gap: 12px;
-  padding: 16px 24px;
+  gap: 10px;
+  padding: 12px 20px;
   position: relative;
   z-index: 2;
 }
@@ -219,6 +219,14 @@
   grid-column: 1 / -1;
 }
 
+.focus-stat-card--half {
+  grid-column: 1 / 2;
+}
+
+.focus-stat-card--half-end {
+  grid-column: 2 / -1;
+}
+
 
 .focus-stat-value {
   font-size: 1.2rem;
@@ -233,6 +241,10 @@
 
 #focus-seg-remaining {
   color: #2ecc71;
+}
+
+#focus-pct {
+  color: #7c6aef;
 }
 
 .focus-stat-label {
@@ -263,6 +275,11 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  z-index: 5;
+}
+
+.focus-pomo-box * {
+  pointer-events: none;
 }
 
 .focus-pomo-num {
@@ -272,6 +289,7 @@
   font-weight: 700;
   line-height: 1;
   font-variant-numeric: tabular-nums;
+  pointer-events: none;
 }
 
 .focus-pomo-box--done .focus-pomo-num {
@@ -343,6 +361,7 @@
   right: 0;
   background: linear-gradient(to top, var(--pomo-color, #f39c12), color-mix(in srgb, var(--pomo-color, #f39c12) 70%, #fff));
   transition: height 1s linear;
+  pointer-events: none;
 }
 
 /* ── Pending ── */

@@ -425,7 +425,7 @@
           <div class="focus-stat-value" id="focus-seg-remaining">0:00:00</div>
           <div class="focus-stat-label">المتبقي من الفترة</div>
         </div>
-        <div class="focus-pomo-countdown-card" id="focus-pomo-countdown-card">
+        <div class="focus-pomo-countdown-card" id="focus-pomo-countdown-card" onclick="event.stopPropagation()">
           <div class="focus-pomo-countdown-fill" id="focus-pomo-countdown-fill"></div>
           <div class="focus-pomo-countdown-inner">
             <div class="focus-stat-value" id="focus-pomo-countdown-value">00:00</div>
@@ -436,18 +436,17 @@
           <div class="focus-stat-value" id="focus-seg-gone">0:00:00</div>
           <div class="focus-stat-label">مضى من الفترة</div>
         </div>
-        <div class="focus-stat-card focus-stat-card--wide">
-          <div class="focus-stat-value" id="focus-seg-range"></div>
-          <div class="focus-stat-label">الفترة</div>
-        </div>
-    
-        <div class="focus-stat-card">
+        <div class="focus-stat-card focus-stat-card--half">
           <div class="focus-stat-value" id="focus-total-time">0:00:00</div>
           <div class="focus-stat-label">وقت التركيز</div>
         </div>
-        <div class="focus-stat-card">
+        <div class="focus-stat-card focus-stat-card--half-end">
           <div class="focus-stat-value" id="focus-pct">0%</div>
           <div class="focus-stat-label">نسبة التركيز</div>
+        </div>
+        <div class="focus-stat-card focus-stat-card--wide">
+          <div class="focus-stat-value" id="focus-seg-range"></div>
+          <div class="focus-stat-label">الفترة</div>
         </div>
       </div>
       <div class="focus-celebrate" id="focus-celebrate"></div>

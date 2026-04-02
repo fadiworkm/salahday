@@ -434,6 +434,11 @@ var FocusMode = {
     els.segGone.textContent = LiveTimer.format(segGone);
     els.totalTime.textContent = LiveTimer.format(totalElapsed);
 
+    // Focus percentage
+    var pctVal = totalSegDur > 0 ? Math.min(100, (totalElapsed / totalSegDur) * 100) : 0;
+    var pctEl = document.getElementById('focus-pct');
+    if (pctEl) pctEl.textContent = Math.floor(pctVal) + '%';
+
     // Pomodoro boxes
     this._updatePomodoro(totalElapsed);
 
@@ -475,8 +480,13 @@ var FocusMode = {
       els.elapsedTimer.textContent = LiveTimer.format(total);
       els.totalTime.textContent = LiveTimer.format(total);
 
-      // Wave: fills from activity-info top upward based on focus progress
+      // Focus percentage
       var totalSegDur = (sE - sS) * 60;
+      var pctVal = totalSegDur > 0 ? Math.min(100, (total / totalSegDur) * 100) : 0;
+      var pctEl = document.getElementById('focus-pct');
+      if (pctEl) pctEl.textContent = Math.floor(pctVal) + '%';
+
+      // Wave: fills from activity-info top upward based on focus progress
       var rawPct = totalSegDur > 0 ? Math.min(1, total / totalSegDur) : 0;
       // Minimum 30px when any focus time exists so crests/bubbles are visible
       var minH = total > 0 ? 30 : 0;
@@ -524,16 +534,16 @@ var FocusMode = {
     for (var i = 0; i < totalPomos; i++) {
       var num = '<span class="focus-pomo-num">' + list[i] + '</span>';
       if (i < donePomos) {
-        html += '<div class="focus-pomo-box focus-pomo-box--done" onclick="FocusMode._openPomoDialog(' + i + ')">' + num + '</div>';
+        html += '<div class="focus-pomo-box focus-pomo-box--done" data-pomo-idx="' + i + '">' + num + '</div>';
       } else if (i === donePomos) {
-        html += '<div class="focus-pomo-box focus-pomo-box--active" style="--pomo-color:' + color + '" onclick="FocusMode._openPomoDialog(' + i + ')">'
+        html += '<div class="focus-pomo-box focus-pomo-box--active" data-pomo-idx="' + i + '" style="--pomo-color:' + color + '">'
           + '<div class="focus-pomo-fill" style="height:' + activePct + '%;--pomo-color:' + color + '"></div>' + num + '</div>';
       } else {
-        html += '<div class="focus-pomo-box focus-pomo-box--pending" onclick="FocusMode._openPomoDialog(' + i + ')">' + num + '</div>';
+        html += '<div class="focus-pomo-box focus-pomo-box--pending" data-pomo-idx="' + i + '">' + num + '</div>';
       }
     }
     // Add "+" button
-    html += '<div class="focus-pomo-box focus-pomo-box--add" onclick="FocusMode._openPomoDialog(null)">+</div>';
+    html += '<div class="focus-pomo-box focus-pomo-box--add" data-pomo-idx="add">+</div>';
     els.pomoBoxes.innerHTML = html;
 
     // Update pomo countdown card
@@ -1118,6 +1128,8 @@ var FocusMode = {
       + '</div>';
     els.celebrate.innerHTML = html;
     els.celebrate.classList.add('active', 'nudge-active');
+    els.celebrate.style.pointerEvents = 'none';
+    els.celebrate.onclick = null;
 
     setTimeout(function () {
       els.celebrate.classList.remove('active', 'nudge-active');
@@ -1271,6 +1283,19 @@ document.getElementById('focus-delete-btn').addEventListener('click', function (
 
 document.getElementById('focus-mute').addEventListener('click', function () {
   FocusMode.toggleMute();
+});
+
+// ── Pomodoro box clicks (delegated) ──
+document.getElementById('focus-pomo-boxes').addEventListener('click', function (e) {
+  var box = e.target.closest('.focus-pomo-box');
+  if (!box) return;
+  e.stopPropagation();
+  var idx = box.dataset.pomoIdx;
+  if (idx === 'add') {
+    FocusMode._openPomoDialog(null);
+  } else {
+    FocusMode._openPomoDialog(parseInt(idx, 10));
+  }
 });
 
 // ── Pomodoro duration dialog ──
