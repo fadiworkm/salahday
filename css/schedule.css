@@ -1063,6 +1063,43 @@
 .wp-dot-gone { background: var(--gold); }
 .wp-dot-left { background: var(--success); }
 
+/* ─── Current activity in top progress bar ─── */
+.wp-current-act {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  direction: rtl;
+}
+
+.wp-act-icon {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.wp-act-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.wp-act-note {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
+}
+
+.wp-act-note::before {
+  content: '·';
+  margin: 0 5px;
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
 @media (max-width: 600px) {
   .work-progress { padding: 14px 14px; }
   .wp-labels {

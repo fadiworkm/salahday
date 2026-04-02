@@ -949,12 +949,27 @@ function renderWorkBlocks(segments, prayerMins) {
 
   const workProgressPct = totalAvail > 0 ? ((workGone / totalAvail) * 100).toFixed(1) : 0;
 
+  // النشاط الحالي (لعرضه في شريط التقدم)
+  let currentActHtml = '';
+  if (isToday) {
+    const nowAct = planActivities.find(a => nowMin >= a.start && nowMin < a.end);
+    if (nowAct) {
+      const noteText = nowAct.note ? nowAct.note.replace(/</g, '&lt;').replace(/\n/g, ' ') : '';
+      currentActHtml = `<div class="wp-current-act" style="--act-color:${nowAct.color}">`;
+      currentActHtml += `<span class="wp-act-icon">${nowAct.icon || ''}</span>`;
+      currentActHtml += `<span class="wp-act-name">${nowAct.name}</span>`;
+      if (noteText) currentActHtml += `<span class="wp-act-note">${noteText}</span>`;
+      currentActHtml += `</div>`;
+    }
+  }
+
   // شريط تقدم العمل في أعلى الصفحة
   const topProgress = document.getElementById('work-progress-top');
   if (topProgress) {
     if (isToday && totalAvail > 0) {
       topProgress.innerHTML = `
       <div class="work-progress" id="work-progress">
+        ${currentActHtml}
         <div class="wp-bar">
           <div class="wp-fill" style="width:${workProgressPct}%"></div>
         </div>
@@ -1406,7 +1421,7 @@ function computeWorkProgress(nowSec) {
   var gone = 0, left = 0;
   workSegs.forEach(function (seg) {
     if (dis.indexOf('work:' + seg.start + '-' + seg.end) !== -1) return;
-    var pa = acts.filter(function (a) { return a.start >= seg.start && a.end <= seg.end; }).sort(function (a, b) { return a.start - b.start; });
+    var pa = acts.filter(function (a) { return a.start >= seg.start && a.end <= seg.end && a.name !== 'عمل'; }).sort(function (a, b) { return a.start - b.start; });
     var c = seg.start;
     pa.forEach(function (a) { if (a.start > c) { acc(c * 60, a.start * 60); } c = a.end; });
     if (c < seg.end) acc(c * 60, seg.end * 60);
@@ -1424,7 +1439,7 @@ function computePeriodProgress(nowSec, segStart, segEnd) {
   let sp = ScheduleData.getDay(dateStr);
   if (Array.isArray(sp)) sp = { activities: sp, disabledPeriods: [] };
   const pa = (sp ? sp.activities || [] : [])
-    .filter(function (a) { return a.start >= segStart && a.end <= segEnd; })
+    .filter(function (a) { return a.start >= segStart && a.end <= segEnd && a.name !== 'عمل'; })
     .sort(function (a, b) { return a.start - b.start; });
   var gone = 0, left = 0, c = segStart;
   pa.forEach(function (a) { if (a.start > c) { acc(c * 60, a.start * 60); } c = a.end; });
