@@ -432,6 +432,7 @@
   display: block;
   line-height: 1;
   filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.4));
+  opacity: 1;
 }
 
 .focus-nudge-text {
@@ -440,7 +441,7 @@
   color: #fff;
   text-shadow: 0 2px 12px rgba(0, 0, 0, 0.5);
   letter-spacing: 0.03em;
-  animation: nudge-fade-text 3s ease forwards;
+  animation: nudge-text-in 0.5s ease 0.3s both;
 }
 
 @keyframes nudge-bounce {
@@ -461,11 +462,26 @@
   80%      { transform: rotate(12deg); }
 }
 
-@keyframes nudge-fade-text {
+@keyframes nudge-text-in {
   0%   { opacity: 0; transform: translateY(10px); }
-  10%  { opacity: 1; transform: translateY(0); }
-  90%  { opacity: 1; }
-  100% { opacity: 0; }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.focus-start-msg {
+  animation: start-msg-pop 3s ease forwards;
+}
+
+.focus-start-msg .focus-nudge-emoji {
+  animation: nudge-shake 0.5s ease-in-out 2;
+}
+
+@keyframes start-msg-pop {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.2) rotate(-10deg); }
+  12%  { opacity: 1; transform: translate(-50%, -50%) scale(1.15) rotate(3deg); }
+  22%  { transform: translate(-50%, -50%) scale(0.95) rotate(-2deg); }
+  30%  { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+  75%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8) translateY(-20px); }
 }
 
 /* ─── 5d. Pomodoro Duration Dialog ─── */
