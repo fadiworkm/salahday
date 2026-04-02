@@ -30,6 +30,9 @@ var FocusMode = {
   _waveMaxHeight: 0,    // px from timer-label bottom to overlay top
 
   _lastDonePomos: 0,     // track completed pomos for celebration trigger
+  _muted: false,
+  _audioCtx: null,
+  _tickInterval: null,
 
   _getPomoFocus: function () {
     return (typeof scheduleSettings !== 'undefined' && scheduleSettings.pomoDuration
@@ -131,6 +134,10 @@ var FocusMode = {
       els.wave.style.setProperty('--wave-color', actInfo.color || '#4ecdc4');
     }
 
+    // Reset mute icon to current state
+    var muteIcon = document.getElementById('focus-mute-icon');
+    if (muteIcon) muteIcon.textContent = this._muted ? '🔇' : '🔊';
+
     // Initial display of accumulated time
     this._updateDisplay();
 
@@ -171,7 +178,9 @@ var FocusMode = {
     this._paused = false;
     this._currentPeriodStart = Math.floor(Date.now() / 1000);
 
-    // LiveTimer handles all display updates via _registerLiveTimers()
+    // Sound
+    this._playStart();
+    this._stopNudge();
 
     // Show pause icon (‖)
     this._showPauseIcon();
@@ -202,6 +211,11 @@ var FocusMode = {
 
     // LiveTimer continues to tick, but with _running=false the elapsed won't increase
 
+    // Sound
+    this._stopTickSound();
+    this._playPause();
+    this._startNudge();
+
     // Show play icon (▶)
     this._showPlayIcon();
   },
@@ -225,6 +239,10 @@ var FocusMode = {
     if (this._running) {
       this.pause();
     }
+
+    // Stop sounds
+    this._stopTickSound();
+    this._stopNudge();
 
     // Remove resize listener
     if (this._onResize) {
@@ -557,6 +575,152 @@ var FocusMode = {
     }, 4000);
   },
 
+  // ── Sound System (Web Audio API) ──────────────────────────────────────
+
+  _ensureAudioCtx: function () {
+    if (!this._audioCtx) {
+      this._audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (this._audioCtx.state === 'suspended') {
+      this._audioCtx.resume();
+    }
+    return this._audioCtx;
+  },
+
+  _tickTock: 0, // alternates 0/1 for tick/tock
+  _nudgeInterval: null,
+
+  _playTick: function () {
+    if (this._muted) return;
+    var ctx = this._ensureAudioCtx();
+    var t = ctx.currentTime;
+    var isTock = this._tickTock;
+    this._tickTock = 1 - this._tickTock;
+
+    // Clock-like tick: sharp noise burst with resonant filter
+    var bufSize = ctx.sampleRate * 0.02; // 20ms
+    var buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+    var data = buf.getChannelData(0);
+    for (var i = 0; i < bufSize; i++) {
+      data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / bufSize, 8);
+    }
+    var src = ctx.createBufferSource();
+    src.buffer = buf;
+
+    // Bandpass filter gives it the wooden clock character
+    var filter = ctx.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = isTock ? 1800 : 2200;
+    filter.Q.value = 3;
+
+    var gain = ctx.createGain();
+    gain.gain.setValueAtTime(isTock ? 0.15 : 0.2, t);
+    gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+
+    src.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    src.start(t);
+  },
+
+  _playNudge: function () {
+    if (this._muted) return;
+    var ctx = this._ensureAudioCtx();
+    var t = ctx.currentTime;
+
+    // Two quick pings — "come back!"
+    [660, 880].forEach(function (freq, i) {
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, t + i * 0.15);
+      gain.gain.setValueAtTime(0.1, t + i * 0.15);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.15 + 0.18);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t + i * 0.15);
+      osc.stop(t + i * 0.15 + 0.18);
+    });
+  },
+
+  _playPause: function () {
+    if (this._muted) return;
+    var ctx = this._ensureAudioCtx();
+    var t = ctx.currentTime;
+
+    // Gentle descending chime
+    [520, 440, 330].forEach(function (freq, i) {
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, t + i * 0.12);
+      gain.gain.setValueAtTime(0.12, t + i * 0.12);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.12 + 0.25);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t + i * 0.12);
+      osc.stop(t + i * 0.12 + 0.25);
+    });
+  },
+
+  _playStart: function () {
+    if (this._muted) return;
+    var ctx = this._ensureAudioCtx();
+    var t = ctx.currentTime;
+
+    // Ascending chime
+    [330, 440, 520].forEach(function (freq, i) {
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, t + i * 0.1);
+      gain.gain.setValueAtTime(0.12, t + i * 0.1);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + i * 0.1 + 0.2);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t + i * 0.1);
+      osc.stop(t + i * 0.1 + 0.2);
+    });
+  },
+
+  _startTickSound: function () {
+    this._stopTickSound();
+    this._stopNudge();
+    this._tickTock = 0;
+    var self = this;
+    this._tickInterval = setInterval(function () {
+      if (self._running && !self._muted) self._playTick();
+    }, 1000);
+  },
+
+  _stopTickSound: function () {
+    if (this._tickInterval) {
+      clearInterval(this._tickInterval);
+      this._tickInterval = null;
+    }
+  },
+
+  _startNudge: function () {
+    this._stopNudge();
+    var self = this;
+    this._nudgeInterval = setInterval(function () {
+      if (self._paused && !self._muted) self._playNudge();
+    }, 5000);
+  },
+
+  _stopNudge: function () {
+    if (this._nudgeInterval) {
+      clearInterval(this._nudgeInterval);
+      this._nudgeInterval = null;
+    }
+  },
+
+  toggleMute: function () {
+    this._muted = !this._muted;
+    var icon = document.getElementById('focus-mute-icon');
+    if (icon) icon.textContent = this._muted ? '🔇' : '🔊';
+  },
+
   /**
    * Show the pause icon (‖) on the control button.
    */
@@ -621,6 +785,10 @@ document.getElementById('focus-elapsed-timer').addEventListener('click', functio
 
 document.getElementById('focus-delete-btn').addEventListener('click', function () {
   FocusMode.deleteSession();
+});
+
+document.getElementById('focus-mute').addEventListener('click', function () {
+  FocusMode.toggleMute();
 });
 
 // ── Pomodoro duration dialog ──

@@ -89,6 +89,33 @@
   letter-spacing: 0.02em;
 }
 
+.focus-mute {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, transform 0.2s;
+  font-family: inherit;
+}
+
+.focus-mute:hover {
+  background: rgba(255, 255, 255, 0.18);
+  transform: scale(1.08);
+}
+
+.focus-mute:active {
+  transform: scale(0.94);
+}
+
 .focus-close {
   width: 36px;
   height: 36px;
