@@ -233,6 +233,16 @@
       </div>
 
       <div class="setting-item">
+        <label>مدة البومودورو</label>
+        <div class="buffer-row">
+          <div class="buffer-field">
+            <input type="number" id="pomo-duration-schedule" min="10" max="90" value="45" class="buffer-input">
+            <span class="buffer-unit">دقيقة</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="setting-item">
         <label>تنسيق الوقت</label>
         <div class="toggle-group" id="time-format-toggle">
           <button type="button" class="toggle-btn" data-value="24">24 ساعة</button>
@@ -447,6 +457,27 @@
         <div class="focus-bubble focus-bubble--6"></div>
         <div class="focus-bubble focus-bubble--7"></div>
         <div class="focus-bubble focus-bubble--8"></div>
+      </div>
+      <div class="focus-pomo-dialog" id="focus-pomo-dialog">
+        <div class="focus-pomo-dialog-content">
+          <div class="focus-pomo-dialog-title">مدة البومودورو</div>
+          <div class="focus-pomo-dialog-row">
+            <button type="button" class="focus-pomo-adj" id="focus-pomo-minus">&minus;</button>
+            <span class="focus-pomo-dialog-value" id="focus-pomo-dialog-value">45</span>
+            <span class="focus-pomo-dialog-unit">دقيقة</span>
+            <button type="button" class="focus-pomo-adj" id="focus-pomo-plus">+</button>
+          </div>
+          <div class="focus-pomo-dialog-presets" id="focus-pomo-presets">
+            <button type="button" class="focus-pomo-preset" data-val="25">25</button>
+            <button type="button" class="focus-pomo-preset" data-val="30">30</button>
+            <button type="button" class="focus-pomo-preset" data-val="45">45</button>
+            <button type="button" class="focus-pomo-preset" data-val="60">60</button>
+          </div>
+          <div class="focus-pomo-dialog-actions">
+            <button type="button" class="focus-pomo-dialog-save" id="focus-pomo-save">حفظ</button>
+            <button type="button" class="focus-pomo-dialog-cancel" id="focus-pomo-cancel">إلغاء</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>

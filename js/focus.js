@@ -29,9 +29,15 @@ var FocusMode = {
   _waveBottom: 0,       // px from overlay bottom to timer-label bottom
   _waveMaxHeight: 0,    // px from timer-label bottom to overlay top
 
-  POMO_FOCUS: 45 * 60,   // 45 min focus in seconds
-  POMO_CYCLE: 60 * 60,   // 60 min total cycle
   _lastDonePomos: 0,     // track completed pomos for celebration trigger
+
+  _getPomoFocus: function () {
+    return (typeof scheduleSettings !== 'undefined' && scheduleSettings.pomoDuration
+      ? scheduleSettings.pomoDuration : 45) * 60;
+  },
+  _getPomoCycle: function () {
+    return this._getPomoFocus() + 15 * 60; // focus + 15 min break
+  },
 
   _getEls: function () {
     if (this._els) return this._els;
@@ -77,7 +83,7 @@ var FocusMode = {
 
     // Initialize pomodoro tracking (set to current done count so celebration doesn't fire on open)
     var initFocus = existingSession ? existingSession.totalFocusSec : 0;
-    this._lastDonePomos = Math.floor(initFocus / this.POMO_FOCUS);
+    this._lastDonePomos = Math.floor(initFocus / this._getPomoFocus());
 
     // Create or resume session
     if (existingSession) {
@@ -436,23 +442,25 @@ var FocusMode = {
     var els = this._getEls();
     if (!els.pomoBoxes) return;
 
+    var pomoFocus = this._getPomoFocus();
+    var pomoCycle = this._getPomoCycle();
     var totalSegSec = (this._segEnd - this._segStart) * 60;
-    var totalPomos = Math.max(1, Math.floor(totalSegSec / this.POMO_CYCLE));
-    var donePomos = Math.floor(focusSec / this.POMO_FOCUS);
-    var inCurrent = focusSec - donePomos * this.POMO_FOCUS;
-    var activePct = donePomos < totalPomos ? Math.min(100, (inCurrent / this.POMO_FOCUS) * 100) : 0;
+    var totalPomos = Math.max(1, Math.floor(totalSegSec / pomoCycle));
+    var donePomos = Math.floor(focusSec / pomoFocus);
+    var inCurrent = focusSec - donePomos * pomoFocus;
+    var activePct = donePomos < totalPomos ? Math.min(100, (inCurrent / pomoFocus) * 100) : 0;
     var color = (this._actInfo && this._actInfo.color) || '#f39c12';
 
     var html = '';
     for (var i = 0; i < totalPomos; i++) {
       var num = '<span class="focus-pomo-num">' + (i + 1) + '</span>';
       if (i < donePomos) {
-        html += '<div class="focus-pomo-box focus-pomo-box--done">' + num + '</div>';
+        html += '<div class="focus-pomo-box focus-pomo-box--done" onclick="FocusMode._openPomoDialog()">' + num + '</div>';
       } else if (i === donePomos) {
-        html += '<div class="focus-pomo-box focus-pomo-box--active" style="--pomo-color:' + color + '">'
+        html += '<div class="focus-pomo-box focus-pomo-box--active" style="--pomo-color:' + color + '" onclick="FocusMode._openPomoDialog()">'
               + '<div class="focus-pomo-fill" style="height:' + activePct + '%;--pomo-color:' + color + '"></div>' + num + '</div>';
       } else {
-        html += '<div class="focus-pomo-box focus-pomo-box--pending">' + num + '</div>';
+        html += '<div class="focus-pomo-box focus-pomo-box--pending" onclick="FocusMode._openPomoDialog()">' + num + '</div>';
       }
     }
     els.pomoBoxes.innerHTML = html;
@@ -462,6 +470,44 @@ var FocusMode = {
       this._celebrate();
     }
     this._lastDonePomos = donePomos;
+  },
+
+  /**
+   * Open the pomodoro duration dialog.
+   */
+  _openPomoDialog: function () {
+    var current = typeof scheduleSettings !== 'undefined' ? scheduleSettings.pomoDuration : 45;
+    this._pomoDialogValue = current;
+    var valEl = document.getElementById('focus-pomo-dialog-value');
+    if (valEl) valEl.textContent = current;
+    // Highlight matching preset
+    document.querySelectorAll('.focus-pomo-preset').forEach(function (btn) {
+      btn.classList.toggle('active', parseInt(btn.dataset.val) === current);
+    });
+    document.getElementById('focus-pomo-dialog').classList.add('active');
+  },
+
+  _closePomoDialog: function () {
+    document.getElementById('focus-pomo-dialog').classList.remove('active');
+  },
+
+  _savePomoDialog: function () {
+    var val = this._pomoDialogValue;
+    if (val < 10) val = 10;
+    if (val > 90) val = 90;
+    scheduleSettings.pomoDuration = val;
+    // Persist to day settings
+    var dateStr = this._date || document.getElementById('schedule-date').value;
+    var dayData = ScheduleData.getDayOrDefault(dateStr);
+    dayData.settings = JSON.parse(JSON.stringify(scheduleSettings));
+    ScheduleData.saveDay(dateStr);
+    // Update settings UI input if visible
+    var inp = document.getElementById('pomo-duration-schedule');
+    if (inp) inp.value = val;
+    // Reset pomodoro tracking for new duration
+    var focusSec = this._session ? this._session.totalFocusSec : 0;
+    this._lastDonePomos = Math.floor(focusSec / this._getPomoFocus());
+    this._closePomoDialog();
   },
 
   /**
@@ -560,4 +606,43 @@ document.getElementById('focus-elapsed-timer').addEventListener('click', functio
 
 document.getElementById('focus-delete-btn').addEventListener('click', function () {
   FocusMode.deleteSession();
+});
+
+// ── Pomodoro duration dialog ──
+document.getElementById('focus-pomo-plus').addEventListener('click', function () {
+  FocusMode._pomoDialogValue = Math.min(90, (FocusMode._pomoDialogValue || 45) + 5);
+  document.getElementById('focus-pomo-dialog-value').textContent = FocusMode._pomoDialogValue;
+  document.querySelectorAll('.focus-pomo-preset').forEach(function (b) {
+    b.classList.toggle('active', parseInt(b.dataset.val) === FocusMode._pomoDialogValue);
+  });
+});
+
+document.getElementById('focus-pomo-minus').addEventListener('click', function () {
+  FocusMode._pomoDialogValue = Math.max(10, (FocusMode._pomoDialogValue || 45) - 5);
+  document.getElementById('focus-pomo-dialog-value').textContent = FocusMode._pomoDialogValue;
+  document.querySelectorAll('.focus-pomo-preset').forEach(function (b) {
+    b.classList.toggle('active', parseInt(b.dataset.val) === FocusMode._pomoDialogValue);
+  });
+});
+
+document.querySelectorAll('.focus-pomo-preset').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    FocusMode._pomoDialogValue = parseInt(btn.dataset.val);
+    document.getElementById('focus-pomo-dialog-value').textContent = FocusMode._pomoDialogValue;
+    document.querySelectorAll('.focus-pomo-preset').forEach(function (b) {
+      b.classList.toggle('active', parseInt(b.dataset.val) === FocusMode._pomoDialogValue);
+    });
+  });
+});
+
+document.getElementById('focus-pomo-save').addEventListener('click', function () {
+  FocusMode._savePomoDialog();
+});
+
+document.getElementById('focus-pomo-cancel').addEventListener('click', function () {
+  FocusMode._closePomoDialog();
+});
+
+document.getElementById('focus-pomo-dialog').addEventListener('click', function (e) {
+  if (e.target === e.currentTarget) FocusMode._closePomoDialog();
 });

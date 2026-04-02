@@ -17,7 +17,8 @@ let scheduleSettings = {
     isha:    { before: 10, after: 20 }
   },
   bedtimeAfterIsha: 120,
-  timeFormat: '12'
+  timeFormat: '12',
+  pomoDuration: 45
 };
 
 // ─── التهيئة ───
@@ -1297,6 +1298,7 @@ function applySettingsToUI() {
   setInputValue('buf-isha-before', buf.isha.before);
   setInputValue('buf-isha-after', buf.isha.after);
   setInputValue('bedtime-after-isha-schedule', scheduleSettings.bedtimeAfterIsha);
+  setInputValue('pomo-duration-schedule', scheduleSettings.pomoDuration);
 
   document.querySelectorAll('#time-format-toggle .toggle-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.value === scheduleSettings.timeFormat);
@@ -1325,6 +1327,7 @@ function saveSettings() {
     isha:    { before: getInputValue('buf-isha-before', 10),     after: getInputValue('buf-isha-after', 20) }
   };
   scheduleSettings.bedtimeAfterIsha = getInputValue('bedtime-after-isha-schedule', 120);
+  scheduleSettings.pomoDuration = getInputValue('pomo-duration-schedule', 45);
 
   // حفظ الإعدادات في بيانات اليوم
   const dateStr = document.getElementById('schedule-date').value;
