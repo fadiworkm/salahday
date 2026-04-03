@@ -1,0 +1,3 @@
+- [schedule.js findings](schedule-js-findings.md) — segment generation, work/unassigned logic, day stats, عمل special-casing
+- [planner.js and api.php findings](planner-api-findings.md) — activity CRUD, data structure, عمل preset and exclusion logic
+- [data-api.js, analysis.js, cross-file عمل search](data-analysis-findings.md) — all locations of عمل string, key insight for change plan

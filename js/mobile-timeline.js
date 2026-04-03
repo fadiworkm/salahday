@@ -78,7 +78,7 @@ function renderMobileTimeline() {
     // header
     html += '<div class="mt-period-header">';
     html += '<span class="mt-period-time">' + displayTimeRange(seg.start, seg.end) + '</span>';
-    html += '<span class="mt-period-dur">' + (isDis ? 'معطّلة' : formatDuration(free) + ' عمل') + '</span>';
+    html += '<span class="mt-period-dur">' + (isDis ? 'معطّلة' : formatDuration(free) + ' متاح') + '</span>';
     if (!isDis) html += '<button class="mt-edit-btn" onclick="openPlannerForPeriod(' + idx + ')">&#9998;</button>';
     html += '</div>';
 
@@ -172,7 +172,7 @@ function _mtBuildFree(start, end, isToday, nowMin, lastLabel) {
     html += '<div class="mt-focus-row">';
     html += '<span class="mt-focus-act-label">🎯 ركز</span>';
     html += '<div class="mt-focus-actions">';
-    html += '<button class="mt-focus-btn" onclick="openFocusMode(\'' + dateStr + '\',' + start + ',' + end + ',\'وقت عمل\',\'🎯\',\'#7c6aef\')">&#127919; ركز</button>';
+    html += '<button class="mt-focus-btn" onclick="openFocusMode(\'' + dateStr + '\',' + start + ',' + end + ',\'وقت متاح\',\'🎯\',\'#7c6aef\')">&#127919; ركز</button>';
     html += '<span class="mt-timer"></span>';
     html += '</div>';
     html += '</div>';

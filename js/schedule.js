@@ -300,11 +300,11 @@ function generateDaySegments(prayerMins) {
       if (gapEnd > gapStart) {
         // تقسيم الفجوة عند وقت النوم
         if (gapStart < bedEnd && gapEnd > bedEnd) {
-          segments.push({ type: 'work', label: 'وقت عمل', prayerKey: 'work', start: gapStart, end: bedEnd, duration: bedEnd - gapStart, isCurrent: currentMinutes >= gapStart && currentMinutes < bedEnd });
+          segments.push({ type: 'work', label: 'وقت متاح', prayerKey: 'work', start: gapStart, end: bedEnd, duration: bedEnd - gapStart, isCurrent: currentMinutes >= gapStart && currentMinutes < bedEnd });
           segments.push({ type: 'sleep', label: 'نوم', prayerKey: 'sleep', start: bedEnd, end: gapEnd, duration: gapEnd - bedEnd, isCurrent: currentMinutes >= bedEnd && currentMinutes < gapEnd });
         } else {
           const isAfterBedtime = gapStart >= bedEnd;
-          segments.push({ type: isAfterBedtime ? 'sleep' : 'work', label: isAfterBedtime ? 'نوم' : 'وقت عمل', prayerKey: isAfterBedtime ? 'sleep' : 'work', start: gapStart, end: gapEnd, duration: gapEnd - gapStart, isCurrent: currentMinutes >= gapStart && currentMinutes < gapEnd });
+          segments.push({ type: isAfterBedtime ? 'sleep' : 'work', label: isAfterBedtime ? 'نوم' : 'وقت متاح', prayerKey: isAfterBedtime ? 'sleep' : 'work', start: gapStart, end: gapEnd, duration: gapEnd - gapStart, isCurrent: currentMinutes >= gapStart && currentMinutes < gapEnd });
         }
       }
     }
@@ -315,11 +315,11 @@ function generateDaySegments(prayerMins) {
     const gapStart = lastOccupied.end;
     // تقسيم عند وقت النوم
     if (gapStart < bedEnd && bedEnd < 1440) {
-      segments.push({ type: 'work', label: 'وقت عمل', prayerKey: 'work', start: gapStart, end: bedEnd, duration: bedEnd - gapStart, isCurrent: currentMinutes >= gapStart && currentMinutes < bedEnd });
+      segments.push({ type: 'work', label: 'وقت متاح', prayerKey: 'work', start: gapStart, end: bedEnd, duration: bedEnd - gapStart, isCurrent: currentMinutes >= gapStart && currentMinutes < bedEnd });
       segments.push({ type: 'sleep', label: 'نوم', prayerKey: 'sleep', start: bedEnd, end: 1440, duration: 1440 - bedEnd, isCurrent: currentMinutes >= bedEnd && currentMinutes < 1440 });
     } else {
       const isSleep = gapStart >= bedEnd;
-      segments.push({ type: isSleep ? 'sleep' : 'work', label: isSleep ? 'نوم' : 'وقت عمل', prayerKey: isSleep ? 'sleep' : 'work', start: gapStart, end: 1440, duration: 1440 - gapStart, isCurrent: currentMinutes >= gapStart && currentMinutes < 1440 });
+      segments.push({ type: isSleep ? 'sleep' : 'work', label: isSleep ? 'نوم' : 'وقت متاح', prayerKey: isSleep ? 'sleep' : 'work', start: gapStart, end: 1440, duration: 1440 - gapStart, isCurrent: currentMinutes >= gapStart && currentMinutes < 1440 });
     }
   }
 
@@ -577,20 +577,15 @@ function renderDayStats(segments) {
     }
   }
 
-  // تجميع أنشطة المخطط حسب الاسم (نشاط "عمل" يُحسب كعمل)
+  // تجميع أنشطة المخطط حسب الاسم
   const activityMap = {};
   let totalActivityTime = 0;
-  let activityWorkTime = 0;
   for (const act of planActivities) {
     const dur = act.end - act.start;
-    if (act.name === 'عمل') {
-      activityWorkTime += dur;
-    } else {
-      if (!activityMap[act.name]) {
-        activityMap[act.name] = { name: act.name, icon: act.icon, color: act.color, duration: 0 };
-      }
-      activityMap[act.name].duration += dur;
+    if (!activityMap[act.name]) {
+      activityMap[act.name] = { name: act.name, icon: act.icon, color: act.color, duration: 0 };
     }
+    activityMap[act.name].duration += dur;
     totalActivityTime += dur;
   }
 
@@ -616,9 +611,9 @@ function renderDayStats(segments) {
     categories.push({ name: 'صلاة وتحضير', icon: '❤️', color: '#7c6aef', duration: prayerTotal, itemClass: 'ds-item-prayer' });
   }
 
-  const remainingWork = Math.max(0, typeTotals.work - workActivityTime) + activityWorkTime;
+  const remainingWork = Math.max(0, typeTotals.work - workActivityTime);
   if (remainingWork > 0) {
-    categories.push({ name: 'عمل', icon: '💼', color: '#4ecdc4', duration: remainingWork, itemClass: 'ds-item-work' });
+    categories.push({ name: 'غير محدد', icon: '⏳', color: '#888', duration: remainingWork, itemClass: 'ds-item-work' });
   }
 
   // إضافة أنشطة المخطط
@@ -646,8 +641,8 @@ function renderDayStats(segments) {
 
     // Check if this focus matches a planned activity by name
     const matchedCat = categories.find(function(c) { return c.name === s.activityName; });
-    // If matched to a planned activity, assign there; otherwise assign to "عمل" (work time)
-    const catName = matchedCat ? matchedCat.name : 'عمل';
+    // If matched to a planned activity, assign there; otherwise assign to "غير محدد" (unspecified time)
+    const catName = matchedCat ? matchedCat.name : 'غير محدد';
 
     if (!focusByCat[catName]) focusByCat[catName] = { totalSec: 0, sessions: 0, details: [] };
     focusByCat[catName].totalSec += s.totalFocusSec;
@@ -721,14 +716,10 @@ function exportDayStatsJSON() {
   }
 
   const activityMap = {};
-  let activityWorkTime = 0;
   for (const act of planActivities) {
     const dur = act.end - act.start;
-    if (act.name === 'عمل') { activityWorkTime += dur; }
-    else {
-      if (!activityMap[act.name]) activityMap[act.name] = { name: act.name, icon: act.icon, color: act.color, duration: 0 };
-      activityMap[act.name].duration += dur;
-    }
+    if (!activityMap[act.name]) activityMap[act.name] = { name: act.name, icon: act.icon, color: act.color, duration: 0 };
+    activityMap[act.name].duration += dur;
   }
 
   let workActivityTime = 0;
@@ -743,8 +734,8 @@ function exportDayStatsJSON() {
   if (typeTotals.sleep > 0) categories.push({ name: 'نوم', icon: '☾', durationMin: typeTotals.sleep });
   const prayerTotal = (typeTotals.prayer || 0) + (typeTotals.prep || 0);
   if (prayerTotal > 0) categories.push({ name: 'صلاة وتحضير', icon: '❤️', durationMin: prayerTotal });
-  const remainingWork = Math.max(0, typeTotals.work - workActivityTime) + activityWorkTime;
-  if (remainingWork > 0) categories.push({ name: 'عمل', icon: '💼', durationMin: remainingWork });
+  const remainingWork = Math.max(0, typeTotals.work - workActivityTime);
+  if (remainingWork > 0) categories.push({ name: 'غير محدد', icon: '⏳', durationMin: remainingWork });
   for (const key of Object.keys(activityMap)) {
     const act = activityMap[key];
     if (act.duration > 0) categories.push({ name: act.name, icon: act.icon, color: act.color, durationMin: act.duration });
@@ -761,7 +752,7 @@ function exportDayStatsJSON() {
     totalDayFocusSec += s.totalFocusSec;
     totalDayFocusSessions += 1;
     const matchedCat = categories.find(function (c) { return c.name === s.activityName; });
-    const catName = matchedCat ? matchedCat.name : 'عمل';
+    const catName = matchedCat ? matchedCat.name : 'غير محدد';
     if (!focusByCat[catName]) focusByCat[catName] = { totalSec: 0, sessions: 0, details: [] };
     focusByCat[catName].totalSec += s.totalFocusSec;
     focusByCat[catName].sessions += 1;
@@ -889,7 +880,7 @@ function renderWorkBlocks(segments, prayerMins) {
     const disabledClass = disabled ? ' wt-block-unchecked' : '';
 
     const periodActs = planActivities.filter(a => a.start >= seg.start && a.end <= seg.end).sort((a, b) => a.start - b.start);
-    const usedTime = periodActs.filter(a => a.name !== 'عمل').reduce((sum, a) => sum + (a.end - a.start), 0);
+    const usedTime = periodActs.reduce((sum, a) => sum + (a.end - a.start), 0);
     const freeTime = seg.duration - usedTime;
 
     if (!disabled) totalAvail += freeTime;
@@ -905,7 +896,7 @@ function renderWorkBlocks(segments, prayerMins) {
     // الرأس
     html += `<div class="wt-period-header">`;
     html += `<span class="wt-period-time">${displayTimeRange(seg.start, seg.end)}</span>`;
-    html += `<span class="wt-period-free">${formatDuration(freeTime)} عمل</span>`;
+    html += `<span class="wt-period-free">${formatDuration(freeTime)} متاح</span>`;
     html += `<button class="wt-edit-btn" onclick="openPlannerForPeriod(${i})" title="إدارة">&#9998;</button>`;
     html += `</div>`;
     if (periodName) {
@@ -914,8 +905,8 @@ function renderWorkBlocks(segments, prayerMins) {
 
     // شريط التقدم للفترة الحالية
     if (isCurrent && !disabled && freeTime > 0) {
-      // حساب الوقت المنقضي والمتبقي لهذه الفترة فقط (أنشطة "عمل" تُعتبر وقت عمل)
-      const nonWorkActs = periodActs.filter(a => a.name !== 'عمل');
+      // حساب الوقت المنقضي والمتبقي لهذه الفترة
+      const nonWorkActs = periodActs;
       let pGone = 0, pLeft = 0;
       let cursor2 = seg.start;
       nonWorkActs.forEach(act => {
@@ -1039,7 +1030,7 @@ function renderWorkBlocks(segments, prayerMins) {
           html += `</div>`;
         } else {
           html += `<div style="padding: 4px 12px 12px;">`;
-          html += `<button class="focus-btn" onclick="openFocusMode('${dateStr2}', ${seg.start}, ${seg.end}, 'وقت عمل', '🎯', '#7c6aef')">`;
+          html += `<button class="focus-btn" onclick="openFocusMode('${dateStr2}', ${seg.start}, ${seg.end}, 'وقت متاح', '🎯', '#7c6aef')">`;
           html += `&#127919; ابدأ التركيز</button>`;
           html += `</div>`;
         }
@@ -1063,7 +1054,7 @@ function renderWorkBlocks(segments, prayerMins) {
     allPeriods.forEach(seg => {
       const pKey = 'work:' + seg.start + '-' + seg.end;
       if (disabledPeriods.indexOf(pKey) !== -1) return;
-      const pActs = planActivities.filter(a => a.start >= seg.start && a.end <= seg.end && a.name !== 'عمل');
+      const pActs = planActivities.filter(a => a.start >= seg.start && a.end <= seg.end);
       // حساب الوقت الحر الفعلي لهذه الفترة
       let cursor = seg.start;
       pActs.sort((a, b) => a.start - b.start).forEach(act => {
@@ -1561,7 +1552,7 @@ function computeWorkProgress(nowSec) {
   var gone = 0, left = 0;
   workSegs.forEach(function (seg) {
     if (dis.indexOf('work:' + seg.start + '-' + seg.end) !== -1) return;
-    var pa = acts.filter(function (a) { return a.start >= seg.start && a.end <= seg.end && a.name !== 'عمل'; }).sort(function (a, b) { return a.start - b.start; });
+    var pa = acts.filter(function (a) { return a.start >= seg.start && a.end <= seg.end; }).sort(function (a, b) { return a.start - b.start; });
     var c = seg.start;
     pa.forEach(function (a) { if (a.start > c) { acc(c * 60, a.start * 60); } c = a.end; });
     if (c < seg.end) acc(c * 60, seg.end * 60);
@@ -1579,7 +1570,7 @@ function computePeriodProgress(nowSec, segStart, segEnd) {
   let sp = ScheduleData.getDay(dateStr);
   if (Array.isArray(sp)) sp = { activities: sp, disabledPeriods: [] };
   const pa = (sp ? sp.activities || [] : [])
-    .filter(function (a) { return a.start >= segStart && a.end <= segEnd && a.name !== 'عمل'; })
+    .filter(function (a) { return a.start >= segStart && a.end <= segEnd; })
     .sort(function (a, b) { return a.start - b.start; });
   var gone = 0, left = 0, c = segStart;
   pa.forEach(function (a) { if (a.start > c) { acc(c * 60, a.start * 60); } c = a.end; });

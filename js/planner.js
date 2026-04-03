@@ -44,7 +44,7 @@ function getPlannerPeriods() {
 
   // فترات العمل
   const periods = workSegs.map(function (seg, i) {
-    return { type: 'work', index: i, start: seg.start, end: seg.end, duration: seg.duration, label: 'وقت عمل' };
+    return { type: 'work', index: i, start: seg.start, end: seg.end, duration: seg.duration, label: 'وقت متاح' };
   });
 
   periods.sort(function (a, b) { return a.start - b.start; });
@@ -147,7 +147,7 @@ function renderPlanner(onlyPeriodIdx) {
     html += '</label>';
     html += '<span class="pl-period-icon">' + iconType + '</span>';
     html += '<span class="pl-period-time">' + displayTimeRange(period.start, period.end) + '</span>';
-    html += '<span class="pl-period-dur">' + formatDuration(freeTime) + (isBedtime ? '' : ' عمل') + '</span>';
+    html += '<span class="pl-period-dur">' + formatDuration(freeTime) + (isBedtime ? '' : ' متاح') + '</span>';
     html += '</div>';
 
     if (!disabled) {
@@ -221,7 +221,7 @@ function updatePlannerSummary() {
   periods.forEach(function (p) {
     if (isPeriodDisabled(p)) return;
     var pActs = activities.filter(function (a) { return a.start >= p.start && a.end <= p.end; });
-    var used = pActs.filter(function (a) { return a.name !== 'عمل'; }).reduce(function (sum, a) { return sum + (a.end - a.start); }, 0);
+    var used = pActs.reduce(function (sum, a) { return sum + (a.end - a.start); }, 0);
     totalFree += p.duration;
     totalUsed += used;
   });
