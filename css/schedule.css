@@ -1204,6 +1204,26 @@
   color: var(--danger);
 }
 
+.btn-export-stats {
+  width: 30px;
+  height: 30px;
+  background: rgba(78, 205, 196, 0.1);
+  border: 1px solid rgba(78, 205, 196, 0.2);
+  border-radius: 8px;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+
+.btn-export-stats:hover {
+  background: rgba(78, 205, 196, 0.2);
+  color: #4ecdc4;
+}
+
 .wt-period-name {
   padding: 0 14px 6px;
   font-size: 0.72rem;

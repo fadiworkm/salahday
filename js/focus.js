@@ -434,10 +434,9 @@ var FocusMode = {
     els.segGone.textContent = LiveTimer.format(segGone);
     els.totalTime.textContent = LiveTimer.format(totalElapsed);
 
-    // Focus percentage
-    var pctVal = totalSegDur > 0 ? Math.min(100, (totalElapsed / totalSegDur) * 100) : 0;
-    var pctEl = document.getElementById('focus-pct');
-    if (pctEl) pctEl.textContent = Math.floor(pctVal) + '%';
+    // Focus percentage (all focus in this segment / segment duration)
+    this._updateSegmentPct(totalElapsed, totalSegDur);
+    this._updateTodayTotal(totalElapsed);
 
     // Pomodoro boxes
     this._updatePomodoro(totalElapsed);
@@ -480,11 +479,10 @@ var FocusMode = {
       els.elapsedTimer.textContent = LiveTimer.format(total);
       els.totalTime.textContent = LiveTimer.format(total);
 
-      // Focus percentage
+      // Focus percentage & today total
       var totalSegDur = (sE - sS) * 60;
-      var pctVal = totalSegDur > 0 ? Math.min(100, (total / totalSegDur) * 100) : 0;
-      var pctEl = document.getElementById('focus-pct');
-      if (pctEl) pctEl.textContent = Math.floor(pctVal) + '%';
+      self._updateSegmentPct(total, totalSegDur);
+      self._updateTodayTotal(total);
 
       // Wave: fills from activity-info top upward based on focus progress
       var rawPct = totalSegDur > 0 ? Math.min(1, total / totalSegDur) : 0;
@@ -504,6 +502,28 @@ var FocusMode = {
    * Render pomodoro progress boxes.
    * @param {number} focusSec — total focus seconds accumulated
    */
+  _updateSegmentPct: function (currentSessionSec, segDurSec) {
+    var pctEl = document.getElementById('focus-pct');
+    if (!pctEl) return;
+    var pct = segDurSec > 0 ? Math.min(100, (currentSessionSec / segDurSec) * 100) : 0;
+    pctEl.textContent = Math.floor(pct) + '%';
+  },
+
+  _updateTodayTotal: function (currentSessionSec) {
+    var el = document.getElementById('focus-today-total');
+    if (!el || !this._date) return;
+    // Sum all other sessions for today
+    var allSessions = FocusData.get(this._date) || [];
+    var otherTotal = 0;
+    var currentId = this._session ? this._session.id : null;
+    for (var i = 0; i < allSessions.length; i++) {
+      if (allSessions[i].id !== currentId) {
+        otherTotal += allSessions[i].totalFocusSec || 0;
+      }
+    }
+    el.textContent = LiveTimer.format(otherTotal + currentSessionSec);
+  },
+
   _updatePomodoro: function (focusSec) {
     var els = this._getEls();
     if (!els.pomoBoxes) return;
@@ -544,7 +564,11 @@ var FocusMode = {
     }
     // Add "+" button
     html += '<div class="focus-pomo-box focus-pomo-box--add" data-pomo-idx="add">+</div>';
-    els.pomoBoxes.innerHTML = html;
+    // Only update DOM when HTML actually changes (prevents click interception)
+    if (els.pomoBoxes._lastHtml !== html) {
+      els.pomoBoxes.innerHTML = html;
+      els.pomoBoxes._lastHtml = html;
+    }
 
     // Update pomo countdown card
     var remainSec = donePomos < totalPomos ? Math.max(0, activeDur - inCurrent) : 0;
@@ -1263,6 +1287,11 @@ function openFocusMode(date, segStart, segEnd, actName, actIcon, actColor) {
 }
 
 // ─── Event listeners ────────────────────────────────────────────────────────
+
+// Prevent clicks in the action row from propagating to timer toggle areas
+document.querySelector('.focus-header-top').addEventListener('click', function (e) {
+  e.stopPropagation();
+});
 
 document.getElementById('focus-close').addEventListener('click', function () {
   FocusMode.close();

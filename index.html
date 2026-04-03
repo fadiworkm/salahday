@@ -106,7 +106,10 @@
     <!-- إحصائيات الـ 24 ساعة -->
     <section>
       <div class="card">
-        <h2><span class="icon">&#128202;</span> إحصائيات يومك</h2>
+        <div class="card-header-row">
+          <h2><span class="icon">&#128202;</span> إحصائيات يومك</h2>
+          <button class="btn-export-stats" id="export-stats-btn" title="تصدير الإحصائيات JSON">&#128229;</button>
+        </div>
         <div id="day-stats">
           <!-- Filled by JS -->
         </div>
@@ -436,13 +439,17 @@
           <div class="focus-stat-value" id="focus-seg-gone">0:00:00</div>
           <div class="focus-stat-label">مضى من الفترة</div>
         </div>
-        <div class="focus-stat-card focus-stat-card--half">
+        <div class="focus-stat-card focus-stat-card--third">
           <div class="focus-stat-value" id="focus-total-time">0:00:00</div>
           <div class="focus-stat-label">وقت التركيز</div>
         </div>
-        <div class="focus-stat-card focus-stat-card--half-end">
+        <div class="focus-stat-card focus-stat-card--third">
           <div class="focus-stat-value" id="focus-pct">0%</div>
-          <div class="focus-stat-label">نسبة التركيز</div>
+          <div class="focus-stat-label">نسبة الفترة</div>
+        </div>
+        <div class="focus-stat-card focus-stat-card--third">
+          <div class="focus-stat-value" id="focus-today-total">0:00:00</div>
+          <div class="focus-stat-label">تركيز اليوم</div>
         </div>
         <div class="focus-stat-card focus-stat-card--wide">
           <div class="focus-stat-value" id="focus-seg-range"></div>

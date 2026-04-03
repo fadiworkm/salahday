@@ -706,6 +706,136 @@ function renderDayStats(segments) {
   container.innerHTML = html;
 }
 
+/** Export day stats + focus data as JSON — mirrors the visual display */
+function exportDayStatsJSON() {
+  const dateStr = document.getElementById('schedule-date').value;
+  const segments = window._allSegments || [];
+  const TOTAL_DAY = 1440;
+
+  const savedDay = ScheduleData.getDay(dateStr);
+  const planActivities = savedDay ? (savedDay.activities || []) : [];
+
+  const typeTotals = { sleep: 0, prayer: 0, prep: 0, work: 0 };
+  for (const seg of segments) {
+    if (typeTotals.hasOwnProperty(seg.type)) typeTotals[seg.type] += seg.duration;
+  }
+
+  const activityMap = {};
+  let activityWorkTime = 0;
+  for (const act of planActivities) {
+    const dur = act.end - act.start;
+    if (act.name === 'عمل') { activityWorkTime += dur; }
+    else {
+      if (!activityMap[act.name]) activityMap[act.name] = { name: act.name, icon: act.icon, color: act.color, duration: 0 };
+      activityMap[act.name].duration += dur;
+    }
+  }
+
+  let workActivityTime = 0;
+  const workSegs = segments.filter(s => s.type === 'work');
+  for (const act of planActivities) {
+    for (const wSeg of workSegs) {
+      if (act.start >= wSeg.start && act.end <= wSeg.end) workActivityTime += (act.end - act.start);
+    }
+  }
+
+  const categories = [];
+  if (typeTotals.sleep > 0) categories.push({ name: 'نوم', icon: '☾', durationMin: typeTotals.sleep });
+  const prayerTotal = (typeTotals.prayer || 0) + (typeTotals.prep || 0);
+  if (prayerTotal > 0) categories.push({ name: 'صلاة وتحضير', icon: '❤️', durationMin: prayerTotal });
+  const remainingWork = Math.max(0, typeTotals.work - workActivityTime) + activityWorkTime;
+  if (remainingWork > 0) categories.push({ name: 'عمل', icon: '💼', durationMin: remainingWork });
+  for (const key of Object.keys(activityMap)) {
+    const act = activityMap[key];
+    if (act.duration > 0) categories.push({ name: act.name, icon: act.icon, color: act.color, durationMin: act.duration });
+  }
+  categories.sort((a, b) => b.durationMin - a.durationMin);
+
+  // Focus sessions grouped by category (same logic as renderDayStats)
+  const focusSessions = typeof FocusData !== 'undefined' ? FocusData.get(dateStr) : [];
+  const focusByCat = {};
+  let totalDayFocusSec = 0;
+  let totalDayFocusSessions = 0;
+  focusSessions.forEach(function (s) {
+    if ((s.totalFocusSec || 0) <= 0) return;
+    totalDayFocusSec += s.totalFocusSec;
+    totalDayFocusSessions += 1;
+    const matchedCat = categories.find(function (c) { return c.name === s.activityName; });
+    const catName = matchedCat ? matchedCat.name : 'عمل';
+    if (!focusByCat[catName]) focusByCat[catName] = { totalSec: 0, sessions: 0, details: [] };
+    focusByCat[catName].totalSec += s.totalFocusSec;
+    focusByCat[catName].sessions += 1;
+    focusByCat[catName].details.push({ name: s.activityName, icon: s.activityIcon, sec: s.totalFocusSec });
+  });
+
+  // Build readable categories with focus & sub-activities
+  const exportCats = categories.map(function (cat) {
+    const pct = parseFloat(((cat.durationMin / TOTAL_DAY) * 100).toFixed(1));
+    const entry = {
+      icon: cat.icon,
+      name: cat.name,
+      duration: formatDuration(cat.durationMin),
+      durationMin: cat.durationMin,
+      pct: pct + '%'
+    };
+
+    // Focus data for this category
+    const focus = focusByCat[cat.name];
+    if (focus && focus.totalSec > 0) {
+      const focusPct = Math.min(100, (focus.totalSec / (cat.durationMin * 60)) * 100).toFixed(0);
+      entry.focus = {
+        duration: _formatFocusTime(focus.totalSec),
+        totalSec: focus.totalSec,
+        sessions: focus.sessions,
+        pct: focusPct + '%'
+      };
+    }
+
+    // Sub-activities (e.g. multiple عمل entries under the عمل category)
+    const subActs = planActivities.filter(function (a) { return a.name === cat.name; });
+    if (subActs.length > 1) {
+      entry.subActivities = subActs.map(function (a) {
+        return {
+          icon: a.icon,
+          name: a.name,
+          time: displayTime(a.start) + ' - ' + displayTime(a.end),
+          duration: formatDuration(a.end - a.start),
+          durationMin: a.end - a.start,
+          note: a.note || ''
+        };
+      });
+    } else if (subActs.length === 1 && subActs[0].note) {
+      entry.note = subActs[0].note;
+    }
+
+    return entry;
+  });
+
+  const data = {
+    date: dateStr,
+    stats: exportCats
+  };
+
+  // Focus summary
+  if (totalDayFocusSec > 0) {
+    data.focusSummary = {
+      icon: '🎯',
+      label: 'إجمالي التركيز اليوم',
+      duration: _formatFocusTime(totalDayFocusSec),
+      totalSec: totalDayFocusSec,
+      sessions: totalDayFocusSessions
+    };
+  }
+
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'day-stats-' + dateStr + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 /** تحديد الصلاتين اللتين تقع فترة العمل بينهما */
 function getWorkBetweenPrayers(seg, prayerMins) {
   const prayerOrder = [
@@ -1189,6 +1319,7 @@ function attachEvents() {
     document.getElementById('import-file').click();
   });
   document.getElementById('import-file').addEventListener('change', handleImport);
+  document.getElementById('export-stats-btn').addEventListener('click', exportDayStatsJSON);
 
   document.getElementById('settings-toggle').addEventListener('click', openSettings);
   document.getElementById('close-settings').addEventListener('click', closeSettings);
