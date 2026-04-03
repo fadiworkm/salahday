@@ -185,7 +185,16 @@
   letter-spacing: 0.05em;
 }
 
-/* ─── 4b. Activity Note (below header) ─── */
+/* ─── 4b. Pause Count (inline in action bar) ─── */
+.focus-pause-count {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #ff6b6b;
+  white-space: nowrap;
+}
+.focus-pause-count:empty { display: none; }
+
+/* ─── 4c. Activity Note (below header) ─── */
 .focus-note {
   font-size: 0.72rem;
   font-weight: 500;

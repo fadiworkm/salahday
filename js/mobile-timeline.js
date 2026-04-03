@@ -117,16 +117,17 @@ function renderMobileTimeline() {
 
     pActs.forEach(function (act) {
       if (act.start > cursor) {
-        html += _mtBuildFree(cursor, act.start, isToday, nowMin, lastLabel);
+        html += _mtBuildFree(cursor, act.start, isToday, nowMin, lastLabel, idx);
         lastLabel = act.start;
       }
-      html += _mtBuildAct(act, isToday, nowMin, lastLabel);
+      var actGIdx = acts.indexOf(act);
+      html += _mtBuildAct(act, isToday, nowMin, lastLabel, idx, actGIdx);
       lastLabel = act.end;
       cursor = act.end;
     });
 
     if (cursor < seg.end) {
-      html += _mtBuildFree(cursor, seg.end, isToday, nowMin, lastLabel);
+      html += _mtBuildFree(cursor, seg.end, isToday, nowMin, lastLabel, idx);
       lastLabel = seg.end;
     }
 
@@ -152,7 +153,7 @@ window.renderMobileTimeline = renderMobileTimeline;
 
 /* ─── node builders ─── */
 
-function _mtBuildFree(start, end, isToday, nowMin, lastLabel) {
+function _mtBuildFree(start, end, isToday, nowMin, lastLabel, pIdx) {
   var dur = end - start;
   var st = _mtState(start, end, isToday, nowMin);
   var h = _mtLineH(dur);
@@ -162,8 +163,9 @@ function _mtBuildFree(start, end, isToday, nowMin, lastLabel) {
     html += '<div class="mt-label" data-t="' + displayTime(start) + '"></div>';
   }
 
-  html += '<div class="mt-node mt-node-free' + (st ? ' ' + st : '') + '"' +
-          ' data-seg-s="' + start + '" data-seg-e="' + end + '">';
+  html += '<div class="mt-node mt-node-free mt-clickable' + (st ? ' ' + st : '') + '"' +
+          ' data-seg-s="' + start + '" data-seg-e="' + end + '"' +
+          ' onclick="onBarFreeClick(' + pIdx + ', ' + start + ')">';
   html += '<div class="mt-rail"><div class="mt-line" style="height:' + h + 'px"><div class="mt-line-fill"></div></div></div>';
   html += '<div class="mt-body mt-body-free">';
   html += '<span class="mt-free-dur">' + formatDuration(dur) + '</span>';
@@ -184,7 +186,7 @@ function _mtBuildFree(start, end, isToday, nowMin, lastLabel) {
   return html;
 }
 
-function _mtBuildAct(act, isToday, nowMin, lastLabel) {
+function _mtBuildAct(act, isToday, nowMin, lastLabel, pIdx, actGIdx) {
   var dur = act.end - act.start;
   var st = _mtState(act.start, act.end, isToday, nowMin);
   var h = _mtPillH(dur);
@@ -195,9 +197,10 @@ function _mtBuildAct(act, isToday, nowMin, lastLabel) {
     html += '<div class="mt-label" data-t="' + displayTime(act.start) + '"></div>';
   }
 
-  html += '<div class="mt-node mt-node-act' + (st ? ' ' + st : '') + '"' +
+  html += '<div class="mt-node mt-node-act mt-clickable' + (st ? ' ' + st : '') + '"' +
           ' data-seg-s="' + act.start + '" data-seg-e="' + act.end + '"' +
-          ' style="--node-color:' + color + '">';
+          ' style="--node-color:' + color + '"' +
+          ' onclick="editActivity(' + pIdx + ', ' + actGIdx + ')">';
   html += '<div class="mt-rail"><div class="mt-pill" style="height:' + h + 'px"><div class="mt-pill-fill"></div></div></div>';
   html += '<div class="mt-body">';
   html += '<div class="mt-icon" style="background:' + color + '">' + (act.icon || '') + '</div>';

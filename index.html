@@ -297,7 +297,10 @@
             <input type="time" id="af-end-time" class="af-input" step="300">
           </div>
         </div>
-        <button type="button" class="btn-start-now" id="af-start-now-btn">▶ ابدأ الآن</button>
+        <div class="af-now-btns">
+          <button type="button" class="btn-start-now" id="af-start-now-btn">▶ ابدأ الآن</button>
+          <button type="button" class="btn-end-now" id="af-end-now-btn">◼ انتهِ الآن</button>
+        </div>
         <div class="af-field">
           <label>المدة (دقيقة)</label>
           <div class="af-duration-row">
@@ -368,6 +371,31 @@
     </div>
   </div>
 
+  <!-- ─── حوار الفترات غير المحددة ─── -->
+  <div class="confirm-overlay" id="unassigned-overlay">
+    <div class="confirm-modal ua-modal">
+      <div class="ua-header">
+        <span class="ua-title">⏳ فترات غير محددة</span>
+        <button class="planner-close" onclick="closeUnassignedDialog()">&times;</button>
+      </div>
+      <div class="ua-body" id="unassigned-body"></div>
+    </div>
+  </div>
+
+  <!-- ─── حوار تعديل النشاط المجاور ─── -->
+  <div class="confirm-overlay" id="adj-overlay">
+    <div class="confirm-modal" style="max-width:340px">
+      <div class="confirm-icon" id="adj-icon">⏱️</div>
+      <div class="confirm-text" id="adj-text"></div>
+      <div class="adj-act-preview" id="adj-preview"></div>
+      <div class="confirm-btns adj-btns">
+        <button class="confirm-yes adj-btn" id="adj-shift">إزاحة</button>
+        <button class="confirm-yes adj-btn adj-btn-extend" id="adj-extend">تمديد</button>
+        <button class="confirm-no" id="adj-cancel">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ─── تأكيد المسح ─── -->
   <div class="confirm-overlay" id="confirm-overlay">
     <div class="confirm-modal">
@@ -410,6 +438,7 @@
           <button class="focus-mute" id="focus-mute" title="كتم الصوت">
             <span id="focus-mute-icon">🔊</span>
           </button>
+          <span class="focus-pause-count" id="focus-pause-count"></span>
           <div class="focus-pomo-boxes" id="focus-pomo-boxes"></div>
           <div class="focus-activity">
             <span class="focus-icon" id="focus-icon"></span>

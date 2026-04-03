@@ -474,23 +474,65 @@
 .af-field-half { flex: 1; }
 .af-field-half .af-input { margin-bottom: 0; }
 
-.btn-start-now {
-  display: block;
-  width: 100%;
-  padding: 8px 0;
+.af-now-btns {
+  display: flex;
+  gap: 8px;
   margin-bottom: 10px;
-  background: rgba(76, 205, 196, 0.12);
-  color: #4ecdc4;
-  border: 1px solid rgba(76, 205, 196, 0.3);
+}
+.btn-start-now, .btn-end-now {
+  flex: 1;
+  padding: 8px 0;
   border-radius: 8px;
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s;
 }
+.btn-start-now {
+  background: rgba(76, 205, 196, 0.12);
+  color: #4ecdc4;
+  border: 1px solid rgba(76, 205, 196, 0.3);
+}
 .btn-start-now:hover {
   background: rgba(76, 205, 196, 0.22);
   border-color: rgba(76, 205, 196, 0.5);
+}
+.btn-end-now {
+  background: rgba(255, 107, 107, 0.12);
+  color: #ff6b6b;
+  border: 1px solid rgba(255, 107, 107, 0.3);
+}
+.btn-end-now:hover {
+  background: rgba(255, 107, 107, 0.22);
+  border-color: rgba(255, 107, 107, 0.5);
+}
+
+/* ─── حوار تعديل النشاط المجاور ─── */
+.adj-act-preview {
+  margin: 10px 0 14px;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 8px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  direction: rtl;
+}
+.adj-btns { flex-wrap: wrap; }
+.adj-btn {
+  background: rgba(76, 205, 196, 0.15) !important;
+  color: #4ecdc4 !important;
+  border-color: rgba(76, 205, 196, 0.3) !important;
+}
+.adj-btn:hover {
+  background: rgba(76, 205, 196, 0.25) !important;
+}
+.adj-btn-extend {
+  background: rgba(124, 106, 239, 0.15) !important;
+  color: #7c6aef !important;
+  border-color: rgba(124, 106, 239, 0.3) !important;
+}
+.adj-btn-extend:hover {
+  background: rgba(124, 106, 239, 0.25) !important;
 }
 
 .af-field { margin-bottom: 14px; }

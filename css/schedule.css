@@ -1362,11 +1362,18 @@
   padding: 4px 12px 10px;
 }
 
+.wt-clickable { cursor: pointer; }
+.wt-vb-free.wt-clickable:hover { background: rgba(78, 205, 196, 0.15); }
+.wt-vb-act.wt-clickable:hover { filter: brightness(1.15); }
+
 .wt-act-card {
   background: color-mix(in srgb, var(--act-color) 12%, transparent);
   border-right: 3px solid var(--act-color);
   border-radius: 8px;
   padding: 8px 10px;
+}
+.wt-act-card.wt-clickable:hover {
+  background: color-mix(in srgb, var(--act-color) 20%, transparent);
 }
 
 .wt-act-card-header {
@@ -1969,6 +1976,80 @@
 /* تأثير خاص لصف العمل */
 .ds-item-work .ds-name {
   color: var(--success);
+}
+
+/* غير محدد — قابل للنقر */
+.ds-item-unassigned .ds-name { color: #999; }
+.ds-item-clickable {
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.ds-item-clickable:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+.ds-arrow {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-right: 2px;
+}
+
+/* ─── حوار الفترات غير المحددة ─── */
+.ua-modal {
+  max-width: 380px;
+  text-align: right;
+}
+.ua-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.ua-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.ua-body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.ua-slot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.ua-slot:hover {
+  background: rgba(78, 205, 196, 0.1);
+  border-color: rgba(78, 205, 196, 0.3);
+}
+.ua-slot-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ua-slot-time {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.ua-slot-dur {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+.ua-slot-action {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #4ecdc4;
+  white-space: nowrap;
 }
 
 /* ─── إجمالي اليوم ─── */

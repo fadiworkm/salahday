@@ -381,6 +381,10 @@
   font-style: italic;
 }
 
+.mt-clickable { cursor: pointer; }
+.mt-node-free.mt-clickable:hover .mt-body-free { background: rgba(78, 205, 196, 0.1); border-radius: 8px; }
+.mt-node-act.mt-clickable:hover .mt-body { background: rgba(255,255,255,0.05); border-radius: 8px; }
+
 /* ════════════════════════════
    States: Done
    ════════════════════════════ */

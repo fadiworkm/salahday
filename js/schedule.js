@@ -611,9 +611,24 @@ function renderDayStats(segments) {
     categories.push({ name: 'صلاة وتحضير', icon: '❤️', color: '#7c6aef', duration: prayerTotal, itemClass: 'ds-item-prayer' });
   }
 
+  // حساب الفجوات غير المحددة داخل فترات العمل
+  const unassignedSlots = [];
+  const disabledPeriods = savedPlanStats ? savedPlanStats.disabledPeriods || [] : [];
+  workSegs.forEach(function(wSeg, wIdx) {
+    const pKey = 'work:' + wSeg.start + '-' + wSeg.end;
+    if (disabledPeriods.indexOf(pKey) !== -1) return;
+    const pActs = planActivities.filter(a => a.start >= wSeg.start && a.end <= wSeg.end).sort((a, b) => a.start - b.start);
+    let cursor = wSeg.start;
+    pActs.forEach(act => {
+      if (act.start > cursor) unassignedSlots.push({ start: cursor, end: act.start, duration: act.start - cursor, periodIdx: wIdx });
+      cursor = act.end;
+    });
+    if (cursor < wSeg.end) unassignedSlots.push({ start: cursor, end: wSeg.end, duration: wSeg.end - cursor, periodIdx: wIdx });
+  });
+
   const remainingWork = Math.max(0, typeTotals.work - workActivityTime);
   if (remainingWork > 0) {
-    categories.push({ name: 'غير محدد', icon: '⏳', color: '#888', duration: remainingWork, itemClass: 'ds-item-work' });
+    categories.push({ name: 'غير محدد', icon: '⏳', color: '#888', duration: remainingWork, itemClass: 'ds-item-unassigned', _slots: unassignedSlots });
   }
 
   // إضافة أنشطة المخطط
@@ -624,8 +639,14 @@ function renderDayStats(segments) {
     }
   }
 
-  // ترتيب حسب المدة تنازلياً
-  categories.sort((a, b) => b.duration - a.duration);
+  // ترتيب: غير محدد أولاً، ثم عمل، ثم عمل خارجي، ثم الباقي بالمدة تنازلياً
+  const _sortPriority = { 'غير محدد': 0, 'عمل': 1, 'عمل خارجي': 2 };
+  categories.sort((a, b) => {
+    const pa = _sortPriority.hasOwnProperty(a.name) ? _sortPriority[a.name] : 99;
+    const pb = _sortPriority.hasOwnProperty(b.name) ? _sortPriority[b.name] : 99;
+    if (pa !== pb) return pa - pb;
+    return b.duration - a.duration;
+  });
 
   // Build focus data: map sessions to categories
   const focusSessions = typeof FocusData !== 'undefined' ? FocusData.get(dateStr) : [];
@@ -655,14 +676,16 @@ function renderDayStats(segments) {
   for (const cat of categories) {
     const pct = ((cat.duration / TOTAL_DAY) * 100).toFixed(1);
     const focus = focusByCat[cat.name];
+    const isUnassigned = cat.name === 'غير محدد';
     html += `
-      <div class="ds-item ${cat.itemClass || ''}">
+      <div class="ds-item ${cat.itemClass || ''}${isUnassigned ? ' ds-item-clickable' : ''}"${isUnassigned ? ' onclick="showUnassignedDialog()"' : ''}>
         <div class="ds-bar" style="width: ${pct}%; background: ${cat.color}"></div>
         <div class="ds-info">
           <span class="ds-icon">${cat.icon}</span>
           <span class="ds-name">${cat.name}</span>
           <span class="ds-time">${formatDuration(cat.duration)}</span>
           <span class="ds-pct">${pct}%</span>
+          ${isUnassigned ? '<span class="ds-arrow">&#9662;</span>' : ''}
         </div>`;
     if (focus && focus.totalSec > 0) {
       const focusPct = Math.min(100, (focus.totalSec / (cat.duration * 60)) * 100).toFixed(0);
@@ -699,6 +722,40 @@ function renderDayStats(segments) {
   }
 
   container.innerHTML = html;
+
+  // حفظ الفجوات غير المحددة لاستخدامها في الحوار
+  window._unassignedSlots = unassignedSlots;
+}
+
+/** عرض حوار الفترات غير المحددة */
+function showUnassignedDialog() {
+  var slots = window._unassignedSlots || [];
+  if (slots.length === 0) return;
+
+  var overlay = document.getElementById('unassigned-overlay');
+  var body = document.getElementById('unassigned-body');
+
+  var html = '';
+  slots.forEach(function(slot) {
+    html += '<div class="ua-slot" onclick="onUnassignedSlotClick(' + slot.periodIdx + ', ' + slot.start + '); document.getElementById(\'unassigned-overlay\').classList.remove(\'active\')">';
+    html += '<div class="ua-slot-info">';
+    html += '<span class="ua-slot-time">' + displayTimeRange(slot.start, slot.end) + '</span>';
+    html += '<span class="ua-slot-dur">' + formatDuration(slot.duration) + '</span>';
+    html += '</div>';
+    html += '<span class="ua-slot-action">✍ إدارة</span>';
+    html += '</div>';
+  });
+
+  body.innerHTML = html;
+  overlay.classList.add('active');
+}
+
+function closeUnassignedDialog() {
+  document.getElementById('unassigned-overlay').classList.remove('active');
+}
+
+function onUnassignedSlotClick(periodIdx, startMin) {
+  onBarFreeClick(periodIdx, startMin);
 }
 
 /** Export day stats + focus data as JSON — mirrors the visual display */
@@ -740,7 +797,13 @@ function exportDayStatsJSON() {
     const act = activityMap[key];
     if (act.duration > 0) categories.push({ name: act.name, icon: act.icon, color: act.color, durationMin: act.duration });
   }
-  categories.sort((a, b) => b.durationMin - a.durationMin);
+  const _sp = { 'غير محدد': 0, 'عمل': 1, 'عمل خارجي': 2 };
+  categories.sort((a, b) => {
+    const pa = _sp.hasOwnProperty(a.name) ? _sp[a.name] : 99;
+    const pb = _sp.hasOwnProperty(b.name) ? _sp[b.name] : 99;
+    if (pa !== pb) return pa - pb;
+    return b.durationMin - a.durationMin;
+  });
 
   // Focus sessions grouped by category (same logic as renderDayStats)
   const focusSessions = typeof FocusData !== 'undefined' ? FocusData.get(dateStr) : [];
@@ -961,7 +1024,7 @@ function renderWorkBlocks(segments, prayerMins) {
           if (act.start > cursor) {
             const freeDur = act.start - cursor;
             const fState = isToday2 ? (nowMin2 >= act.start ? 'done' : nowMin2 > cursor ? 'active' : '') : '';
-            html += `<div class="wt-vb-seg wt-vb-free${fState ? ' vb-' + fState : ''}" style="flex:${freeDur}" data-seg-s="${cursor}" data-seg-e="${act.start}">`;
+            html += `<div class="wt-vb-seg wt-vb-free wt-clickable${fState ? ' vb-' + fState : ''}" style="flex:${freeDur}" data-seg-s="${cursor}" data-seg-e="${act.start}" onclick="onBarFreeClick(${i}, ${cursor})">`;
             html += `<div class="vb-fill"></div>`;
             if (freeDur >= 15) html += `<span class="vb-dur">${formatDuration(freeDur)}</span>`;
             html += `<span class="vb-range">${displayTime(cursor)} - ${displayTime(act.start)}</span>`;
@@ -969,8 +1032,9 @@ function renderWorkBlocks(segments, prayerMins) {
             html += `</div>`;
           }
           const actDur = act.end - act.start;
+          const actGIdx = planActivities.indexOf(act);
           const aState = isToday2 ? (nowMin2 >= act.end ? 'done' : nowMin2 >= act.start ? 'active' : '') : '';
-          html += `<div class="wt-vb-seg wt-vb-act${aState ? ' vb-' + aState : ''}" style="flex:${actDur}; background:${act.color}" data-seg-s="${act.start}" data-seg-e="${act.end}">`;
+          html += `<div class="wt-vb-seg wt-vb-act wt-clickable${aState ? ' vb-' + aState : ''}" style="flex:${actDur}; background:${act.color}" data-seg-s="${act.start}" data-seg-e="${act.end}" onclick="editActivity(${i}, ${actGIdx})">`;
           html += `<div class="vb-fill"></div>`;
           html += `<span class="vb-dur">${act.icon}</span>`;
           html += `<span class="vb-range">${displayTime(act.start)} - ${displayTime(act.end)}</span>`;
@@ -981,7 +1045,7 @@ function renderWorkBlocks(segments, prayerMins) {
         if (cursor < seg.end) {
           const freeDur = seg.end - cursor;
           const fState = isToday2 ? (nowMin2 >= seg.end ? 'done' : nowMin2 > cursor ? 'active' : '') : '';
-          html += `<div class="wt-vb-seg wt-vb-free${fState ? ' vb-' + fState : ''}" style="flex:${freeDur}" data-seg-s="${cursor}" data-seg-e="${seg.end}">`;
+          html += `<div class="wt-vb-seg wt-vb-free wt-clickable${fState ? ' vb-' + fState : ''}" style="flex:${freeDur}" data-seg-s="${cursor}" data-seg-e="${seg.end}" onclick="onBarFreeClick(${i}, ${cursor})">`;
           html += `<div class="vb-fill"></div>`;
           if (freeDur >= 15) html += `<span class="vb-dur">${formatDuration(freeDur)}</span>`;
           html += `<span class="vb-range">${displayTime(cursor)} - ${displayTime(seg.end)}</span>`;
@@ -994,7 +1058,8 @@ function renderWorkBlocks(segments, prayerMins) {
         html += `<div class="wt-act-list">`;
         periodActs.forEach(act => {
           const hasNote = act.note && act.note.trim();
-          html += `<div class="wt-act-card" style="--act-color:${act.color}">`;
+          const cardGIdx = planActivities.indexOf(act);
+          html += `<div class="wt-act-card wt-clickable" style="--act-color:${act.color}" onclick="editActivity(${i}, ${cardGIdx})">`;
           html += `<div class="wt-act-card-header">`;
           html += `<span class="wt-act-card-icon">${act.icon}</span>`;
           html += `<span class="wt-act-card-name">${act.name}</span>`;

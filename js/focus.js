@@ -35,6 +35,17 @@ var FocusMode = {
   _tickInterval: null,
 
   _editingPomoIdx: null, // which box is being edited (null = adding new)
+  _pauseCount: 0,       // how many times user paused/stopped
+
+  _PAUSE_EMOJIS: ['😡','😭','😤','😠','😢','😳','🤯','🤬','😩','🥵'],
+
+  _updatePauseDisplay: function () {
+    var el = document.getElementById('focus-pause-count');
+    if (!el) return;
+    if (this._pauseCount <= 0) { el.textContent = ''; return; }
+    var emoji = this._PAUSE_EMOJIS[Math.floor(Math.random() * this._PAUSE_EMOJIS.length)];
+    el.textContent = this._pauseCount + '× ' + emoji;
+  },
 
   _getPomoKey: function () {
     return this._actInfo ? 'pomo_' + this._actInfo.name : null;
@@ -109,6 +120,8 @@ var FocusMode = {
     this._segStart = segStart;
     this._segEnd = segEnd;
     this._actInfo = actInfo;
+    this._pauseCount = existingSession ? (existingSession._pauseCount || 0) : 0;
+    this._updatePauseDisplay();
 
     // Initialize pomodoro tracking (set to current done count so celebration doesn't fire on open)
     var initFocus = existingSession ? existingSession.totalFocusSec : 0;
@@ -244,6 +257,11 @@ var FocusMode = {
     this._currentPeriodStart = null;
 
     // LiveTimer continues to tick, but with _running=false the elapsed won't increase
+
+    // Pause counter
+    this._pauseCount++;
+    if (this._session) this._session._pauseCount = this._pauseCount;
+    this._updatePauseDisplay();
 
     // Sound
     this._stopTickSound();

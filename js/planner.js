@@ -598,6 +598,7 @@ function addActivity() {
   savePlannerData();
   closeActivityForm();
   renderPlanner(currentPlannerFilter);
+  updateMainWorkBlocks();
 }
 
 function deleteActivityFromForm() {
@@ -619,6 +620,7 @@ function removeActivity(globalIndex) {
     activities.splice(globalIndex, 1);
     savePlannerData();
     renderPlanner(currentPlannerFilter);
+    updateMainWorkBlocks();
   }
 }
 
@@ -675,6 +677,173 @@ function showConfirm(message, onYes) {
   noBtn.addEventListener('click', handleNo);
 }
 
+// ─── حوار تعديل النشاط المجاور ───
+
+function showAdjustDialog(opts, onShift, onExtend) {
+  var overlay = document.getElementById('adj-overlay');
+  document.getElementById('adj-icon').textContent = opts.icon || '⏱️';
+  document.getElementById('adj-text').textContent = opts.text;
+  document.getElementById('adj-preview').innerHTML = opts.preview || '';
+  document.getElementById('adj-shift').textContent = opts.shiftLabel;
+  document.getElementById('adj-extend').textContent = opts.extendLabel;
+  overlay.classList.add('active');
+
+  var shiftBtn = document.getElementById('adj-shift');
+  var extendBtn = document.getElementById('adj-extend');
+  var cancelBtn = document.getElementById('adj-cancel');
+
+  function cleanup() {
+    overlay.classList.remove('active');
+    shiftBtn.removeEventListener('click', handleShift);
+    extendBtn.removeEventListener('click', handleExtend);
+    cancelBtn.removeEventListener('click', handleCancel);
+  }
+  function handleShift() { cleanup(); onShift(); }
+  function handleExtend() { cleanup(); onExtend(); }
+  function handleCancel() { cleanup(); }
+
+  shiftBtn.addEventListener('click', handleShift);
+  extendBtn.addEventListener('click', handleExtend);
+  cancelBtn.addEventListener('click', handleCancel);
+}
+
+// ─── مساعد: تحديث حقول النموذج ───
+
+function _updateFormFields(startMin, endMin) {
+  document.getElementById('af-start-time').value = minutesToTimeStr(startMin);
+  document.getElementById('af-end-time').value = minutesToTimeStr(endMin);
+  var dur = endMin - startMin;
+  var slider = document.getElementById('af-duration');
+  slider.max = dur;
+  slider.value = dur;
+  document.getElementById('af-duration-value').textContent = dur;
+}
+
+// ─── ابدأ الآن (محسّن) ───
+
+function handleStartNow() {
+  if (currentFormWorkIndex === null) return;
+  var periods = getPlannerPeriods();
+  var period = periods[currentFormWorkIndex];
+  if (!period) return;
+
+  var nowMin = _getNowMin();
+  if (nowMin < period.start) nowMin = period.start;
+  if (nowMin >= period.end) return;
+
+  var activities = getDayActivities();
+  var periodActs = activities.filter(function (a) {
+    return a.start >= period.start && a.end <= period.end;
+  }).filter(function (a) {
+    return editingActivityIndex === null || activities.indexOf(a) !== editingActivityIndex;
+  });
+  periodActs.sort(function (a, b) { return a.start - b.start; });
+
+  // البحث عن النشاط السابق الذي يتداخل مع الآن
+  var prevAct = null;
+  for (var i = 0; i < periodActs.length; i++) {
+    if (periodActs[i].start < nowMin && periodActs[i].end > nowMin) {
+      prevAct = periodActs[i];
+      break;
+    }
+  }
+
+  // حساب نهاية النشاط: بداية النشاط التالي أو نهاية الفترة
+  var endMin = period.end;
+  for (var j = 0; j < periodActs.length; j++) {
+    if (periodActs[j].start >= nowMin) {
+      endMin = periodActs[j].start;
+      break;
+    }
+  }
+
+  if (prevAct) {
+    var preview = prevAct.icon + ' ' + prevAct.name + ' (' + displayTimeRange(prevAct.start, prevAct.end) + ')';
+    showAdjustDialog({
+      icon: '▶',
+      text: 'يوجد نشاط سابق يتداخل مع الوقت الحالي. كيف تريد التعامل معه؟',
+      preview: preview,
+      shiftLabel: '⬅ إزاحة السابق',
+      extendLabel: '✂ قص السابق'
+    }, function () {
+      // إزاحة: تحريك النشاط السابق بالكامل للخلف
+      var dur = prevAct.end - prevAct.start;
+      prevAct.end = nowMin;
+      prevAct.start = nowMin - dur;
+      if (prevAct.start < period.start) prevAct.start = period.start;
+      savePlannerData();
+      _updateFormFields(nowMin, endMin);
+    }, function () {
+      // قص: تقليص نهاية النشاط السابق إلى الآن
+      prevAct.end = nowMin;
+      savePlannerData();
+      _updateFormFields(nowMin, endMin);
+    });
+  } else {
+    _updateFormFields(nowMin, endMin);
+  }
+}
+
+// ─── انتهِ الآن ───
+
+function handleEndNow() {
+  if (currentFormWorkIndex === null) return;
+  var periods = getPlannerPeriods();
+  var period = periods[currentFormWorkIndex];
+  if (!period) return;
+
+  var nowMin = _getNowMin();
+  if (nowMin <= period.start || nowMin > period.end) return;
+
+  // تحديث وقت الانتهاء في النموذج
+  var sParts = document.getElementById('af-start-time').value.split(':').map(Number);
+  var startMin = sParts[0] * 60 + sParts[1];
+  if (nowMin <= startMin) return;
+
+  var activities = getDayActivities();
+  var periodActs = activities.filter(function (a) {
+    return a.start >= period.start && a.end <= period.end;
+  }).filter(function (a) {
+    return editingActivityIndex === null || activities.indexOf(a) !== editingActivityIndex;
+  });
+  periodActs.sort(function (a, b) { return a.start - b.start; });
+
+  // البحث عن النشاط التالي
+  var nextAct = null;
+  for (var i = 0; i < periodActs.length; i++) {
+    if (periodActs[i].start >= nowMin) {
+      nextAct = periodActs[i];
+      break;
+    }
+  }
+
+  if (nextAct) {
+    var preview = nextAct.icon + ' ' + nextAct.name + ' (' + displayTimeRange(nextAct.start, nextAct.end) + ')';
+    showAdjustDialog({
+      icon: '◼',
+      text: 'يوجد نشاط تالٍ. كيف تريد التعامل معه؟',
+      preview: preview,
+      shiftLabel: '➡ إزاحة التالي',
+      extendLabel: '↔ تمديد التالي'
+    }, function () {
+      // إزاحة: تحريك النشاط التالي ليبدأ من الآن
+      var dur = nextAct.end - nextAct.start;
+      nextAct.start = nowMin;
+      nextAct.end = nowMin + dur;
+      if (nextAct.end > period.end) nextAct.end = period.end;
+      savePlannerData();
+      _updateFormFields(startMin, nowMin);
+    }, function () {
+      // تمديد: توسيع بداية النشاط التالي لتغطية الفجوة (الحفاظ على النهاية)
+      nextAct.start = nowMin;
+      savePlannerData();
+      _updateFormFields(startMin, nowMin);
+    });
+  } else {
+    _updateFormFields(startMin, nowMin);
+  }
+}
+
 // ─── ربط الأحداث ───
 
 document.addEventListener('DOMContentLoaded', async function () {
@@ -705,48 +874,9 @@ document.addEventListener('DOMContentLoaded', async function () {
   document.getElementById('af-start-time').addEventListener('change', syncFromStartTime);
   document.getElementById('af-end-time').addEventListener('change', syncFromEndTime);
 
-  // زر "ابدأ الآن": تعيين وقت البدء للوقت الحالي وإزاحة النشاط السابق
-  document.getElementById('af-start-now-btn').addEventListener('click', function () {
-    if (currentFormWorkIndex === null) return;
-    var periods = getPlannerPeriods();
-    var period = periods[currentFormWorkIndex];
-    if (!period) return;
-
-    var nowMin = _getNowMin();
-    if (nowMin < period.start) nowMin = period.start;
-    if (nowMin >= period.end) return;
-
-    // إزاحة النشاط السابق إن وُجد (تقليص نهايته إلى الآن)
-    var activities = getDayActivities();
-    var periodActs = activities.filter(function (a) {
-      return a.start >= period.start && a.end <= period.end;
-    });
-    periodActs.forEach(function (a) {
-      if (editingActivityIndex !== null && activities.indexOf(a) === editingActivityIndex) return;
-      if (a.start < nowMin && a.end > nowMin) {
-        a.end = nowMin;
-      }
-    });
-
-    // حساب نهاية النشاط: بداية النشاط التالي أو نهاية الفترة
-    var endMin = period.end;
-    periodActs.sort(function (a, b) { return a.start - b.start; });
-    for (var i = 0; i < periodActs.length; i++) {
-      if (editingActivityIndex !== null && activities.indexOf(periodActs[i]) === editingActivityIndex) continue;
-      if (periodActs[i].start >= nowMin) {
-        endMin = periodActs[i].start;
-        break;
-      }
-    }
-
-    document.getElementById('af-start-time').value = minutesToTimeStr(nowMin);
-    var dur = endMin - nowMin;
-    var slider = document.getElementById('af-duration');
-    slider.max = dur;
-    slider.value = dur;
-    document.getElementById('af-duration-value').textContent = dur;
-    document.getElementById('af-end-time').value = minutesToTimeStr(endMin);
-  });
+  // أزرار الوقت الحالي
+  document.getElementById('af-start-now-btn').addEventListener('click', handleStartNow);
+  document.getElementById('af-end-now-btn').addEventListener('click', handleEndNow);
 
   // عرض الأنشطة المسبقة
   renderPresetButtons();
