@@ -82,6 +82,23 @@ var FocusMode = {
     if (key) localStorage.setItem(key, JSON.stringify(list));
   },
 
+  _recalcPomos: function () {
+    var def = this._getDefaultPomoDur();
+    var totalMin = (this._segEnd - this._segStart);
+    var fullBlocks = Math.floor(totalMin / 60);
+    var list = [];
+    for (var i = 0; i < fullBlocks; i++) list.push(def);
+    var remaining = totalMin - (fullBlocks * 60);
+    if (remaining > 0) list.push(remaining < def ? remaining : def);
+    if (list.length === 0) list.push(Math.min(def, totalMin));
+    this._savePomoList(list);
+    // Force re-render
+    var els = this._getEls();
+    if (els.pomoBoxes) els.pomoBoxes._lastHtml = '';
+    var focusSec = this._session ? this._session.totalFocusSec || 0 : 0;
+    this._updatePomodoro(focusSec);
+  },
+
   _getEls: function () {
     if (this._els) return this._els;
     this._els = {
@@ -174,9 +191,10 @@ var FocusMode = {
       els.note.textContent = actNote || '';
     }
 
-    // Time range
+    // Time range + duration
+    var segDuration = segEnd - segStart;
     els.segRange.textContent =
-      '\u200F' + displayTime(segStart) + '\u200F - \u200F' + displayTime(segEnd) + '\u200F';
+      '\u200F' + displayTime(segStart) + '\u200F - \u200F' + displayTime(segEnd) + '\u200F  ·  ' + formatDuration(segDuration);
 
     // Wave color from activity color
     if (els.wave) {
@@ -578,8 +596,9 @@ var FocusMode = {
         html += '<div class="focus-pomo-box focus-pomo-box--pending" data-pomo-idx="' + i + '">' + num + '</div>';
       }
     }
-    // Add "+" button
+    // Add "+" and recalc buttons
     html += '<div class="focus-pomo-box focus-pomo-box--add" data-pomo-idx="add">+</div>';
+    html += '<div class="focus-pomo-box focus-pomo-box--recalc" data-pomo-idx="recalc">↻</div>';
     // Only update DOM when HTML actually changes (prevents click interception)
     if (els.pomoBoxes._lastHtml !== html) {
       els.pomoBoxes.innerHTML = html;
@@ -1339,6 +1358,8 @@ document.getElementById('focus-pomo-boxes').addEventListener('click', function (
   var idx = box.dataset.pomoIdx;
   if (idx === 'add') {
     FocusMode._openPomoDialog(null);
+  } else if (idx === 'recalc') {
+    FocusMode._recalcPomos();
   } else {
     FocusMode._openPomoDialog(parseInt(idx, 10));
   }

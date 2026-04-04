@@ -406,6 +406,20 @@
   color: rgba(255, 255, 255, 0.6);
 }
 
+/* ── Recalc box ── */
+.focus-pomo-box--recalc {
+  border-style: dashed;
+  border-color: rgba(78, 205, 196, 0.3);
+  font-size: 1rem;
+  font-weight: 700;
+  color: rgba(78, 205, 196, 0.5);
+  cursor: pointer;
+}
+.focus-pomo-box--recalc:hover {
+  border-color: rgba(78, 205, 196, 0.6);
+  color: rgba(78, 205, 196, 0.9);
+}
+
 @keyframes pomo-glow {
 
   0%,
