@@ -13,6 +13,7 @@
   <link rel="stylesheet" href="css/planner.css?v=3">
   <link rel="stylesheet" href="css/mobile-timeline.css?v=3">
   <link rel="stylesheet" href="css/focus.css?v=3">
+  <link rel="stylesheet" href="css/tick-slider.css?v=1">
   <link rel="stylesheet" href="css/theme-light.css?v=1">
 </head>
 <body>
@@ -303,10 +304,7 @@
         </div>
         <div class="af-field">
           <label>المدة (دقيقة)</label>
-          <div class="af-duration-row">
-            <input type="range" id="af-duration" min="5" max="120" step="5" value="30">
-            <span id="af-duration-value" class="af-dur-val">30</span>
-          </div>
+          <input type="range" id="af-duration" min="5" max="120" step="5" value="30">
         </div>
         <button class="btn-primary" id="af-add-btn">إضافة</button>
         <button class="btn-delete" id="af-delete-btn" style="display:none">&#128465; حذف النشاط</button>
@@ -540,6 +538,7 @@
   <script src="js/focus-data.js?v=3"></script>
   <script src="js/focus.js?v=3"></script>
   <script src="js/mobile-timeline.js?v=3"></script>
+  <script src="js/tick-slider.js?v=1"></script>
   <script src="js/planner.js?v=3"></script>
 </body>
 </html>

@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/theme-light.css?v=1">
+  <link rel="stylesheet" href="css/tick-slider.css?v=1">
 </head>
 <body>
 
@@ -67,13 +68,7 @@
 
         <div class="setting-item inline-setting">
           <label>وقت الاستيقاظ قبل الفجر</label>
-          <div class="range-row">
-            <input type="range" id="pre-fajr-buffer" min="0" max="120" step="5" value="60">
-            <div class="range-value">
-              <span id="pre-fajr-buffer-value">60</span>
-              <span class="range-unit">دقيقة</span>
-            </div>
-          </div>
+          <input type="range" id="pre-fajr-buffer" min="0" max="120" step="5" value="60">
         </div>
 
         <div class="flex-wake-row">
@@ -191,24 +186,12 @@
 
       <div class="setting-item">
         <label>مدة دورة النوم</label>
-        <div class="range-row">
-          <input type="range" id="cycle-duration" min="60" max="120" step="5" value="90">
-          <div class="range-value">
-            <span id="cycle-duration-value">90</span>
-            <span class="range-unit">دقيقة</span>
-          </div>
-        </div>
+        <input type="range" id="cycle-duration" min="60" max="120" step="5" value="90">
       </div>
 
       <div class="setting-item">
         <label>وقت النوم الافتراضي بعد العشاء</label>
-        <div class="range-row">
-          <input type="range" id="bedtime-after-isha" min="30" max="240" step="15" value="60">
-          <div class="range-value">
-            <span id="bedtime-after-isha-value">60</span>
-            <span class="range-unit">دقيقة</span>
-          </div>
-        </div>
+        <input type="range" id="bedtime-after-isha" min="30" max="240" step="15" value="60">
       </div>
 
       <div class="setting-item">
@@ -223,6 +206,7 @@
     </div>
   </div>
 
+  <script src="js/tick-slider.js?v=1"></script>
   <script src="js/theme.js?v=1"></script>
   <script src="js/data.js?v=2"></script>
   <script src="js/calculator.js?v=2"></script>

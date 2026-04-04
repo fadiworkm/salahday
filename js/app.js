@@ -86,11 +86,10 @@ function attachEvents() {
   const cycleDurationInput = document.getElementById('cycle-duration');
   const preFajrInput = document.getElementById('pre-fajr-buffer');
 
-  cycleDurationInput.addEventListener('input', () => {
-    document.getElementById('cycle-duration-value').textContent = cycleDurationInput.value;
-  });
+  TickSlider.init(preFajrInput, { color: 'var(--fajr, #f0c27f)' });
+  TickSlider.init(cycleDurationInput, { color: 'var(--purple, #7c6aef)' });
+
   preFajrInput.addEventListener('input', () => {
-    document.getElementById('pre-fajr-buffer-value').textContent = preFajrInput.value;
     settings.preFajrBuffer = parseInt(preFajrInput.value);
     saveSettings();
     hideResults();
@@ -109,9 +108,7 @@ function attachEvents() {
   // وقت النوم بعد العشاء (في الإعدادات)
   const bedAfterIshaInput = document.getElementById('bedtime-after-isha');
   if (bedAfterIshaInput) {
-    bedAfterIshaInput.addEventListener('input', () => {
-      document.getElementById('bedtime-after-isha-value').textContent = bedAfterIshaInput.value;
-    });
+    TickSlider.init(bedAfterIshaInput, { color: 'var(--purple, #7c6aef)' });
   }
 
   // أزرار تبديل تنسيق الوقت
@@ -656,9 +653,9 @@ function loadSettings() {
     } catch (e) { /* تجاهل */ }
   }
   document.getElementById('cycle-duration').value = settings.cycleDuration;
-  document.getElementById('cycle-duration-value').textContent = settings.cycleDuration;
+  TickSlider.refresh(document.getElementById('cycle-duration'));
   document.getElementById('pre-fajr-buffer').value = settings.preFajrBuffer;
-  document.getElementById('pre-fajr-buffer-value').textContent = settings.preFajrBuffer;
+  TickSlider.refresh(document.getElementById('pre-fajr-buffer'));
 
   // تحميل إعداد الاستيقاظ المرن
   const flexWakeEl = document.getElementById('flexible-wake');
@@ -670,7 +667,7 @@ function loadSettings() {
   const bedAfterIshaEl = document.getElementById('bedtime-after-isha');
   if (bedAfterIshaEl) {
     bedAfterIshaEl.value = settings.bedtimeAfterIsha;
-    document.getElementById('bedtime-after-isha-value').textContent = settings.bedtimeAfterIsha;
+    TickSlider.refresh(bedAfterIshaEl);
   }
 
   // تحديث زر تنسيق الوقت

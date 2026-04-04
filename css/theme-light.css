@@ -254,13 +254,7 @@
   box-shadow: 0 8px 40px rgba(0, 0, 0, 0.18);
 }
 
-/* Range sliders in settings */
-[data-theme="light"] .setting-item input[type="range"],
-[data-theme="light"] .inline-setting input[type="range"] {
-  background: rgba(0, 0, 0, 0.12) !important;
-  border: none !important;
-  box-shadow: none !important;
-}
+/* Range sliders — now handled by tick-slider.css light theme rule */
 
 /* Toggle group buttons */
 [data-theme="light"] .toggle-group {
@@ -423,9 +417,6 @@
   color: var(--success) !important;
 }
 
-[data-theme="light"] .af-duration-row input[type="range"] {
-  background: rgba(0, 0, 0, 0.12) !important;
-}
 
 /* Custom preset icon/color pickers */
 [data-theme="light"] .cp-icon-btn {

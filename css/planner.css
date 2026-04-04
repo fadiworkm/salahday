@@ -386,7 +386,7 @@
   background: var(--bg-mid);
   border: 1px solid var(--border-card);
   border-radius: var(--radius);
-  max-width: 360px;
+  max-width: 440px;
   width: 100%;
   max-height: 80vh;
   overflow-y: auto;
@@ -405,19 +405,19 @@
 
 .af-presets {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
   margin-bottom: 16px;
 }
 
 .af-preset {
-  padding: 10px 8px;
+  padding: 7px 5px;
   background: rgba(255, 255, 255, 0.04);
   border: 2px solid rgba(255, 255, 255, 0.08);
   border-radius: var(--radius-sm);
   color: var(--text-secondary);
   font-family: 'Cairo', sans-serif;
-  font-size: 0.78rem;
+  font-size: 0.68rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
@@ -538,40 +538,7 @@
 .af-field { margin-bottom: 14px; }
 .af-field label { display: block; font-size: 0.82rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; }
 
-.af-duration-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.af-duration-row input[type="range"] {
-  flex: 1;
-  -webkit-appearance: none;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-  outline: none;
-}
-.af-duration-row input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 20px; height: 20px;
-  background: var(--success);
-  border-radius: 50%;
-  cursor: pointer;
-}
-.af-duration-row input[type="range"]::-moz-range-thumb {
-  width: 20px; height: 20px;
-  background: var(--success);
-  border-radius: 50%;
-  cursor: pointer;
-  border: none;
-}
-.af-dur-val {
-  min-width: 40px;
-  text-align: center;
-  font-weight: 700;
-  font-size: 1rem;
-  color: var(--success);
-}
+/* af-duration slider now uses TickSlider component (tick-slider.css) */
 
 /* ─── إضافة نشاط مخصص ─── */
 .custom-preset-overlay {
@@ -713,7 +680,7 @@
 @media (max-width: 600px) {
   .planner-modal { max-height: 95vh; }
   .planner-body { padding: 12px; }
-  .af-presets { grid-template-columns: repeat(2, 1fr); }
+  .af-presets { grid-template-columns: repeat(3, 1fr); }
   .pl-bar { height: 50px; }
 }
 

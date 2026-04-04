@@ -1235,40 +1235,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   margin-bottom: 16px;
 }
 
-.inline-setting .range-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.inline-setting input[type="range"] {
-  flex: 1;
-  -webkit-appearance: none;
-  appearance: none;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-  outline: none;
-}
-
-.inline-setting input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 20px;
-  height: 20px;
-  background: var(--fajr);
-  border-radius: 50%;
-  cursor: pointer;
-  box-shadow: 0 0 8px var(--fajr-glow);
-}
-
-.inline-setting input[type="range"]::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  background: var(--fajr);
-  border-radius: 50%;
-  cursor: pointer;
-  border: none;
-}
+/* Slider styling now handled by TickSlider component (tick-slider.css) */
 
 .setting-item label {
   display: block;
@@ -1278,40 +1245,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   margin-bottom: 10px;
 }
 
-.setting-item .range-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.setting-item input[type="range"] {
-  flex: 1;
-  -webkit-appearance: none;
-  appearance: none;
-  height: 6px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-  outline: none;
-}
-
-.setting-item input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 20px;
-  height: 20px;
-  background: var(--purple);
-  border-radius: 50%;
-  cursor: pointer;
-  box-shadow: 0 0 8px var(--purple-glow);
-}
-
-.setting-item input[type="range"]::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  background: var(--purple);
-  border-radius: 50%;
-  cursor: pointer;
-  border: none;
-}
 
 /* مجموعة أزرار التبديل */
 .toggle-group {
@@ -1349,19 +1282,6 @@ input[type="time"]::-webkit-calendar-picker-indicator {
   color: var(--text-secondary);
 }
 
-.range-value {
-  min-width: 48px;
-  text-align: center;
-  font-weight: 700;
-  font-size: 1.1rem;
-  color: var(--purple);
-  direction: ltr;
-}
-
-.range-unit {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
 
 /* ─── خيار الاستيقاظ المرن ─── */
 .flex-wake-row {

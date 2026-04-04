@@ -65,12 +65,15 @@ var FocusMode = {
         try { var arr = JSON.parse(raw); if (Array.isArray(arr) && arr.length) return arr; } catch (e) {}
       }
     }
-    // Auto-generate from segment duration using default
+    // Auto-generate: distribute into hour-aligned blocks
     var def = this._getDefaultPomoDur();
     var totalMin = (this._segEnd - this._segStart);
-    var count = Math.max(1, Math.floor(totalMin / (def + 15)));
+    var fullBlocks = Math.floor(totalMin / 60);
     var list = [];
-    for (var i = 0; i < count; i++) list.push(def);
+    for (var i = 0; i < fullBlocks; i++) list.push(def);
+    var remaining = totalMin - (fullBlocks * 60);
+    if (remaining > 0) list.push(remaining < def ? remaining : def);
+    if (list.length === 0) list.push(Math.min(def, totalMin));
     return list;
   },
 

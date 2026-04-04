@@ -236,13 +236,10 @@ function updatePlannerSummary() {
 // ─── الأنشطة المسبقة ───
 
 var DEFAULT_PRESETS = [
-  { name: 'عمل',       icon: '💼', color: '#4ecdc4' },
-  { name: 'رياضة',     icon: '🏃', color: '#ff6b6b' },
-  { name: 'قراءة',     icon: '📖', color: '#7c6aef' },
-  { name: 'طعام',      icon: '🍽️', color: '#e67e22' },
-  { name: 'استراحة',   icon: '☕', color: '#ffa366' },
-  { name: 'قيلولة',    icon: '😴', color: '#6c5ce7' },
-  { name: 'نوم',       icon: '🌙', color: '#3a3f6b' },
+  { name: 'عمل', icon: '💼', color: '#4ecdc4' },
+  { name: 'رياضة', icon: '🏃', color: '#ff6b6b' },
+  { name: 'قراءة', icon: '📖', color: '#7c6aef' },
+  { name: 'قيلولة', icon: '😴', color: '#6c5ce7' },
   { name: 'عمل خارجي', icon: '🏢', color: '#3498db' }
 ];
 
@@ -252,7 +249,7 @@ function loadCustomPresets() {
 
 function saveCustomPreset(preset) {
   var customs = loadCustomPresets().slice();
-  customs = customs.filter(function(p) { return p.name !== preset.name; });
+  customs = customs.filter(function (p) { return p.name !== preset.name; });
   customs.push(preset);
   ScheduleData.savePresets(customs);
 }
@@ -266,18 +263,19 @@ function renderPresetButtons() {
   if (!container) return;
   var presets = getAllPresets();
   var html = '';
-  presets.forEach(function(p) {
+  presets.forEach(function (p) {
     html += '<button type="button" class="af-preset" data-name="' + p.name + '" data-icon="' + p.icon + '" data-color="' + p.color + '" style="border-color:' + p.color + '30">' + p.icon + ' ' + p.name + '</button>';
   });
   html += '<button type="button" class="af-preset af-preset-add" id="add-custom-preset">+ جديد</button>';
   container.innerHTML = html;
 
   // ربط الأحداث
-  container.querySelectorAll('.af-preset:not(.af-preset-add)').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      container.querySelectorAll('.af-preset').forEach(function(p) { p.classList.remove('af-preset-selected'); });
+  container.querySelectorAll('.af-preset:not(.af-preset-add)').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      container.querySelectorAll('.af-preset').forEach(function (p) { p.classList.remove('af-preset-selected'); });
       btn.classList.add('af-preset-selected');
       selectedPreset = { name: btn.dataset.name, icon: btn.dataset.icon, color: btn.dataset.color };
+      document.getElementById('af-custom-name').value = btn.dataset.name;
     });
   });
 
@@ -296,8 +294,8 @@ function openCustomPresetDialog() {
   cpSelectedIcon = null;
   cpSelectedColor = null;
   document.getElementById('cp-name').value = '';
-  document.querySelectorAll('.cp-icon-btn').forEach(function(b) { b.classList.remove('cp-selected'); });
-  document.querySelectorAll('.cp-color-btn').forEach(function(b) { b.classList.remove('cp-selected'); });
+  document.querySelectorAll('.cp-icon-btn').forEach(function (b) { b.classList.remove('cp-selected'); });
+  document.querySelectorAll('.cp-color-btn').forEach(function (b) { b.classList.remove('cp-selected'); });
   document.getElementById('custom-preset-overlay').classList.add('active');
 }
 
@@ -315,9 +313,9 @@ function saveCustomPresetFromDialog() {
   renderPresetButtons();
   // تحديد النشاط الجديد تلقائياً
   selectedPreset = { name: name, icon: icon, color: color };
-  setTimeout(function() {
+  setTimeout(function () {
     var btns = document.querySelectorAll('.af-preset');
-    btns.forEach(function(b) {
+    btns.forEach(function (b) {
       b.classList.toggle('af-preset-selected', b.dataset.name === name);
     });
   }, 50);
@@ -325,8 +323,8 @@ function saveCustomPresetFromDialog() {
 
 // ─── ألوان وأيقونات عشوائية ───
 
-var RANDOM_COLORS = ['#e74c3c','#e67e22','#f1c40f','#2ecc71','#1abc9c','#3498db','#9b59b6','#e84393','#00cec9','#6c5ce7','#fd79a8','#00b894'];
-var RANDOM_ICONS = ['🎯','⭐','🔥','💡','📝','🎨','🎵','🏠','🚗','📱','🎮','🧹','🍳','💪','🧘','📞','✏️','🛒'];
+var RANDOM_COLORS = ['#e74c3c', '#e67e22', '#f1c40f', '#2ecc71', '#1abc9c', '#3498db', '#9b59b6', '#e84393', '#00cec9', '#6c5ce7', '#fd79a8', '#00b894'];
+var RANDOM_ICONS = ['🎯', '⭐', '🔥', '💡', '📝', '🎨', '🎵', '🏠', '🚗', '📱', '🎮', '🧹', '🍳', '💪', '🧘', '📞', '✏️', '🛒'];
 
 function getRandomColor() { return RANDOM_COLORS[Math.floor(Math.random() * RANDOM_COLORS.length)]; }
 function getRandomIcon() { return RANDOM_ICONS[Math.floor(Math.random() * RANDOM_ICONS.length)]; }
@@ -366,8 +364,8 @@ function getSmartStartTime(pIdx) {
   var periods = getPlannerPeriods();
   var period = periods[pIdx];
   if (!period) return period ? period.start : 0;
-  var activities = getDayActivities().filter(function(a) { return a.start >= period.start && a.end <= period.end; });
-  activities.sort(function(a, b) { return a.start - b.start; });
+  var activities = getDayActivities().filter(function (a) { return a.start >= period.start && a.end <= period.end; });
+  activities.sort(function (a, b) { return a.start - b.start; });
   // البدء بعد آخر نشاط
   if (activities.length > 0) return activities[activities.length - 1].end;
   return period.start;
@@ -377,9 +375,9 @@ function getMaxEndForStart(pIdx, startMin) {
   var periods = getPlannerPeriods();
   var period = periods[pIdx];
   if (!period) return 1440;
-  var activities = getDayActivities().filter(function(a) { return a.start >= period.start && a.end <= period.end; });
+  var activities = getDayActivities().filter(function (a) { return a.start >= period.start && a.end <= period.end; });
   if (editingActivityIndex !== null) {
-    activities = activities.filter(function(a, idx) { return idx !== editingActivityIndex; });
+    activities = activities.filter(function (a, idx) { return idx !== editingActivityIndex; });
   }
   var maxEnd = period.end;
   for (var i = 0; i < activities.length; i++) {
@@ -397,7 +395,6 @@ function syncFromStartAndDuration() {
   var startMin = parts[0] * 60 + parts[1];
   var dur = parseInt(document.getElementById('af-duration').value);
   document.getElementById('af-end-time').value = minutesToTimeStr(startMin + dur);
-  document.getElementById('af-duration-value').textContent = dur;
 }
 
 function syncFromEndTime() {
@@ -408,7 +405,7 @@ function syncFromEndTime() {
   var dur = Math.max(5, endMin - startMin);
   var slider = document.getElementById('af-duration');
   slider.value = dur;
-  document.getElementById('af-duration-value').textContent = dur;
+  TickSlider.refresh(slider);
 }
 
 function syncFromStartTime() {
@@ -419,6 +416,7 @@ function syncFromStartTime() {
   var slider = document.getElementById('af-duration');
   slider.max = maxDur;
   if (parseInt(slider.value) > maxDur) slider.value = maxDur;
+  TickSlider.refresh(slider);
   syncFromStartAndDuration();
 }
 
@@ -451,7 +449,7 @@ function showActivityForm(pIdx) {
   slider.step = 5;
   slider.max = maxDur;
   slider.value = defaultDur;
-  document.getElementById('af-duration-value').textContent = defaultDur;
+  TickSlider.refresh(slider);
   document.getElementById('af-end-time').value = minutesToTimeStr(smartStart + defaultDur);
 
   document.querySelectorAll('.af-preset').forEach(function (p) { p.classList.remove('af-preset-selected'); });
@@ -482,7 +480,7 @@ function setFullPeriod(pIdx) {
   slider.step = 1;
   slider.max = fullDur;
   slider.value = fullDur;
-  document.getElementById('af-duration-value').textContent = fullDur;
+  TickSlider.refresh(slider);
 
   document.querySelectorAll('.af-preset').forEach(function (p) { p.classList.remove('af-preset-selected'); });
 
@@ -513,7 +511,7 @@ function editActivity(pIdx, globalIdx) {
   var maxEnd = getMaxEndForStart(pIdx, act.start);
   slider.max = Math.max(5, maxEnd - act.start);
   slider.value = duration;
-  document.getElementById('af-duration-value').textContent = duration;
+  TickSlider.refresh(slider);
 
   selectedPreset = { name: act.name, icon: act.icon, color: act.color };
   document.querySelectorAll('.af-preset').forEach(function (p) {
@@ -563,8 +561,8 @@ function addActivity() {
   var activities = getDayActivities();
 
   // إزاحة ذكية: تحريك الأنشطة المجاورة إذا لزم الأمر
-  var periodActs = activities.filter(function(a) { return a.start >= period.start && a.end <= period.end; });
-  periodActs.forEach(function(a, idx) {
+  var periodActs = activities.filter(function (a) { return a.start >= period.start && a.end <= period.end; });
+  periodActs.forEach(function (a, idx) {
     if (editingActivityIndex !== null && activities.indexOf(a) === editingActivityIndex) return;
     // إزاحة نشاط يتداخل بعد النشاط الجديد
     if (a.start >= startMin && a.start < endMin) {
@@ -581,7 +579,7 @@ function addActivity() {
     if (typeof FocusData !== 'undefined' && oldAct) {
       var dateStr = getPlannerDate();
       var sessions = FocusData.getForSegment(dateStr, oldAct.start, oldAct.end);
-      sessions.forEach(function(s) {
+      sessions.forEach(function (s) {
         s.segStart = startMin;
         s.segEnd = endMin;
         s.activityName = name;
@@ -615,7 +613,7 @@ function removeActivity(globalIndex) {
     if (typeof FocusData !== 'undefined' && act) {
       var dateStr = getPlannerDate();
       var sessions = FocusData.getForSegment(dateStr, act.start, act.end);
-      sessions.forEach(function(s) { FocusData.delete(dateStr, s.id); });
+      sessions.forEach(function (s) { FocusData.delete(dateStr, s.id); });
     }
     activities.splice(globalIndex, 1);
     savePlannerData();
@@ -638,14 +636,14 @@ function updateMainWorkBlocks() {
 }
 
 function clearDayPlan() {
-  showConfirm('هل تريد مسح جميع الأنشطة لهذا اليوم؟', function() {
+  showConfirm('هل تريد مسح جميع الأنشطة لهذا اليوم؟', function () {
     var dateStr = getPlannerDate();
     var dayData = ScheduleData.getDay(dateStr);
     // Delete all focus sessions for this day's activities
     if (typeof FocusData !== 'undefined' && dayData && dayData.activities) {
-      dayData.activities.forEach(function(act) {
+      dayData.activities.forEach(function (act) {
         var sessions = FocusData.getForSegment(dateStr, act.start, act.end);
-        sessions.forEach(function(s) { FocusData.delete(dateStr, s.id); });
+        sessions.forEach(function (s) { FocusData.delete(dateStr, s.id); });
       });
     }
     if (dayData) {
@@ -716,7 +714,7 @@ function _updateFormFields(startMin, endMin) {
   var slider = document.getElementById('af-duration');
   slider.max = dur;
   slider.value = dur;
-  document.getElementById('af-duration-value').textContent = dur;
+  TickSlider.refresh(slider);
 }
 
 // ─── ابدأ الآن (محسّن) ───
@@ -870,6 +868,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   document.getElementById('af-delete-btn').addEventListener('click', deleteActivityFromForm);
 
   // مزامنة البدء/الانتهاء/المدة
+  TickSlider.init(document.getElementById('af-duration'), { color: 'var(--success)' });
   document.getElementById('af-duration').addEventListener('input', syncFromStartAndDuration);
   document.getElementById('af-start-time').addEventListener('change', syncFromStartTime);
   document.getElementById('af-end-time').addEventListener('change', syncFromEndTime);
@@ -883,24 +882,24 @@ document.addEventListener('DOMContentLoaded', async function () {
 
   // نافذة النشاط المخصص
   document.getElementById('cp-close').addEventListener('click', closeCustomPresetDialog);
-  document.getElementById('custom-preset-overlay').addEventListener('click', function(e) {
+  document.getElementById('custom-preset-overlay').addEventListener('click', function (e) {
     if (e.target === e.currentTarget) closeCustomPresetDialog();
   });
   document.getElementById('cp-save').addEventListener('click', saveCustomPresetFromDialog);
 
   // اختيار أيقونة
-  document.querySelectorAll('.cp-icon-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      document.querySelectorAll('.cp-icon-btn').forEach(function(b) { b.classList.remove('cp-selected'); });
+  document.querySelectorAll('.cp-icon-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.cp-icon-btn').forEach(function (b) { b.classList.remove('cp-selected'); });
       btn.classList.add('cp-selected');
       cpSelectedIcon = btn.dataset.icon;
     });
   });
 
   // اختيار لون
-  document.querySelectorAll('.cp-color-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      document.querySelectorAll('.cp-color-btn').forEach(function(b) { b.classList.remove('cp-selected'); });
+  document.querySelectorAll('.cp-color-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      document.querySelectorAll('.cp-color-btn').forEach(function (b) { b.classList.remove('cp-selected'); });
       btn.classList.add('cp-selected');
       cpSelectedColor = btn.dataset.color;
     });
