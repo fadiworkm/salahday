@@ -141,6 +141,7 @@ var FocusMode = {
     this._segEnd = segEnd;
     this._actInfo = actInfo;
     this._pauseCount = existingSession ? (existingSession._pauseCount || 0) : 0;
+    this._win80Triggered = existingSession ? (existingSession._win80Triggered || false) : false;
     this._updatePauseDisplay();
 
     // Initialize pomodoro tracking (set to current done count so celebration doesn't fire on open)
@@ -541,6 +542,7 @@ var FocusMode = {
     if (!pctEl) return;
     var pct = segDurSec > 0 ? Math.min(100, (currentSessionSec / segDurSec) * 100) : 0;
     pctEl.textContent = Math.floor(pct) + '%';
+    this._checkWinThreshold(pct);
   },
 
   _updateTodayTotal: function (currentSessionSec) {
@@ -1103,6 +1105,87 @@ var FocusMode = {
 
   ],
   _lastNudgeIdx: -1,
+
+  // ── رسائل الفوز عند 80% ──
+  _win80Triggered: false,
+  _winMessages: [
+    ['🏆', 'يا بطل! 80% تركيز… أنت أسطورة!'],
+    ['🥇', 'ميدالية ذهبية للتركيز!'],
+    ['🦁', 'أسد الشغل ما بيرحم!'],
+    ['👑', 'ملك التركيز وصل!'],
+    ['🎯', 'إصابة مباشرة في الإنتاجية!'],
+    ['💎', 'تركيزك أغلى من الألماس!'],
+    ['🔥', 'محرقة إنتاج! ما شاء الله عليك!'],
+    ['⚡', 'صاعقة تركيز! الكسل اتفحّم!'],
+    ['🚀', 'وصلت المدار! هيوستن نجحنا!'],
+    ['🧠', 'عقلك اشتغل توربو اليوم!'],
+    ['💪', 'عضلات التركيز عندك حديد!'],
+    ['🎪', 'عرض تركيز خرافي!'],
+    ['🌋', 'بركان إنتاجية!'],
+    ['🦾', 'نص إنسان نص آلة إنتاج!'],
+    ['🏅', 'تستاهل جائزة نوبل بالتركيز!'],
+    ['🎭', 'أداء أوسكاري بالشغل!'],
+    ['🧲', 'مغناطيس إنجاز!'],
+    ['💣', 'قنبلة إنتاجية انفجرت!'],
+    ['🏋️', 'رفعت أثقال التركيز!'],
+    ['🎖️', 'رتبة جنرال تركيز!'],
+    ['🌟', 'نجم اليوم بلا منازع!'],
+    ['🦅', 'حلّقت فوق الكسل!'],
+    ['🏰', 'بنيت قلعة إنتاجية!'],
+    ['⭐', 'تركيز خمس نجوم!'],
+    ['🎤', 'لو التركيز أغنية… أنت المطرب!'],
+    ['🧪', 'خلطة التركيز نجحت!'],
+    ['📈', 'سهمك بالإنجاز طاير!'],
+    ['🎬', 'مشهد التركيز يستاهل أوسكار!'],
+    ['🍕', 'تركيزك ألذ من بيتزا!'],
+    ['☕', 'مركّز أكثر من قهوة تركية!'],
+    ['🎸', 'عزفت سيمفونية إنتاج!'],
+    ['🏄', 'ركبت موجة التركيز!'],
+    ['🎳', 'سترايك تركيز!'],
+    ['🥊', 'ضربة قاضية للكسل!'],
+    ['🧁', 'تركيزك حلو زي الكيك!'],
+    ['🦸', 'سوبرمان الإنتاجية!'],
+    ['🎮', 'فزت بالمرحلة!'],
+    ['🗝️', 'فتحت باب النجاح!'],
+    ['🛸', 'تركيز من كوكب ثاني!'],
+    ['🌈', 'بعد الجد… جاء قوس قزح الإنجاز!'],
+  ],
+
+  _playWinSound: function () {
+    if (this._muted) return;
+    var ctx = this._ensureAudioCtx();
+    var t = ctx.currentTime;
+    // Achievement chime — bright ascending arpeggio
+    var notes = [
+      { f: 659,  t: 0,    d: 0.18 },  // E5
+      { f: 784,  t: 0.1,  d: 0.18 },  // G5
+      { f: 988,  t: 0.2,  d: 0.18 },  // B5
+      { f: 1319, t: 0.3,  d: 0.35 },  // E6 (hold)
+      { f: 1568, t: 0.55, d: 0.5  },  // G6 (final shimmer)
+    ];
+    notes.forEach(function (n) {
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(n.f, t + n.t);
+      gain.gain.setValueAtTime(0.12, t + n.t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + n.t + n.d);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t + n.t);
+      osc.stop(t + n.t + n.d + 0.05);
+    });
+  },
+
+  _checkWinThreshold: function (pct) {
+    if (this._win80Triggered || pct < 80) return;
+    this._win80Triggered = true;
+    var msgs = this._winMessages;
+    var idx = Math.floor(Math.random() * msgs.length);
+    var msg = msgs[idx];
+    this._showNudgeAnimation(msg[0], msg[1]);
+    this._playWinSound();
+  },
 
   _playNudge: function () {
     // Pick a random message (avoid repeating the last one)

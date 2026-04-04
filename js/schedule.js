@@ -334,6 +334,8 @@ const PRAYER_COLORS = {
   work: '#4ecdc4', sleep: '#3a3f6b', bedtime: '#5a4f9e'
 };
 
+const PRAYER_ICONS = { fajr: '🌅', dhuhr: '☀️', asr: '🌤️', maghrib: '🌇', isha: '🌙' };
+
 function renderPrayerGrid(dayData, prayerMins) {
   const container = document.getElementById('prayer-live');
   if (!container) return;
@@ -894,65 +896,138 @@ function exportDayStatsJSON() {
 function getWorkBetweenPrayers(seg, prayerMins) {
   const prayerOrder = [
     { key: 'fajr',    name: 'الفجر' },
-    { key: 'sunrise', name: 'الشروق' },
     { key: 'dhuhr',   name: 'الظهر' },
     { key: 'asr',     name: 'العصر' },
     { key: 'maghrib', name: 'المغرب' },
     { key: 'isha',    name: 'العشاء' }
   ];
 
-  let before = null, after = null;
+  // Find the prayer whose athan falls within this period (prayer at start)
+  let thisPrayer = null, nextPrayer = null;
   for (const p of prayerOrder) {
-    if (prayerMins[p.key] <= seg.start) before = p.name;
-    if (!after && prayerMins[p.key] >= seg.end) after = p.name;
+    if (prayerMins[p.key] >= seg.start && prayerMins[p.key] < seg.end) {
+      if (!thisPrayer) thisPrayer = p.name;
+    }
+    if (!nextPrayer && prayerMins[p.key] >= seg.end) {
+      nextPrayer = p.name;
+    }
   }
 
-  if (before && after) return `من ${before} إلى ${after}`;
-  if (before) return `بعد ${before}`;
-  if (after) return `قبل ${after}`;
+  if (thisPrayer && nextPrayer) return `من ${thisPrayer} إلى ${nextPrayer}`;
+  if (thisPrayer) return `بعد ${thisPrayer}`;
+  if (nextPrayer) return `قبل ${nextPrayer}`;
   return '';
 }
 
-function _buildPrayerGroupsFromSegments(segments) {
-  const groups = {};
-  const prayerIcons = { fajr: '🌅', dhuhr: '☀️', asr: '🌤️', maghrib: '🌇', isha: '🌙' };
-  segments.forEach(seg => {
-    if (seg.type !== 'prayer' && seg.type !== 'prep') return;
-    const key = seg.prayerKey;
-    if (!groups[key]) {
-      groups[key] = { prayerKey: key, start: seg.start, end: seg.end, icon: prayerIcons[key] || '🕌' };
+
+function _buildExpandedPeriods(segments) {
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const expanded = [];
+  let currentPrayer = null;
+
+  for (const seg of segments) {
+    if (seg.type === 'prayer' || seg.type === 'prep') {
+      if (!currentPrayer || currentPrayer.prayerKey !== seg.prayerKey) {
+        // Save previous prayer if exists and has no work after
+        if (currentPrayer) {
+          expanded.push({
+            type: 'work', start: currentPrayer.start, end: currentPrayer.end,
+            duration: currentPrayer.end - currentPrayer.start,
+            isCurrent: currentMinutes >= currentPrayer.start && currentMinutes < currentPrayer.end,
+            label: PRAYER_NAMES[currentPrayer.prayerKey] || '', prayerKey: 'work',
+            prayerAtStart: { ...currentPrayer, icon: PRAYER_ICONS[currentPrayer.prayerKey] || '🕌' }
+          });
+        }
+        currentPrayer = { prayerKey: seg.prayerKey, start: seg.start, end: seg.end };
+      } else {
+        currentPrayer.start = Math.min(currentPrayer.start, seg.start);
+        currentPrayer.end = Math.max(currentPrayer.end, seg.end);
+      }
+    } else if (seg.type === 'work') {
+      const expandedStart = currentPrayer ? currentPrayer.start : seg.start;
+      expanded.push({
+        type: 'work', start: expandedStart, end: seg.end,
+        duration: seg.end - expandedStart,
+        isCurrent: currentMinutes >= expandedStart && currentMinutes < seg.end,
+        label: seg.label, prayerKey: 'work',
+        prayerAtStart: currentPrayer ? { ...currentPrayer, icon: PRAYER_ICONS[currentPrayer.prayerKey] || '🕌' } : null
+      });
+      currentPrayer = null;
+    } else {
+      // Sleep or other segment - flush pending prayer
+      if (currentPrayer) {
+        expanded.push({
+          type: 'work', start: currentPrayer.start, end: currentPrayer.end,
+          duration: currentPrayer.end - currentPrayer.start,
+          isCurrent: currentMinutes >= currentPrayer.start && currentMinutes < currentPrayer.end,
+          label: PRAYER_NAMES[currentPrayer.prayerKey] || '', prayerKey: 'work',
+          prayerAtStart: { ...currentPrayer, icon: PRAYER_ICONS[currentPrayer.prayerKey] || '🕌' }
+        });
+        currentPrayer = null;
+      }
     }
-    groups[key].start = Math.min(groups[key].start, seg.start);
-    groups[key].end = Math.max(groups[key].end, seg.end);
-  });
-  return Object.values(groups).sort((a, b) => a.start - b.start);
+  }
+
+  // Handle trailing prayer
+  if (currentPrayer) {
+    expanded.push({
+      type: 'work', start: currentPrayer.start, end: currentPrayer.end,
+      duration: currentPrayer.end - currentPrayer.start,
+      isCurrent: currentMinutes >= currentPrayer.start && currentMinutes < currentPrayer.end,
+      label: PRAYER_NAMES[currentPrayer.prayerKey] || '', prayerKey: 'work',
+      prayerAtStart: { ...currentPrayer, icon: PRAYER_ICONS[currentPrayer.prayerKey] || '🕌' }
+    });
+  }
+
+  return expanded;
 }
 
-function _renderPrayerBlock(pg) {
-  const color = PRAYER_COLORS[pg.prayerKey] || '#7c6aef';
-  const name = PRAYER_NAMES[pg.prayerKey] || pg.prayerKey;
-  const dur = pg.end - pg.start;
-  let h = `<div class="wt-prayer-block">`;
-  h += `<div class="wt-act-card wt-clickable" style="--act-color:${color}" onclick="editPrayerDuration('${pg.prayerKey}')">`;
-  h += `<div class="wt-act-card-header">`;
-  h += `<span class="wt-act-card-icon">${pg.icon}</span>`;
-  h += `<span class="wt-act-card-name">صلاة</span>`;
-  h += `<span class="wt-act-card-time">${displayTime(pg.start)} - ${displayTime(pg.end)}</span>`;
-  h += `<span class="wt-act-card-dur">${formatDuration(dur)}</span>`;
-  h += `</div>`;
-  h += `<div class="wt-act-card-note">${name}</div>`;
-  h += `</div></div>`;
-  return h;
+function ensurePrayerActivities(expandedPeriods) {
+  const dateStr = document.getElementById('schedule-date').value;
+  const dayData = ScheduleData.getDayOrDefault(dateStr);
+  if (!dayData.activities) dayData.activities = [];
+  const activities = dayData.activities;
+
+  let changed = false;
+
+  expandedPeriods.forEach(period => {
+    if (!period.prayerAtStart) return;
+    const pg = period.prayerAtStart;
+    const pKey = pg.prayerKey;
+
+    const exists = activities.some(a => a.isPrayer && a.prayerKey === pKey);
+    if (exists) return;
+
+    activities.push({
+      name: PRAYER_NAMES[pKey] || pKey,
+      icon: PRAYER_ICONS[pKey] || '🕌',
+      color: PRAYER_COLORS[pKey] || '#7c6aef',
+      start: pg.start,
+      end: pg.end,
+      isPrayer: true,
+      prayerKey: pKey,
+      note: '',
+      dailyHabit: true
+    });
+    changed = true;
+  });
+
+  if (changed) {
+    activities.sort((a, b) => a.start - b.start);
+    ScheduleData.saveDay(dateStr);
+  }
 }
 
 function renderWorkBlocks(segments, prayerMins) {
   const container = document.getElementById('work-blocks');
-  const workSegments = segments.filter(s => s.type === 'work');
-  const allPeriods = [...workSegments];
+  const expandedPeriods = _buildExpandedPeriods(segments);
+  const allPeriods = expandedPeriods;
 
-  window._workSegments = workSegments;
+  window._workSegments = expandedPeriods;
 
-  const prayerGroups = _buildPrayerGroupsFromSegments(segments);
+  // Auto-generate prayer activities
+  ensurePrayerActivities(expandedPeriods);
 
   if (allPeriods.length === 0) {
     container.innerHTML = '<p class="no-work-msg">لا توجد فترات عمل متاحة</p>';
@@ -971,13 +1046,6 @@ function renderWorkBlocks(segments, prayerMins) {
   let totalAvail = 0;
 
   allPeriods.forEach((seg, i) => {
-    // إدراج فترات الصلاة قبل فترة العمل
-    const prevEnd = i > 0 ? allPeriods[i - 1].end : 0;
-    prayerGroups.forEach(pg => {
-      if (pg.start >= prevEnd && pg.end <= seg.start) {
-        html += _renderPrayerBlock(pg);
-      }
-    });
     const pKey = 'work:' + seg.start + '-' + seg.end;
     const disabled = disabledPeriods.indexOf(pKey) !== -1;
     const currentClass = seg.isCurrent ? ' wt-block-current' : '';
@@ -1148,16 +1216,6 @@ function renderWorkBlocks(segments, prayerMins) {
     html += `</div>`;
   });
 
-  // إدراج فترات الصلاة بعد آخر فترة عمل
-  if (allPeriods.length > 0) {
-    const lastEnd = allPeriods[allPeriods.length - 1].end;
-    prayerGroups.forEach(pg => {
-      if (pg.start >= lastEnd) {
-        html += _renderPrayerBlock(pg);
-      }
-    });
-  }
-
   const totalAll = allPeriods.reduce((sum, s) => sum + s.duration, 0);
 
   // حساب وقت العمل المنقضي والمتبقي حسب الآن
@@ -1286,6 +1344,7 @@ function renderDay() {
   }
 
   const prayerMins = extractPrayerMinutes(dayData);
+  window._prayerMins = prayerMins;
 
   // تعيين وقت النوم — من المحفوظ أو الافتراضي
   const bedtimeInput = document.getElementById('manual-bedtime');
