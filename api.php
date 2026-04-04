@@ -152,8 +152,14 @@ switch ($action) {
             }
 
             if ($prevDate && isset($data['days'][$prevDate])) {
+                // Copy daily habit activities from previous day
+                $prevActivities = $data['days'][$prevDate]['activities'] ?? [];
+                $habitActivities = array_values(array_filter($prevActivities, function($a) {
+                    return !empty($a['dailyHabit']);
+                }));
+
                 $dayData = [
-                    'activities'      => [],
+                    'activities'      => $habitActivities,
                     'disabledPeriods' => [],
                     'manualBedtime'   => null,
                     'settings'        => $data['days'][$prevDate]['settings'] ?? defaultSettings(),

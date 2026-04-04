@@ -913,12 +913,46 @@ function getWorkBetweenPrayers(seg, prayerMins) {
   return '';
 }
 
+function _buildPrayerGroupsFromSegments(segments) {
+  const groups = {};
+  const prayerIcons = { fajr: '🌅', dhuhr: '☀️', asr: '🌤️', maghrib: '🌇', isha: '🌙' };
+  segments.forEach(seg => {
+    if (seg.type !== 'prayer' && seg.type !== 'prep') return;
+    const key = seg.prayerKey;
+    if (!groups[key]) {
+      groups[key] = { prayerKey: key, start: seg.start, end: seg.end, icon: prayerIcons[key] || '🕌' };
+    }
+    groups[key].start = Math.min(groups[key].start, seg.start);
+    groups[key].end = Math.max(groups[key].end, seg.end);
+  });
+  return Object.values(groups).sort((a, b) => a.start - b.start);
+}
+
+function _renderPrayerBlock(pg) {
+  const color = PRAYER_COLORS[pg.prayerKey] || '#7c6aef';
+  const name = PRAYER_NAMES[pg.prayerKey] || pg.prayerKey;
+  const dur = pg.end - pg.start;
+  let h = `<div class="wt-prayer-block">`;
+  h += `<div class="wt-act-card wt-clickable" style="--act-color:${color}" onclick="editPrayerDuration('${pg.prayerKey}')">`;
+  h += `<div class="wt-act-card-header">`;
+  h += `<span class="wt-act-card-icon">${pg.icon}</span>`;
+  h += `<span class="wt-act-card-name">صلاة</span>`;
+  h += `<span class="wt-act-card-time">${displayTime(pg.start)} - ${displayTime(pg.end)}</span>`;
+  h += `<span class="wt-act-card-dur">${formatDuration(dur)}</span>`;
+  h += `</div>`;
+  h += `<div class="wt-act-card-note">${name}</div>`;
+  h += `</div></div>`;
+  return h;
+}
+
 function renderWorkBlocks(segments, prayerMins) {
   const container = document.getElementById('work-blocks');
   const workSegments = segments.filter(s => s.type === 'work');
   const allPeriods = [...workSegments];
 
   window._workSegments = workSegments;
+
+  const prayerGroups = _buildPrayerGroupsFromSegments(segments);
 
   if (allPeriods.length === 0) {
     container.innerHTML = '<p class="no-work-msg">لا توجد فترات عمل متاحة</p>';
@@ -937,6 +971,13 @@ function renderWorkBlocks(segments, prayerMins) {
   let totalAvail = 0;
 
   allPeriods.forEach((seg, i) => {
+    // إدراج فترات الصلاة قبل فترة العمل
+    const prevEnd = i > 0 ? allPeriods[i - 1].end : 0;
+    prayerGroups.forEach(pg => {
+      if (pg.start >= prevEnd && pg.end <= seg.start) {
+        html += _renderPrayerBlock(pg);
+      }
+    });
     const pKey = 'work:' + seg.start + '-' + seg.end;
     const disabled = disabledPeriods.indexOf(pKey) !== -1;
     const currentClass = seg.isCurrent ? ' wt-block-current' : '';
@@ -1106,6 +1147,16 @@ function renderWorkBlocks(segments, prayerMins) {
 
     html += `</div>`;
   });
+
+  // إدراج فترات الصلاة بعد آخر فترة عمل
+  if (allPeriods.length > 0) {
+    const lastEnd = allPeriods[allPeriods.length - 1].end;
+    prayerGroups.forEach(pg => {
+      if (pg.start >= lastEnd) {
+        html += _renderPrayerBlock(pg);
+      }
+    });
+  }
 
   const totalAll = allPeriods.reduce((sum, s) => sum + s.duration, 0);
 

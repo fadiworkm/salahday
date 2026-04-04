@@ -406,12 +406,6 @@ var FocusMode = {
       : 0;
     var waveHeight = totalElapsed > 0 ? rawPct * this._waveMaxHeight : 0;
 
-    // Auto-close when segment time is up
-    if (segRemaining <= 0) {
-      this.close();
-      return;
-    }
-
     // ── Update DOM ──
     var els = this._getEls();
 
@@ -487,10 +481,7 @@ var FocusMode = {
       var segEndSec = sE * 60;
       var gone = Math.max(0, nowSec - segStartSec);
       var left = Math.max(0, segEndSec - nowSec);
-      // Auto-close when segment ends (even if paused)
-      if (left <= 0 && self._session) {
-        self.close();
-      }
+      // Segment ended — keep dialog open, timer can continue as extra time
       return { gone: gone, left: left };
     });
 

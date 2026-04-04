@@ -51,6 +51,45 @@ function getPlannerPeriods() {
   return periods;
 }
 
+// ─── فترات الصلاة (تجميع التحضير + الصلاة) ───
+
+var PRAYER_ICONS = { fajr: '🌅', dhuhr: '☀️', asr: '🌤️', maghrib: '🌇', isha: '🌙' };
+
+function buildPrayerGroups() {
+  var allSegs = window._allSegments || [];
+  var groups = {};
+  allSegs.forEach(function (seg) {
+    if (seg.type !== 'prayer' && seg.type !== 'prep') return;
+    var key = seg.prayerKey;
+    if (!groups[key]) {
+      groups[key] = { prayerKey: key, start: seg.start, end: seg.end, prepDuration: 0, prayerDuration: 0 };
+    }
+    groups[key].start = Math.min(groups[key].start, seg.start);
+    groups[key].end = Math.max(groups[key].end, seg.end);
+    if (seg.type === 'prep') groups[key].prepDuration += seg.duration;
+    if (seg.type === 'prayer') groups[key].prayerDuration += seg.duration;
+  });
+  return Object.values(groups).sort(function (a, b) { return a.start - b.start; });
+}
+
+function renderPrayerGroupHTML(pg) {
+  var name = PRAYER_NAMES[pg.prayerKey] || pg.prayerKey;
+  var color = PRAYER_COLORS[pg.prayerKey] || '#7c6aef';
+  var totalDur = pg.end - pg.start;
+  var icon = PRAYER_ICONS[pg.prayerKey] || '🕌';
+
+  var html = '<div class="pl-prayer-group" style="border-color:' + color + '30">';
+  html += '<div class="pl-prayer-header" style="background:' + color + '12" onclick="editPrayerDuration(\'' + pg.prayerKey + '\')">';
+  html += '<span class="pl-prayer-icon">' + icon + '</span>';
+  html += '<span class="pl-prayer-name">' + name + '</span>';
+  html += '<span class="pl-prayer-time">' + displayTimeRange(pg.start, pg.end) + '</span>';
+  html += '<span class="pl-prayer-dur">' + formatDuration(totalDur) + '</span>';
+  html += '<span class="pl-prayer-edit">&#9998;</span>';
+  html += '</div>';
+  html += '</div>';
+  return html;
+}
+
 // ─── فتح/إغلاق المخطط ───
 
 function openPlanner() {
@@ -120,9 +159,20 @@ function togglePeriodEnabled(period) {
 function renderPlanner(onlyPeriodIdx) {
   var periods = getPlannerPeriods();
   var activities = getDayActivities();
+  var _prayerGroups = buildPrayerGroups();
   var html = '';
 
   periods.forEach(function (period, pIdx) {
+    // إدراج فترات الصلاة بين فترات العمل
+    if (onlyPeriodIdx == null) {
+      var prevEnd = pIdx > 0 ? periods[pIdx - 1].end : 0;
+      _prayerGroups.forEach(function (pg) {
+        if (pg.start >= prevEnd && pg.end <= period.start) {
+          html += renderPrayerGroupHTML(pg);
+        }
+      });
+    }
+
     // عرض فترة واحدة فقط إذا تم تحديدها
     if (onlyPeriodIdx != null && pIdx !== onlyPeriodIdx) return;
 
@@ -179,6 +229,7 @@ function renderPlanner(onlyPeriodIdx) {
           var actGlobalIdx = activities.indexOf(act);
           html += '<span class="pl-activity-chip" style="background:' + act.color + '" onclick="editActivity(' + pIdx + ', ' + actGlobalIdx + ')">';
           html += act.icon + ' ' + act.name + ' (' + formatDuration(act.end - act.start) + ')';
+          if (act.dailyHabit) html += '<span class="chip-note" title="عادة يومية">🔄</span>';
           if (act.note) html += '<span class="chip-note" title="' + act.note.replace(/"/g, '&quot;') + '">📝</span>';
           html += '<span class="chip-edit">&#9998;</span></span>';
         });
@@ -196,6 +247,16 @@ function renderPlanner(onlyPeriodIdx) {
 
     html += '</div>';
   });
+
+  // إضافة فترات الصلاة بعد آخر فترة عمل
+  if (onlyPeriodIdx == null && periods.length > 0) {
+    var lastEnd = periods[periods.length - 1].end;
+    _prayerGroups.forEach(function (pg) {
+      if (pg.start >= lastEnd) {
+        html += renderPrayerGroupHTML(pg);
+      }
+    });
+  }
 
   document.getElementById('planner-body').innerHTML = html;
   updatePlannerSummary();
@@ -530,6 +591,7 @@ function showActivityForm(pIdx) {
 
   document.querySelectorAll('.af-preset').forEach(function (p) { p.classList.remove('af-preset-selected'); });
 
+  document.getElementById('af-daily-habit').checked = false;
   document.getElementById('af-add-btn').textContent = 'إضافة';
   document.getElementById('af-delete-btn').style.display = 'none';
   document.querySelector('.af-header h3').textContent = 'إضافة نشاط';
@@ -560,6 +622,7 @@ function setFullPeriod(pIdx) {
 
   document.querySelectorAll('.af-preset').forEach(function (p) { p.classList.remove('af-preset-selected'); });
 
+  document.getElementById('af-daily-habit').checked = false;
   document.getElementById('af-add-btn').textContent = 'تعيين';
   document.getElementById('af-delete-btn').style.display = 'none';
   document.querySelector('.af-header h3').textContent = 'تعيين كامل الفترة';
@@ -594,6 +657,7 @@ function editActivity(pIdx, globalIdx) {
     p.classList.toggle('af-preset-selected', p.dataset.name === act.name);
   });
 
+  document.getElementById('af-daily-habit').checked = !!act.dailyHabit;
   document.getElementById('af-add-btn').textContent = 'حفظ التعديل';
   document.getElementById('af-delete-btn').style.display = '';
   document.querySelector('.af-header h3').textContent = 'تعديل نشاط';
@@ -649,6 +713,8 @@ function addActivity() {
     }
   });
 
+  var dailyHabit = document.getElementById('af-daily-habit').checked;
+
   if (editingActivityIndex !== null) {
     var oldAct = activities[editingActivityIndex];
     // Update associated focus sessions if time range or name changed
@@ -664,9 +730,9 @@ function addActivity() {
         FocusData.save(dateStr, s);
       });
     }
-    activities[editingActivityIndex] = { name: name, icon: preset.icon, color: preset.color, start: startMin, end: endMin, note: note };
+    activities[editingActivityIndex] = { name: name, icon: preset.icon, color: preset.color, start: startMin, end: endMin, note: note, dailyHabit: dailyHabit };
   } else {
-    activities.push({ name: name, icon: preset.icon, color: preset.color, start: startMin, end: endMin, note: note });
+    activities.push({ name: name, icon: preset.icon, color: preset.color, start: startMin, end: endMin, note: note, dailyHabit: dailyHabit });
   }
 
   savePlannerData();
@@ -779,6 +845,66 @@ function showAdjustDialog(opts, onShift, onExtend) {
   shiftBtn.addEventListener('click', handleShift);
   extendBtn.addEventListener('click', handleExtend);
   cancelBtn.addEventListener('click', handleCancel);
+}
+
+// ─── تعديل مدة الصلاة ───
+
+var currentEditingPrayer = null;
+
+function editPrayerDuration(prayerKey) {
+  currentEditingPrayer = prayerKey;
+  var buf = scheduleSettings.buffers[prayerKey];
+  if (!buf) return;
+
+  var name = PRAYER_NAMES[prayerKey] || prayerKey;
+  var icon = PRAYER_ICONS[prayerKey] || '🕌';
+
+  document.getElementById('pe-icon').textContent = icon;
+  document.getElementById('pe-title').textContent = name;
+  document.getElementById('pe-before-val').textContent = buf.before;
+  document.getElementById('pe-after-val').textContent = buf.after;
+  document.getElementById('prayer-edit-overlay').classList.add('active');
+}
+
+function adjustPrayerBuf(type, delta) {
+  var el = document.getElementById('pe-' + type + '-val');
+  var val = parseInt(el.textContent) + delta;
+  if (val < 0) val = 0;
+  if (val > 120) val = 120;
+  el.textContent = val;
+}
+
+function savePrayerEdit() {
+  if (!currentEditingPrayer) return;
+  var key = currentEditingPrayer;
+  var beforeVal = parseInt(document.getElementById('pe-before-val').textContent);
+  var afterVal = parseInt(document.getElementById('pe-after-val').textContent);
+
+  scheduleSettings.buffers[key].before = beforeVal;
+  scheduleSettings.buffers[key].after = afterVal;
+
+  // تحديث حقول الإعدادات
+  var beforeInput = document.getElementById('buf-' + key + '-before');
+  var afterInput = document.getElementById('buf-' + key + '-after');
+  if (beforeInput) beforeInput.value = beforeVal;
+  if (afterInput) afterInput.value = afterVal;
+
+  // حفظ في بيانات اليوم
+  var dateStr = getPlannerDate();
+  var dayData = ScheduleData.getDayOrDefault(dateStr);
+  dayData.settings = JSON.parse(JSON.stringify(scheduleSettings));
+  ScheduleData.saveDay(dateStr);
+
+  closePrayerEdit();
+
+  // إعادة بناء الجدول (تتغير الفترات)
+  if (typeof renderDay === 'function') renderDay();
+  setTimeout(function () { renderPlanner(currentPlannerFilter); }, 100);
+}
+
+function closePrayerEdit() {
+  currentEditingPrayer = null;
+  document.getElementById('prayer-edit-overlay').classList.remove('active');
 }
 
 // ─── مساعد: تحديث حقول النموذج ───
@@ -959,6 +1085,17 @@ document.addEventListener('DOMContentLoaded', async function () {
 
   // عرض الأنشطة المسبقة
   renderPresetButtons();
+
+  // أحداث تعديل مدة الصلاة
+  document.getElementById('pe-before-minus').addEventListener('click', function () { adjustPrayerBuf('before', -5); });
+  document.getElementById('pe-before-plus').addEventListener('click', function () { adjustPrayerBuf('before', 5); });
+  document.getElementById('pe-after-minus').addEventListener('click', function () { adjustPrayerBuf('after', -5); });
+  document.getElementById('pe-after-plus').addEventListener('click', function () { adjustPrayerBuf('after', 5); });
+  document.getElementById('pe-save').addEventListener('click', savePrayerEdit);
+  document.getElementById('pe-cancel').addEventListener('click', closePrayerEdit);
+  document.getElementById('prayer-edit-overlay').addEventListener('click', function (e) {
+    if (e.target === e.currentTarget) closePrayerEdit();
+  });
 
   // نافذة النشاط المخصص
   document.getElementById('cp-close').addEventListener('click', closeCustomPresetDialog);

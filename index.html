@@ -312,6 +312,13 @@
           <label>المدة (دقيقة)</label>
           <input type="range" id="af-duration" min="5" max="120" step="5" value="30">
         </div>
+        <div class="af-field af-habit-field">
+          <label class="af-habit-label">
+            <input type="checkbox" id="af-daily-habit">
+            <span class="af-habit-check"></span>
+            اجعلها عادة يومية
+          </label>
+        </div>
         <button class="btn-primary" id="af-add-btn">إضافة</button>
         <button class="btn-delete" id="af-delete-btn" style="display:none">&#128465; حذف النشاط</button>
       </div>
@@ -383,6 +390,40 @@
         <button class="planner-close" onclick="closeUnassignedDialog()">&times;</button>
       </div>
       <div class="ua-body" id="unassigned-body"></div>
+    </div>
+  </div>
+
+  <!-- ─── حوار تعديل مدة الصلاة ─── -->
+  <div class="confirm-overlay" id="prayer-edit-overlay">
+    <div class="confirm-modal pe-modal">
+      <div class="pe-header">
+        <span class="pe-icon" id="pe-icon">🕌</span>
+        <span class="pe-title" id="pe-title">صلاة الفجر</span>
+      </div>
+      <div class="pe-body">
+        <div class="pe-row">
+          <label>تحضير قبل الصلاة</label>
+          <div class="pe-input-wrap">
+            <button type="button" class="pe-adj" id="pe-before-minus">−</button>
+            <span class="pe-val" id="pe-before-val">90</span>
+            <span class="pe-unit">د</span>
+            <button type="button" class="pe-adj" id="pe-before-plus">+</button>
+          </div>
+        </div>
+        <div class="pe-row">
+          <label>بعد الصلاة</label>
+          <div class="pe-input-wrap">
+            <button type="button" class="pe-adj" id="pe-after-minus">−</button>
+            <span class="pe-val" id="pe-after-val">30</span>
+            <span class="pe-unit">د</span>
+            <button type="button" class="pe-adj" id="pe-after-plus">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="confirm-btns">
+        <button class="confirm-yes pe-save-btn" id="pe-save">حفظ</button>
+        <button class="confirm-no" id="pe-cancel">إلغاء</button>
+      </div>
     </div>
   </div>
 
