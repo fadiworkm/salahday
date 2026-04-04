@@ -240,7 +240,8 @@ var DEFAULT_PRESETS = [
   { name: 'رياضة', icon: '🏃', color: '#ff6b6b' },
   { name: 'قراءة', icon: '📖', color: '#7c6aef' },
   { name: 'قيلولة', icon: '😴', color: '#6c5ce7' },
-  { name: 'عمل خارجي', icon: '🏢', color: '#3498db' }
+  { name: 'عمل خارجي', icon: '🏢', color: '#3498db' },
+  { name: 'ضائع', icon: '🥹', color: '#ff9500db' },
 ];
 
 function loadCustomPresets() {
@@ -418,6 +419,81 @@ function syncFromStartTime() {
   if (parseInt(slider.value) > maxDur) slider.value = maxDur;
   TickSlider.refresh(slider);
   syncFromStartAndDuration();
+}
+
+// ─── أزرار التوسيع للنشاط المجاور ───
+
+function _getNeighborActivities() {
+  var periods = getPlannerPeriods();
+  var period = periods[currentFormWorkIndex];
+  if (!period) return { activities: [], period: null };
+  var activities = getDayActivities().filter(function (a) {
+    return a.start >= period.start && a.end <= period.end;
+  });
+  if (editingActivityIndex !== null) {
+    activities = activities.filter(function (_, idx) { return idx !== editingActivityIndex; });
+  }
+  return { activities: activities, period: period };
+}
+
+function skipStartToPrev() {
+  if (currentFormWorkIndex === null) return;
+  var info = _getNeighborActivities();
+  if (!info.period) return;
+
+  var parts = document.getElementById('af-start-time').value.split(':').map(Number);
+  var currentStart = parts[0] * 60 + parts[1];
+
+  // Find nearest activity ending before current start, or period start
+  var target = info.period.start;
+  for (var i = 0; i < info.activities.length; i++) {
+    if (info.activities[i].end <= currentStart && info.activities[i].end > target) {
+      target = info.activities[i].end;
+    }
+  }
+
+  // Keep end time fixed, update start and duration
+  var eParts = document.getElementById('af-end-time').value.split(':').map(Number);
+  var endMin = eParts[0] * 60 + eParts[1];
+  var newDur = endMin - target;
+  if (newDur < 5) return;
+
+  document.getElementById('af-start-time').value = minutesToTimeStr(target);
+  var slider = document.getElementById('af-duration');
+  slider.max = Math.max(5, newDur);
+  slider.value = newDur;
+  TickSlider.refresh(slider);
+}
+
+function skipEndToNext() {
+  if (currentFormWorkIndex === null) return;
+  var info = _getNeighborActivities();
+  if (!info.period) return;
+
+  var eParts = document.getElementById('af-end-time').value.split(':').map(Number);
+  var currentEnd = eParts[0] * 60 + eParts[1];
+
+  // Find nearest activity starting after current end, or period end
+  var target = info.period.end;
+  for (var i = 0; i < info.activities.length; i++) {
+    if (info.activities[i].start >= currentEnd && info.activities[i].start < target) {
+      target = info.activities[i].start;
+    }
+  }
+  // If already at that boundary, jump to period end
+  if (target === currentEnd) target = info.period.end;
+
+  // Keep start time fixed, update end and duration
+  var sParts = document.getElementById('af-start-time').value.split(':').map(Number);
+  var startMin = sParts[0] * 60 + sParts[1];
+  var newDur = target - startMin;
+  if (newDur < 5) return;
+
+  document.getElementById('af-end-time').value = minutesToTimeStr(target);
+  var slider = document.getElementById('af-duration');
+  slider.max = Math.max(5, newDur);
+  slider.value = newDur;
+  TickSlider.refresh(slider);
 }
 
 // ─── نموذج إضافة نشاط ───
@@ -872,6 +948,10 @@ document.addEventListener('DOMContentLoaded', async function () {
   document.getElementById('af-duration').addEventListener('input', syncFromStartAndDuration);
   document.getElementById('af-start-time').addEventListener('change', syncFromStartTime);
   document.getElementById('af-end-time').addEventListener('change', syncFromEndTime);
+
+  // أزرار التوسيع للنشاط المجاور
+  document.getElementById('af-skip-prev').addEventListener('click', skipStartToPrev);
+  document.getElementById('af-skip-next').addEventListener('click', skipEndToNext);
 
   // أزرار الوقت الحالي
   document.getElementById('af-start-now-btn').addEventListener('click', handleStartNow);

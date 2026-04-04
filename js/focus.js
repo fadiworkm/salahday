@@ -363,10 +363,13 @@ var FocusMode = {
     var els = this._getEls();
     if (!els.timerLabel || !els.overlay) return;
     var activityInfo = document.querySelector('.focus-activity-info');
+    var header = document.querySelector('.focus-header');
     var overlayRect = els.overlay.getBoundingClientRect();
     var anchorTop = activityInfo ? activityInfo.getBoundingClientRect().top : els.timerLabel.getBoundingClientRect().bottom;
     this._waveBottom = overlayRect.bottom - anchorTop;
-    this._waveMaxHeight = anchorTop - overlayRect.top;
+    // Cap wave so it stops below the header (action bar)
+    var headerBottom = header ? header.getBoundingClientRect().bottom : overlayRect.top;
+    this._waveMaxHeight = anchorTop - headerBottom;
     if (els.wave) {
       els.wave.style.setProperty('--wave-bottom', this._waveBottom + 'px');
     }

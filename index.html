@@ -291,11 +291,17 @@
         <div class="af-times-row">
           <div class="af-field af-field-half">
             <label>البدء</label>
-            <input type="time" id="af-start-time" class="af-input" step="300">
+            <div class="af-input-with-arrows">
+              <button type="button" class="af-skip-btn af-skip-btn--start" id="af-skip-prev" title="توسيع لبداية الفترة"><span class="af-skip-icon">&#9654;</span></button>
+              <input type="time" id="af-start-time" class="af-input" step="300">
+            </div>
           </div>
           <div class="af-field af-field-half">
             <label>الانتهاء</label>
-            <input type="time" id="af-end-time" class="af-input" step="300">
+            <div class="af-input-with-arrows">
+              <input type="time" id="af-end-time" class="af-input" step="300">
+              <button type="button" class="af-skip-btn af-skip-btn--end" id="af-skip-next" title="توسيع لنهاية الفترة"><span class="af-skip-icon">&#9664;</span></button>
+            </div>
           </div>
         </div>
         <div class="af-now-btns">

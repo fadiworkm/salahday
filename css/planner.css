@@ -474,6 +474,77 @@
 .af-field-half { flex: 1; }
 .af-field-half .af-input { margin-bottom: 0; }
 
+.af-input-with-arrows {
+  display: flex;
+  align-items: stretch;
+}
+.af-input-with-arrows .af-input {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
+}
+.af-skip-btn {
+  width: 30px;
+  min-width: 30px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.04);
+  color: var(--text-muted, #666);
+  font-size: 0.55rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.15s, color 0.15s;
+}
+.af-skip-btn:active {
+  background: rgba(255,255,255,0.12);
+  color: var(--text-primary);
+}
+.af-skip-icon {
+  font-size: 0.5rem;
+  line-height: 1;
+}
+/* ◄| button — first child in البدء row, renders on right in RTL */
+.af-skip-btn--start {
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  border-left: none;
+  flex-direction: row;
+  gap: 1px;
+}
+.af-skip-btn--start::before {
+  content: '';
+  width: 1.5px;
+  height: 10px;
+  background: currentColor;
+  border-radius: 1px;
+}
+/* Input after --start button: round left side */
+.af-skip-btn--start + .af-input {
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+/* |► button — last child in الانتهاء row, renders on left in RTL */
+.af-skip-btn--end {
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  border-right: none;
+  flex-direction: row;
+  gap: 1px;
+}
+.af-skip-btn--end::after {
+  content: '';
+  width: 1.5px;
+  height: 10px;
+  background: currentColor;
+  border-radius: 1px;
+}
+/* Input before --end button: round right side */
+.af-input + .af-skip-btn--end {
+  /* already handled by --end radius */
+}
+.af-input-with-arrows .af-input:first-child {
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
 .af-now-btns {
   display: flex;
   gap: 8px;
