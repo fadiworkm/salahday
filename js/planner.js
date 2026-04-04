@@ -53,9 +53,6 @@ function getPlannerPeriods() {
 
 // ─── فترات الصلاة (تجميع التحضير + الصلاة) ───
 
-var PRAYER_ICONS = { fajr: '🌅', dhuhr: '☀️', asr: '🌤️', maghrib: '🌇', isha: '🌙' };
-
-
 // ─── فتح/إغلاق المخطط ───
 
 function openPlanner() {

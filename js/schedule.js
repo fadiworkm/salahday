@@ -584,10 +584,11 @@ function renderDayStats(segments) {
   let totalActivityTime = 0;
   for (const act of planActivities) {
     const dur = act.end - act.start;
-    if (!activityMap[act.name]) {
-      activityMap[act.name] = { name: act.name, icon: act.icon, color: act.color, duration: 0 };
+    const groupName = act.isPrayer ? 'صلاة' : act.name;
+    if (!activityMap[groupName]) {
+      activityMap[groupName] = { name: groupName, icon: act.isPrayer ? '🕌' : act.icon, color: act.isPrayer ? '#7c6aef' : act.color, duration: 0 };
     }
-    activityMap[act.name].duration += dur;
+    activityMap[groupName].duration += dur;
     totalActivityTime += dur;
   }
 
@@ -609,7 +610,7 @@ function renderDayStats(segments) {
     categories.push({ name: 'نوم', icon: '☾', color: '#3a3f6b', duration: typeTotals.sleep });
   }
   const prayerTotal = (typeTotals.prayer || 0) + (typeTotals.prep || 0);
-  if (prayerTotal > 0) {
+  if (prayerTotal > 0 && !activityMap['صلاة']) {
     categories.push({ name: 'صلاة وتحضير', icon: '❤️', color: '#7c6aef', duration: prayerTotal, itemClass: 'ds-item-prayer' });
   }
 
@@ -777,8 +778,9 @@ function exportDayStatsJSON() {
   const activityMap = {};
   for (const act of planActivities) {
     const dur = act.end - act.start;
-    if (!activityMap[act.name]) activityMap[act.name] = { name: act.name, icon: act.icon, color: act.color, duration: 0 };
-    activityMap[act.name].duration += dur;
+    const groupName = act.isPrayer ? 'صلاة' : act.name;
+    if (!activityMap[groupName]) activityMap[groupName] = { name: groupName, icon: act.isPrayer ? '🕌' : act.icon, color: act.isPrayer ? '#7c6aef' : act.color, duration: 0 };
+    activityMap[groupName].duration += dur;
   }
 
   let workActivityTime = 0;
@@ -792,7 +794,7 @@ function exportDayStatsJSON() {
   const categories = [];
   if (typeTotals.sleep > 0) categories.push({ name: 'نوم', icon: '☾', durationMin: typeTotals.sleep });
   const prayerTotal = (typeTotals.prayer || 0) + (typeTotals.prep || 0);
-  if (prayerTotal > 0) categories.push({ name: 'صلاة وتحضير', icon: '❤️', durationMin: prayerTotal });
+  if (prayerTotal > 0 && !activityMap['صلاة']) categories.push({ name: 'صلاة وتحضير', icon: '❤️', durationMin: prayerTotal });
   const remainingWork = Math.max(0, typeTotals.work - workActivityTime);
   if (remainingWork > 0) categories.push({ name: 'غير محدد', icon: '⏳', durationMin: remainingWork });
   for (const key of Object.keys(activityMap)) {
@@ -1000,14 +1002,14 @@ function ensurePrayerActivities(expandedPeriods) {
     if (exists) return;
 
     activities.push({
-      name: PRAYER_NAMES[pKey] || pKey,
+      name: 'صلاة',
       icon: PRAYER_ICONS[pKey] || '🕌',
       color: PRAYER_COLORS[pKey] || '#7c6aef',
       start: pg.start,
       end: pg.end,
       isPrayer: true,
       prayerKey: pKey,
-      note: '',
+      note: PRAYER_NAMES[pKey] || '',
       dailyHabit: true
     });
     changed = true;
