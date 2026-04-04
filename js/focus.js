@@ -92,7 +92,7 @@ var FocusMode = {
       segRemaining: document.getElementById('focus-seg-remaining'),
       segGone: document.getElementById('focus-seg-gone'),
       segRange: document.getElementById('focus-seg-range'),
-      totalTime: document.getElementById('focus-total-time'),
+      lostTime: document.getElementById('focus-lost-time'),
       btnPause: document.getElementById('focus-btn-pause'),
       pauseIcon: document.querySelector('#focus-btn-pause .focus-pause-icon'),
       wave: document.getElementById('focus-wave'),
@@ -419,8 +419,8 @@ var FocusMode = {
     els.segRemaining.textContent = LiveTimer.format(segRemaining);
     els.segGone.textContent = LiveTimer.format(segGone);
 
-    // Total focus time
-    els.totalTime.textContent = LiveTimer.format(totalElapsed);
+    // Lost time (segment gone minus focus time)
+    els.lostTime.textContent = LiveTimer.format(Math.max(0, segGone - totalElapsed));
 
     // Wave height via CSS custom property
     if (els.wave) {
@@ -453,7 +453,7 @@ var FocusMode = {
     els.elapsedTimer.textContent = LiveTimer.format(totalElapsed);
     els.segRemaining.textContent = LiveTimer.format(segRemaining);
     els.segGone.textContent = LiveTimer.format(segGone);
-    els.totalTime.textContent = LiveTimer.format(totalElapsed);
+    els.lostTime.textContent = LiveTimer.format(Math.max(0, segGone - totalElapsed));
 
     // Focus percentage (all focus in this segment / segment duration)
     this._updateSegmentPct(totalElapsed, totalSegDur);
@@ -498,7 +498,8 @@ var FocusMode = {
         ? Math.floor(Date.now() / 1000) - self._currentPeriodStart : 0;
       var total = self._session.totalFocusSec + currentElapsed;
       els.elapsedTimer.textContent = LiveTimer.format(total);
-      els.totalTime.textContent = LiveTimer.format(total);
+      var segGoneNow = Math.max(0, nowSec - sS * 60);
+      els.lostTime.textContent = LiveTimer.format(Math.max(0, segGoneNow - total));
 
       // Focus percentage & today total
       var totalSegDur = (sE - sS) * 60;
@@ -620,7 +621,8 @@ var FocusMode = {
     // idx = box index to edit, null = add new
     this._editingPomoIdx = idx;
     var list = this._getPomoList();
-    var current = (idx !== null && idx < list.length) ? list[idx] : this._getDefaultPomoDur();
+    var segRemainingMin = Math.max(1, Math.floor((this._segEnd * 60 - LiveTimer.now()) / 60));
+    var current = (idx !== null && idx < list.length) ? list[idx] : segRemainingMin;
     this._pomoDialogValue = current;
 
     var valEl = document.getElementById('focus-pomo-dialog-value');
