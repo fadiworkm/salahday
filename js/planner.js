@@ -7,6 +7,7 @@ let currentFormWorkIndex = null;
 let selectedPreset = null;
 let editingActivityIndex = null;
 let currentPlannerFilter = null; // null = عرض الكل, رقم = فترة واحدة
+let durationAnchor = 'start'; // 'start' = slider changes end, 'end' = slider changes start
 
 // ─── استمرارية البيانات (عبر ScheduleData) ───
 
@@ -395,10 +396,62 @@ function getMaxEndForStart(pIdx, startMin) {
 // ─── مزامنة البدء/الانتهاء/المدة ───
 
 function syncFromStartAndDuration() {
-  var parts = document.getElementById('af-start-time').value.split(':').map(Number);
-  var startMin = parts[0] * 60 + parts[1];
   var dur = parseInt(document.getElementById('af-duration').value);
-  document.getElementById('af-end-time').value = minutesToTimeStr(startMin + dur);
+  if (durationAnchor === 'end') {
+    // Anchor is end — update start from end minus duration
+    var eParts = document.getElementById('af-end-time').value.split(':').map(Number);
+    var endMin = eParts[0] * 60 + eParts[1];
+    document.getElementById('af-start-time').value = minutesToTimeStr(endMin - dur);
+  } else {
+    // Anchor is start (default) — update end from start plus duration
+    var sParts = document.getElementById('af-start-time').value.split(':').map(Number);
+    var startMin = sParts[0] * 60 + sParts[1];
+    document.getElementById('af-end-time').value = minutesToTimeStr(startMin + dur);
+  }
+}
+
+function setDurationAnchor(anchor) {
+  durationAnchor = anchor;
+  document.getElementById('af-anchor-start').classList.toggle('af-anchor-active', anchor === 'start');
+  document.getElementById('af-anchor-end').classList.toggle('af-anchor-active', anchor === 'end');
+
+  // Recalculate slider max based on anchor
+  if (currentFormWorkIndex === null) return;
+  var slider = document.getElementById('af-duration');
+  var curDur = parseInt(slider.value);
+  if (anchor === 'end') {
+    var eParts = document.getElementById('af-end-time').value.split(':').map(Number);
+    var endMin = eParts[0] * 60 + eParts[1];
+    var minStart = getMinStartForEnd(currentFormWorkIndex, endMin);
+    var maxDur = Math.max(5, endMin - minStart);
+    slider.max = maxDur;
+    if (curDur > maxDur) slider.value = maxDur;
+  } else {
+    var sParts = document.getElementById('af-start-time').value.split(':').map(Number);
+    var startMin = sParts[0] * 60 + sParts[1];
+    var maxEnd = getMaxEndForStart(currentFormWorkIndex, startMin);
+    var maxDur = Math.max(5, maxEnd - startMin);
+    slider.max = maxDur;
+    if (curDur > maxDur) slider.value = maxDur;
+  }
+  TickSlider.refresh(slider);
+}
+
+function getMinStartForEnd(pIdx, endMin) {
+  var periods = getPlannerPeriods();
+  var period = periods[pIdx];
+  if (!period) return 0;
+  var activities = getDayActivities().filter(function (a) { return a.start >= period.start && a.end <= period.end; });
+  if (editingActivityIndex !== null) {
+    activities = activities.filter(function (a, idx) { return idx !== editingActivityIndex; });
+  }
+  var minStart = period.start;
+  for (var i = 0; i < activities.length; i++) {
+    if (activities[i].end <= endMin && activities[i].end > minStart) {
+      minStart = activities[i].end;
+    }
+  }
+  return minStart;
 }
 
 function syncFromEndTime() {
@@ -407,9 +460,14 @@ function syncFromEndTime() {
   var startMin = sParts[0] * 60 + sParts[1];
   var endMin = eParts[0] * 60 + eParts[1];
   var dur = Math.max(5, endMin - startMin);
+  var minStart = getMinStartForEnd(currentFormWorkIndex, endMin);
+  var maxDur = Math.max(5, endMin - minStart);
   var slider = document.getElementById('af-duration');
+  slider.max = maxDur;
+  if (dur > maxDur) dur = maxDur;
   slider.value = dur;
   TickSlider.refresh(slider);
+  setDurationAnchor('end');
 }
 
 function syncFromStartTime() {
@@ -421,6 +479,7 @@ function syncFromStartTime() {
   slider.max = maxDur;
   if (parseInt(slider.value) > maxDur) slider.value = maxDur;
   TickSlider.refresh(slider);
+  setDurationAnchor('start');
   syncFromStartAndDuration();
 }
 
@@ -533,6 +592,7 @@ function showActivityForm(pIdx) {
 
   document.querySelectorAll('.af-preset').forEach(function (p) { p.classList.remove('af-preset-selected'); });
 
+  setDurationAnchor('start');
   document.getElementById('af-daily-habit').checked = false;
   document.getElementById('af-add-btn').textContent = 'إضافة';
   document.getElementById('af-delete-btn').style.display = 'none';
@@ -564,6 +624,7 @@ function setFullPeriod(pIdx) {
 
   document.querySelectorAll('.af-preset').forEach(function (p) { p.classList.remove('af-preset-selected'); });
 
+  setDurationAnchor('start');
   document.getElementById('af-daily-habit').checked = false;
   document.getElementById('af-add-btn').textContent = 'تعيين';
   document.getElementById('af-delete-btn').style.display = 'none';
@@ -599,6 +660,7 @@ function editActivity(pIdx, globalIdx) {
     p.classList.toggle('af-preset-selected', p.dataset.name === act.name);
   });
 
+  setDurationAnchor('start');
   document.getElementById('af-daily-habit').checked = !!act.dailyHabit;
   document.getElementById('af-add-btn').textContent = 'حفظ التعديل';
   document.getElementById('af-delete-btn').style.display = '';
@@ -974,6 +1036,10 @@ document.addEventListener('DOMContentLoaded', async function () {
   document.getElementById('af-duration').addEventListener('input', syncFromStartAndDuration);
   document.getElementById('af-start-time').addEventListener('change', syncFromStartTime);
   document.getElementById('af-end-time').addEventListener('change', syncFromEndTime);
+
+  // مفتاح تثبيت البدء/الانتهاء
+  document.getElementById('af-anchor-start').addEventListener('click', function () { setDurationAnchor('start'); });
+  document.getElementById('af-anchor-end').addEventListener('click', function () { setDurationAnchor('end'); });
 
   // أزرار التوسيع للنشاط المجاور
   document.getElementById('af-skip-prev').addEventListener('click', skipStartToPrev);

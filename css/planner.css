@@ -545,6 +545,33 @@
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
 
+.af-anchor-toggle {
+  display: flex;
+  gap: 0;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+.af-anchor-btn {
+  flex: 1;
+  padding: 7px 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  background: rgba(255,255,255,0.04);
+  color: var(--text-muted, #888);
+  transition: background 0.2s, color 0.2s;
+}
+.af-anchor-btn:not(:last-child) {
+  border-left: 1px solid rgba(255,255,255,0.1);
+}
+.af-anchor-btn.af-anchor-active {
+  background: rgba(76, 205, 196, 0.15);
+  color: #4ecdc4;
+}
+
 .af-now-btns {
   display: flex;
   gap: 8px;
