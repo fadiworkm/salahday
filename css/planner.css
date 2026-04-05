@@ -545,31 +545,27 @@
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
 
-.af-anchor-toggle {
-  display: flex;
-  gap: 0;
-  margin-bottom: 10px;
-  border-radius: 8px;
-  overflow: hidden;
-  border: 1px solid rgba(255,255,255,0.1);
-}
-.af-anchor-btn {
-  flex: 1;
-  padding: 7px 0;
-  font-size: 0.82rem;
-  font-weight: 600;
+/* ─── Anchor diamonds on slider sides ─── */
+.af-anchor-diamond {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  transform: rotate(45deg);
+  border: 2px solid var(--tick-slider-color, var(--success, #4ecdc4));
+  border-radius: 3px;
   cursor: pointer;
-  border: none;
-  background: rgba(255,255,255,0.04);
-  color: var(--text-muted, #888);
-  transition: background 0.2s, color 0.2s;
+  transition: background 0.2s, box-shadow 0.2s;
+  background: transparent;
+  z-index: 3;
 }
-.af-anchor-btn:not(:last-child) {
-  border-left: 1px solid rgba(255,255,255,0.1);
+.af-anchor-diamond.af-anchor-active {
+  background: var(--tick-slider-color, var(--success, #4ecdc4));
+  box-shadow: 0 0 8px color-mix(in srgb, var(--tick-slider-color, var(--success, #4ecdc4)) 40%, transparent);
 }
-.af-anchor-btn.af-anchor-active {
-  background: rgba(76, 205, 196, 0.15);
-  color: #4ecdc4;
+/* Adjust ticks area to account for diamonds on both sides */
+.af-field .tick-slider-ticks {
+  margin-left: 80px;
+  margin-right: 28px;
 }
 
 .af-now-btns {

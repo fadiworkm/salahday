@@ -412,8 +412,10 @@ function syncFromStartAndDuration() {
 
 function setDurationAnchor(anchor) {
   durationAnchor = anchor;
-  document.getElementById('af-anchor-start').classList.toggle('af-anchor-active', anchor === 'start');
-  document.getElementById('af-anchor-end').classList.toggle('af-anchor-active', anchor === 'end');
+  var startEl = document.getElementById('af-anchor-start');
+  var endEl = document.getElementById('af-anchor-end');
+  if (startEl) startEl.classList.toggle('af-anchor-active', anchor === 'start');
+  if (endEl) endEl.classList.toggle('af-anchor-active', anchor === 'end');
 
   // Recalculate slider max based on anchor
   if (currentFormWorkIndex === null) return;
@@ -1037,9 +1039,27 @@ document.addEventListener('DOMContentLoaded', async function () {
   document.getElementById('af-start-time').addEventListener('change', syncFromStartTime);
   document.getElementById('af-end-time').addEventListener('change', syncFromEndTime);
 
-  // مفتاح تثبيت البدء/الانتهاء
-  document.getElementById('af-anchor-start').addEventListener('click', function () { setDurationAnchor('start'); });
-  document.getElementById('af-anchor-end').addEventListener('click', function () { setDurationAnchor('end'); });
+  // إضافة ماسات التثبيت على جانبي السلايدر
+  (function () {
+    var wrap = document.getElementById('af-duration').closest('.tick-slider-wrap');
+    if (!wrap) return;
+
+    var dStart = document.createElement('span');
+    dStart.className = 'af-anchor-diamond af-anchor-active';
+    dStart.id = 'af-anchor-start';
+    dStart.title = 'تثبيت البدء';
+    dStart.addEventListener('click', function () { setDurationAnchor('start'); });
+
+    var dEnd = document.createElement('span');
+    dEnd.className = 'af-anchor-diamond';
+    dEnd.id = 'af-anchor-end';
+    dEnd.title = 'تثبيت الانتهاء';
+    dEnd.addEventListener('click', function () { setDurationAnchor('end'); });
+
+    // DOM order: [dStart, slider, valueEl, dEnd] → RTL visual: dStart=RIGHT, dEnd=LEFT
+    wrap.insertBefore(dStart, wrap.firstChild);
+    wrap.appendChild(dEnd);
+  })();
 
   // أزرار التوسيع للنشاط المجاور
   document.getElementById('af-skip-prev').addEventListener('click', skipStartToPrev);
