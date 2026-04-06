@@ -19,7 +19,8 @@ header('Expires: 0');
 
 $DATA_DIR  = __DIR__ . '/data';
 $DATA_FILE  = $DATA_DIR . '/schedule-data.json';
-$FOCUS_FILE = $DATA_DIR . '/focus-data.json';
+$FOCUS_FILE  = $DATA_DIR . '/focus-data.json';
+$KANBAN_FILE = $DATA_DIR . '/kanban-data.json';
 
 if (!is_dir($DATA_DIR)) {
     mkdir($DATA_DIR, 0755, true);
@@ -116,6 +117,25 @@ function writeFocus($data) {
     if (empty($data['sessions'])) $data['sessions'] = new stdClass();
     $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
     file_put_contents($FOCUS_FILE, $json, LOCK_EX);
+}
+
+function readKanban() {
+    global $KANBAN_FILE;
+    if (!file_exists($KANBAN_FILE)) {
+        return ['tasks' => []];
+    }
+    $raw  = file_get_contents($KANBAN_FILE);
+    $data = json_decode($raw, true);
+    if (!$data) return ['tasks' => []];
+    if (!isset($data['tasks'])) $data['tasks'] = [];
+    return $data;
+}
+
+function writeKanban($data) {
+    global $KANBAN_FILE;
+    if (empty($data['tasks'])) $data['tasks'] = new stdClass();
+    $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+    file_put_contents($KANBAN_FILE, $json, LOCK_EX);
 }
 
 // ─── Routing ───
@@ -273,6 +293,27 @@ switch ($action) {
         $sessions = $data['sessions'];
         if (empty($sessions)) $sessions = new stdClass();
         echo json_encode($sessions, JSON_UNESCAPED_UNICODE);
+        break;
+
+    // Kanban tasks (per date)
+    case 'kanban':
+        if (!$date) {
+            http_response_code(400);
+            echo json_encode(['error' => 'date required']);
+            break;
+        }
+
+        if ($method === 'GET') {
+            $data = readKanban();
+            $tasks = $data['tasks'][$date] ?? [];
+            echo json_encode($tasks, JSON_UNESCAPED_UNICODE);
+
+        } elseif ($method === 'POST') {
+            $data = readKanban();
+            $data['tasks'][$date] = getBody();
+            writeKanban($data);
+            echo json_encode(['ok' => true]);
+        }
         break;
 
     default:

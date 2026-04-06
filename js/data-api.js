@@ -4,6 +4,7 @@
  */
 var ScheduleData = {
   _data: { days: {}, customPresets: [] },
+  _kanban: {},
   _readyPromise: null,
 
   init: function () {
@@ -124,6 +125,39 @@ var ScheduleData = {
   /** All days in cache */
   getAllDays: function () {
     return this._data.days || {};
+  },
+
+  /** Fetch kanban tasks for a date from server */
+  loadKanbanTasks: function (date) {
+    var self = this;
+    return this._fetch('api.php?action=kanban&date=' + date)
+      .then(function (res) {
+        if (res.ok) return res.json();
+        throw new Error('HTTP ' + res.status);
+      })
+      .then(function (tasks) {
+        self._kanban[date] = tasks || [];
+        return self._kanban[date];
+      })
+      .catch(function (e) {
+        console.error('Failed to load kanban:', e);
+        return self._kanban[date] || [];
+      });
+  },
+
+  /** Get kanban tasks from cache */
+  getKanbanTasks: function (date) {
+    return this._kanban[date] || [];
+  },
+
+  /** Save kanban tasks for a date (fire-and-forget) */
+  saveKanbanTasks: function (date, tasks) {
+    this._kanban[date] = tasks;
+    this._fetch('api.php?action=kanban&date=' + date, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(tasks)
+    }).catch(function (e) { console.error('Failed to save kanban:', e); });
   }
 };
 

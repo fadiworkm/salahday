@@ -14,6 +14,7 @@
   <link rel="stylesheet" href="css/mobile-timeline.css?v=3">
   <link rel="stylesheet" href="css/focus.css?v=3">
   <link rel="stylesheet" href="css/tick-slider.css?v=1">
+  <link rel="stylesheet" href="css/kanban.css?v=1">
   <link rel="stylesheet" href="css/theme-light.css?v=1">
 </head>
 <body>
@@ -100,6 +101,22 @@
         </div>
         <div class="work-blocks" id="work-blocks">
           <!-- Filled by JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- لوحة المهام (كانبان) -->
+    <section class="kanban-section">
+      <div class="card">
+        <div class="kanban-header-row">
+          <h2><span class="icon">📋</span> لوحة المهام</h2>
+          <div class="kanban-header-actions">
+            <button class="kanban-view-btn" id="kanban-view-toggle" title="تبديل العرض"></button>
+            <button class="kanban-add-btn" id="kanban-add-btn">+ مهمة جديدة</button>
+          </div>
+        </div>
+        <div id="kanban-board">
+          <!-- Filled by js/kanban.js -->
         </div>
       </div>
     </section>
@@ -552,6 +569,7 @@
   <script src="js/focus.js?v=3"></script>
   <script src="js/mobile-timeline.js?v=3"></script>
   <script src="js/tick-slider.js?v=1"></script>
+  <script src="js/kanban.js?v=1"></script>
   <script src="js/planner.js?v=4"></script>
 </body>
 </html>
