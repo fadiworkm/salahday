@@ -998,8 +998,18 @@ function ensurePrayerActivities(expandedPeriods) {
     const pg = period.prayerAtStart;
     const pKey = pg.prayerKey;
 
-    const exists = activities.some(a => a.isPrayer && a.prayerKey === pKey);
-    if (exists) return;
+    const existingIdx = activities.findIndex(a => a.isPrayer && a.prayerKey === pKey);
+
+    if (existingIdx !== -1) {
+      // Update stale times (copied from previous day) to today's prayer times
+      const existing = activities[existingIdx];
+      if (existing.start !== pg.start || existing.end !== pg.end) {
+        existing.start = pg.start;
+        existing.end = pg.end;
+        changed = true;
+      }
+      return;
+    }
 
     activities.push({
       name: 'صلاة',
