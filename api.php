@@ -48,12 +48,12 @@ function defaultSettings() {
 function readData() {
     global $DATA_FILE;
     if (!file_exists($DATA_FILE)) {
-        return ['days' => [], 'customPresets' => []];
+        return ['days' => [], 'customPresets' => [], 'habits' => []];
     }
     $raw  = file_get_contents($DATA_FILE);
     $data = json_decode($raw, true);
     if (!$data) {
-        return ['days' => [], 'customPresets' => []];
+        return ['days' => [], 'customPresets' => [], 'habits' => []];
     }
     // Migrate old format
     if (isset($data['workPlannerData']) && !isset($data['days'])) {
@@ -61,6 +61,7 @@ function readData() {
     }
     if (!isset($data['days']))          $data['days'] = [];
     if (!isset($data['customPresets'])) $data['customPresets'] = [];
+    if (!isset($data['habits']))        $data['habits'] = [];
     return $data;
 }
 
@@ -172,17 +173,12 @@ switch ($action) {
             }
 
             if ($prevDate && isset($data['days'][$prevDate])) {
-                // Copy daily habit activities from previous day
-                $prevActivities = $data['days'][$prevDate]['activities'] ?? [];
-                $habitActivities = array_values(array_filter($prevActivities, function($a) {
-                    return !empty($a['dailyHabit']);
-                }));
-
                 $dayData = [
-                    'activities'      => $habitActivities,
+                    'activities'      => [],
                     'disabledPeriods' => [],
                     'manualBedtime'   => null,
                     'settings'        => $data['days'][$prevDate]['settings'] ?? defaultSettings(),
+                    '_new'            => true,
                 ];
             } else {
                 $dayData = [
@@ -190,6 +186,7 @@ switch ($action) {
                     'disabledPeriods' => [],
                     'manualBedtime'   => null,
                     'settings'        => defaultSettings(),
+                    '_new'            => true,
                 ];
             }
 
@@ -219,6 +216,19 @@ switch ($action) {
         } elseif ($method === 'POST') {
             $data = readData();
             $data['customPresets'] = getBody();
+            writeData($data);
+            echo json_encode(['ok' => true]);
+        }
+        break;
+
+    // Daily habits
+    case 'habits':
+        if ($method === 'GET') {
+            $data = readData();
+            echo json_encode($data['habits'] ?? [], JSON_UNESCAPED_UNICODE);
+        } elseif ($method === 'POST') {
+            $data = readData();
+            $data['habits'] = getBody();
             writeData($data);
             echo json_encode(['ok' => true]);
         }

@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>العادات اليومية</title>
+  <meta name="description" content="إدارة العادات اليومية المرتبطة بأوقات الصلاة">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=3">
+  <link rel="stylesheet" href="css/habits.css?v=1">
+  <link rel="stylesheet" href="css/theme-light.css?v=1">
+</head>
+<body>
+
+  <div id="stars-container"></div>
+
+  <div class="container">
+
+    <!-- Header -->
+    <header>
+      <div class="header-icon">&#128197;</div>
+      <h1>العادات اليومية</h1>
+      <p class="subtitle">عادات تُضاف تلقائياً لجدولك كل يوم</p>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="page-nav">
+      <a href="index.html" class="nav-link">&#128197; جدول اليوم</a>
+      <a href="habits.html" class="nav-link active">&#128260; العادات</a>
+      <a href="sleep.html" class="nav-link">&#9790; حاسبة النوم</a>
+      <a href="analysis.html" class="nav-link">&#128202; التحليل</a>
+    </nav>
+
+    <!-- Habits List -->
+    <section>
+      <div class="card">
+        <h2><span class="icon">&#128260;</span> عاداتك اليومية</h2>
+        <div id="habits-list" class="habits-list">
+          <!-- Filled by JS -->
+        </div>
+        <button class="habit-add-btn" id="habit-add-btn" style="margin-top: 12px;">+ إضافة عادة جديدة</button>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <div class="city-info">درعا، سوريا</div>
+      <div>المصدر: وزارة الأوقاف</div>
+    </footer>
+
+  </div>
+
+  <!-- ─── نموذج إضافة/تعديل عادة ─── -->
+  <div class="habit-form-overlay" id="habit-form-overlay">
+    <div class="habit-form-modal">
+      <div class="hf-header">
+        <h3>إضافة عادة يومية</h3>
+        <button class="planner-close" id="hf-close">&times;</button>
+      </div>
+      <div class="hf-body">
+
+        <!-- اختيار نشاط مسبق -->
+        <div class="hf-field">
+          <label>اختر نشاطاً</label>
+          <div class="hf-presets" id="hf-presets">
+            <!-- Filled by JS -->
+          </div>
+        </div>
+
+        <!-- اسم مخصص -->
+        <div class="hf-field">
+          <label>اسم العادة</label>
+          <input type="text" id="hf-name" class="hf-input" placeholder="مثال: رياضة صباحية">
+        </div>
+
+        <!-- نوع الجدولة -->
+        <div class="hf-field">
+          <label>نوع الجدولة</label>
+          <div class="hf-schedule-types">
+            <button type="button" class="hf-type-btn active" data-type="prayer-to-prayer">بين صلاتين</button>
+            <button type="button" class="hf-type-btn" data-type="prayer-duration">من صلاة + مدة</button>
+            <button type="button" class="hf-type-btn" data-type="custom-time">وقت محدد</button>
+          </div>
+        </div>
+
+        <!-- حقول الصلاة -->
+        <div class="hf-field" id="hf-prayer-section">
+          <div class="hf-prayer-row">
+            <div class="hf-field">
+              <label>من صلاة</label>
+              <select id="hf-from-prayer" class="hf-select">
+                <option value="fajr">الفجر</option>
+                <option value="sunrise">الشروق</option>
+                <option value="dhuhr">الظهر</option>
+                <option value="asr">العصر</option>
+                <option value="maghrib">المغرب</option>
+                <option value="isha">العشاء</option>
+              </select>
+            </div>
+            <div class="hf-field" id="hf-to-prayer-field">
+              <label>إلى صلاة</label>
+              <select id="hf-to-prayer" class="hf-select">
+                <option value="fajr">الفجر</option>
+                <option value="sunrise">الشروق</option>
+                <option value="dhuhr" selected>الظهر</option>
+                <option value="asr">العصر</option>
+                <option value="maghrib">المغرب</option>
+                <option value="isha">العشاء</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- الإزاحة بعد الصلاة -->
+        <div class="hf-field" id="hf-offset-section">
+          <label>إزاحة بعد الصلاة</label>
+          <div class="hf-offset-row">
+            <input type="number" id="hf-offset" class="hf-input hf-offset-input" value="0" min="0" max="120" step="5">
+            <span class="hf-offset-unit">دقيقة بعد وقت الصلاة</span>
+          </div>
+        </div>
+
+        <!-- المدة (لنوع prayer-duration) -->
+        <div class="hf-field hf-section-hidden" id="hf-duration-section">
+          <label>المدة</label>
+          <div class="hf-offset-row">
+            <input type="number" id="hf-duration-input" class="hf-input hf-offset-input" value="30" min="5" max="300" step="5">
+            <span class="hf-offset-unit">دقيقة</span>
+          </div>
+        </div>
+
+        <!-- وقت مخصص -->
+        <div class="hf-field hf-section-hidden" id="hf-custom-section">
+          <div class="hf-time-row">
+            <div class="hf-field">
+              <label>البدء</label>
+              <input type="time" id="hf-start-time" class="hf-input" value="08:00" step="300">
+            </div>
+            <div class="hf-field">
+              <label>الانتهاء</label>
+              <input type="time" id="hf-end-time" class="hf-input" value="09:00" step="300">
+            </div>
+          </div>
+        </div>
+
+        <!-- معاينة الوقت -->
+        <div class="hf-preview">
+          <div class="hf-preview-label">الوقت المحسوب لليوم</div>
+          <div class="hf-preview-time" id="hf-preview-time">&mdash;</div>
+        </div>
+
+        <!-- ملاحظة -->
+        <div class="hf-field">
+          <label>ملاحظة (اختياري)</label>
+          <textarea id="hf-note" class="hf-input hf-note" placeholder="ملاحظة تظهر مع النشاط" rows="2"></textarea>
+        </div>
+
+        <button class="hf-save-btn" id="hf-save-btn">إضافة</button>
+        <button class="hf-delete-btn" id="hf-delete-btn">&#128465; حذف العادة</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/theme.js?v=1"></script>
+  <script src="js/pray-times-data.js?v=3"></script>
+  <script src="js/data-api.js?v=3"></script>
+  <script src="js/habits.js?v=1"></script>
+</body>
+</html>

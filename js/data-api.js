@@ -34,6 +34,7 @@ var ScheduleData = {
         self._data = data;
         if (!self._data.days) self._data.days = {};
         if (!self._data.customPresets) self._data.customPresets = [];
+        if (!self._data.habits) self._data.habits = [];
       })
       .catch(function (e) {
         console.error('Failed to load data from server:', e);
@@ -120,6 +121,39 @@ var ScheduleData = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(presets)
     }).catch(function (e) { console.error('Failed to save presets:', e); });
+  },
+
+  /** Load habits from server */
+  loadHabits: function () {
+    var self = this;
+    return this._fetch('api.php?action=habits')
+      .then(function (res) {
+        if (res.ok) return res.json();
+        throw new Error('HTTP ' + res.status);
+      })
+      .then(function (habits) {
+        self._data.habits = habits || [];
+        return self._data.habits;
+      })
+      .catch(function (e) {
+        console.error('Failed to load habits:', e);
+        return self._data.habits || [];
+      });
+  },
+
+  /** Get habits from cache */
+  getHabits: function () {
+    return this._data.habits || [];
+  },
+
+  /** Save habits to server (fire-and-forget) */
+  saveHabits: function (habits) {
+    this._data.habits = habits;
+    this._fetch('api.php?action=habits', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(habits)
+    }).catch(function (e) { console.error('Failed to save habits:', e); });
   },
 
   /** All days in cache */

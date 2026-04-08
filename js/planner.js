@@ -182,7 +182,7 @@ function renderPlanner(onlyPeriodIdx) {
           var actGlobalIdx = activities.indexOf(act);
           html += '<span class="pl-activity-chip" style="background:' + act.color + '" onclick="editActivity(' + pIdx + ', ' + actGlobalIdx + ')">';
           html += act.icon + ' ' + act.name + ' (' + formatDuration(act.end - act.start) + ')';
-          if (act.dailyHabit) html += '<span class="chip-note" title="عادة يومية">🔄</span>';
+          if (act.fromHabit) html += '<span class="chip-note" title="عادة يومية">🔄</span>';
           if (act.note) html += '<span class="chip-note" title="' + act.note.replace(/"/g, '&quot;') + '">📝</span>';
           html += '<span class="chip-edit">&#9998;</span></span>';
         });
@@ -595,7 +595,6 @@ function showActivityForm(pIdx) {
   document.querySelectorAll('.af-preset').forEach(function (p) { p.classList.remove('af-preset-selected'); });
 
   setDurationAnchor('start');
-  document.getElementById('af-daily-habit').checked = false;
   document.getElementById('af-add-btn').textContent = 'إضافة';
   document.getElementById('af-delete-btn').style.display = 'none';
   document.querySelector('.af-header h3').textContent = 'إضافة نشاط';
@@ -627,7 +626,6 @@ function setFullPeriod(pIdx) {
   document.querySelectorAll('.af-preset').forEach(function (p) { p.classList.remove('af-preset-selected'); });
 
   setDurationAnchor('start');
-  document.getElementById('af-daily-habit').checked = false;
   document.getElementById('af-add-btn').textContent = 'تعيين';
   document.getElementById('af-delete-btn').style.display = 'none';
   document.querySelector('.af-header h3').textContent = 'تعيين كامل الفترة';
@@ -663,7 +661,6 @@ function editActivity(pIdx, globalIdx) {
   });
 
   setDurationAnchor('start');
-  document.getElementById('af-daily-habit').checked = !!act.dailyHabit;
   document.getElementById('af-add-btn').textContent = 'حفظ التعديل';
   document.getElementById('af-delete-btn').style.display = '';
   document.querySelector('.af-header h3').textContent = 'تعديل نشاط';
@@ -719,8 +716,6 @@ function addActivity() {
     }
   });
 
-  var dailyHabit = document.getElementById('af-daily-habit').checked;
-
   if (editingActivityIndex !== null) {
     var oldAct = activities[editingActivityIndex];
     // Update associated focus sessions if time range or name changed
@@ -736,12 +731,12 @@ function addActivity() {
         FocusData.save(dateStr, s);
       });
     }
-    var updatedAct = { name: name, icon: preset.icon, color: preset.color, start: startMin, end: endMin, note: note, dailyHabit: dailyHabit };
+    var updatedAct = { name: name, icon: preset.icon, color: preset.color, start: startMin, end: endMin, note: note };
     // Preserve prayer properties when editing a prayer activity
     if (oldAct && oldAct.isPrayer) { updatedAct.isPrayer = true; updatedAct.prayerKey = oldAct.prayerKey; }
     activities[editingActivityIndex] = updatedAct;
   } else {
-    activities.push({ name: name, icon: preset.icon, color: preset.color, start: startMin, end: endMin, note: note, dailyHabit: dailyHabit });
+    activities.push({ name: name, icon: preset.icon, color: preset.color, start: startMin, end: endMin, note: note });
   }
 
   // If editing a prayer activity, update buffer settings to match new times
@@ -817,7 +812,14 @@ function clearDayPlan() {
       dayData.disabledPeriods = [];
       ScheduleData.saveDay(dateStr);
     }
-    if (typeof renderDay === 'function') renderDay();
+    // Re-apply enabled habits
+    if (typeof reloadHabitsForDay === 'function') {
+      reloadHabitsForDay(dateStr).then(function () {
+        if (typeof renderDay === 'function') renderDay();
+      });
+    } else {
+      if (typeof renderDay === 'function') renderDay();
+    }
   });
 }
 

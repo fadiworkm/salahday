@@ -190,6 +190,96 @@ function clearSavedBedtime() {
 async function loadDayFromServer() {
   const dateStr = document.getElementById('schedule-date').value;
   await ScheduleData.loadDay(dateStr);
+  await applyDailyHabits(dateStr);
+}
+
+/** Generate habit activities for a day using prayer times and buffer settings */
+function generateHabitActivities(dateStr, day) {
+  const habits = ScheduleData.getHabits();
+  if (!habits || habits.length === 0) return [];
+
+  let dayData = getDayData(dateStr);
+  if (!dayData) dayData = getClosestDate(dateStr);
+  if (!dayData) return [];
+
+  const pMins = extractPrayerMinutes(dayData);
+  const buf = (day.settings && day.settings.buffers) || scheduleSettings.buffers;
+  const result = [];
+
+  habits.forEach(function (habit) {
+    if (!habit.enabled) return;
+
+    let start, end;
+    const offset = parseInt(habit.offsetAfter, 10) || 0;
+
+    if (habit.scheduleType === 'prayer-to-prayer') {
+      const fromBuf = buf[habit.fromPrayer] || { before: 0, after: 0 };
+      const toBuf   = buf[habit.toPrayer]   || { before: 0, after: 0 };
+      start = pMins[habit.fromPrayer] + fromBuf.after + offset;
+      end   = pMins[habit.toPrayer]   - toBuf.before;
+      if (end <= start) return;
+    } else if (habit.scheduleType === 'prayer-duration') {
+      const fromBuf = buf[habit.fromPrayer] || { before: 0, after: 0 };
+      start = pMins[habit.fromPrayer] + fromBuf.after + offset;
+      end = start + (parseInt(habit.duration, 10) || 30);
+    } else if (habit.scheduleType === 'custom-time') {
+      start = parseInt(habit.startTime, 10) || 0;
+      end = parseInt(habit.endTime, 10) || 0;
+      if (end <= start) return;
+    } else {
+      return;
+    }
+
+    result.push({
+      name: habit.name,
+      icon: habit.icon,
+      color: habit.color,
+      start: start,
+      end: end,
+      note: habit.note || '',
+      fromHabit: habit.id
+    });
+  });
+
+  return result;
+}
+
+/** Check if day has no user activities (only prayers or empty) */
+function dayNeedsHabits(day) {
+  if (!day.activities || day.activities.length === 0) return true;
+  // If all existing activities are prayers, treat as empty
+  return day.activities.every(function (a) { return a.isPrayer; });
+}
+
+/** Apply daily habits when a new day is first loaded or has no user activities */
+async function applyDailyHabits(dateStr) {
+  const day = ScheduleData.getDayOrDefault(dateStr);
+  const isNew = !!day._new;
+
+  if (isNew) delete day._new;
+
+  if (!isNew && !dayNeedsHabits(day)) {
+    if (isNew) ScheduleData.saveDay(dateStr);
+    return;
+  }
+
+  await ScheduleData.loadHabits();
+  const generated = generateHabitActivities(dateStr, day);
+
+  if (generated.length > 0) {
+    generated.forEach(function (act) { day.activities.push(act); });
+  }
+
+  ScheduleData.saveDay(dateStr);
+}
+
+/** Re-apply habits after clearing a day */
+async function reloadHabitsForDay(dateStr) {
+  await ScheduleData.loadHabits();
+  const day = ScheduleData.getDayOrDefault(dateStr);
+  const generated = generateHabitActivities(dateStr, day);
+  generated.forEach(function (act) { day.activities.push(act); });
+  ScheduleData.saveDay(dateStr);
 }
 
 function loadSettingsFromDay() {
@@ -1019,8 +1109,7 @@ function ensurePrayerActivities(expandedPeriods) {
       end: pg.end,
       isPrayer: true,
       prayerKey: pKey,
-      note: PRAYER_NAMES[pKey] || '',
-      dailyHabit: true
+      note: PRAYER_NAMES[pKey] || ''
     });
     changed = true;
   });
