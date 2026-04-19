@@ -70,8 +70,15 @@ function renderMobileTimeline() {
 
     if (idx > 0) html += '<div class="mt-period-sep"></div>';
 
+    // Color the period header using the prayer color of the prayer at the start of this period
+    var prayerKey = seg.prayerAtStart && seg.prayerAtStart.prayerKey;
+    var periodColor = (typeof PRAYER_COLORS !== 'undefined' && prayerKey && PRAYER_COLORS[prayerKey])
+      ? PRAYER_COLORS[prayerKey]
+      : null;
+    var periodStyle = periodColor ? ' style="--period-color:' + periodColor + '"' : '';
+
     html += '<div class="mt-period' + (isDis ? ' mt-period-disabled' : '') +
-            (isCur ? ' mt-period-current' : '') + '">';
+            (isCur ? ' mt-period-current' : '') + '"' + periodStyle + '>';
 
     // header
     html += '<div class="mt-period-header">';
@@ -203,7 +210,6 @@ function _mtBuildAct(act, isToday, nowMin, lastLabel, pIdx, actGIdx) {
   html += '<div class="mt-body">';
   html += '<div class="mt-icon" style="background:' + color + '">' + (act.icon || '') + '</div>';
   html += '<div class="mt-info">';
-  html += '<div class="mt-timerange">' + displayTime(act.start) + ' - ' + displayTime(act.end) + '</div>';
   html += '<div class="mt-name">' + (act.name || '') + '</div>';
   html += '<div class="mt-dur">' + formatDuration(dur) + '</div>';
   if (act.note && act.note.trim()) {

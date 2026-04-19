@@ -15,6 +15,7 @@
    ════════════════════════════ */
 .mt-period {
   margin-bottom: 16px;
+  --period-color: #4ecdc4; /* default: success/teal when no prayer color */
 }
 
 .mt-period-header {
@@ -23,8 +24,8 @@
   gap: 8px;
   padding: 10px 14px;
   margin-bottom: 6px;
-  background: rgba(78, 205, 196, 0.05);
-  border: 1px solid rgba(78, 205, 196, 0.12);
+  background: color-mix(in srgb, var(--period-color) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--period-color) 25%, transparent);
   border-radius: var(--radius-sm);
   position: relative;
   direction: rtl;
@@ -37,19 +38,19 @@
   top: 0;
   bottom: 0;
   width: 3px;
-  background: var(--success);
+  background: var(--period-color);
   border-radius: 2px 0 0 2px;
 }
 
 .mt-period-current .mt-period-header {
-  border-color: rgba(78, 205, 196, 0.3);
-  background: rgba(78, 205, 196, 0.08);
+  border-color: color-mix(in srgb, var(--period-color) 45%, transparent);
+  background: color-mix(in srgb, var(--period-color) 14%, transparent);
 }
 
 .mt-period-time {
   font-size: 0.82rem;
   font-weight: 700;
-  color: var(--cyan);
+  color: var(--period-color);
   white-space: nowrap;
   direction: ltr;
   unicode-bidi: bidi-override;

@@ -1042,6 +1042,7 @@ function ensurePrayerActivities(expandedPeriods) {
     const pg = period.prayerAtStart;
     const pKey = pg.prayerKey;
 
+    const fullName = PRAYER_NAMES[pKey] || 'صلاة';
     const existingIdx = activities.findIndex(a => a.isPrayer && a.prayerKey === pKey);
 
     if (existingIdx !== -1) {
@@ -1052,18 +1053,23 @@ function ensurePrayerActivities(expandedPeriods) {
         existing.end = pg.end;
         changed = true;
       }
+      // Migrate legacy entries: name="صلاة" + note="صلاة الفلانية" → name="صلاة الفلانية", no note
+      if (existing.name !== fullName || (existing.note && existing.note === fullName)) {
+        existing.name = fullName;
+        if (existing.note === fullName) delete existing.note;
+        changed = true;
+      }
       return;
     }
 
     activities.push({
-      name: 'صلاة',
+      name: fullName,
       icon: PRAYER_ICONS[pKey] || '🕌',
       color: PRAYER_COLORS[pKey] || '#7c6aef',
       start: pg.start,
       end: pg.end,
       isPrayer: true,
-      prayerKey: pKey,
-      note: PRAYER_NAMES[pKey] || ''
+      prayerKey: pKey
     });
     changed = true;
   });
