@@ -72,6 +72,24 @@ var LiveTimer = {
     this._items.push({ t: 'pg', fillEl: fillEl, goneEl: goneEl, leftEl: leftEl, fn: computeFn });
   },
 
+  /**
+   * Register a smart prayer timer: shows elapsed since prev prayer while under threshold,
+   * otherwise shows remaining to next prayer. Either prev or next may be null.
+   */
+  smart: function (labelEl, timeEl, prevMin, prevName, nextMin, nextName, thresholdSec) {
+    if (!labelEl || !timeEl) return;
+    this._items.push({
+      t: 'sm',
+      labelEl: labelEl,
+      timeEl: timeEl,
+      prev: prevMin != null ? prevMin * 60 : null,
+      prevName: prevName || '',
+      next: nextMin != null ? nextMin * 60 : null,
+      nextName: nextName || '',
+      threshold: thresholdSec != null ? thresholdSec : 1800
+    });
+  },
+
   /** Start the 1-second tick */
   start: function () {
     this.stop();
@@ -121,6 +139,21 @@ var LiveTimer = {
         if (it.fillEl) it.fillEl.style.width = pct + '%';
         if (it.goneEl) it.goneEl.textContent = self.format(r.gone);
         if (it.leftEl) it.leftEl.textContent = self.format(r.left);
+
+      } else if (it.t === 'sm') {
+        var showElapsed = false;
+        if (it.prev != null && it.next != null) {
+          showElapsed = (ns - it.prev) < it.threshold;
+        } else if (it.prev != null) {
+          showElapsed = true;
+        }
+        if (showElapsed && it.prev != null) {
+          it.labelEl.textContent = 'منذ ' + it.prevName;
+          it.timeEl.textContent = self.format(Math.max(0, ns - it.prev));
+        } else if (it.next != null) {
+          it.labelEl.textContent = it.nextName + ' بعد';
+          it.timeEl.textContent = self.format(Math.max(0, it.next - ns));
+        }
       }
     });
 

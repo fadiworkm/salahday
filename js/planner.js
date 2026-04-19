@@ -368,12 +368,16 @@ function getPresetOrRandom(name) {
 function getSmartStartTime(pIdx) {
   var periods = getPlannerPeriods();
   var period = periods[pIdx];
-  if (!period) return period ? period.start : 0;
+  if (!period) return 0;
   var activities = getDayActivities().filter(function (a) { return a.start >= period.start && a.end <= period.end; });
   activities.sort(function (a, b) { return a.start - b.start; });
-  // البدء بعد آخر نشاط
-  if (activities.length > 0) return activities[activities.length - 1].end;
-  return period.start;
+  // البدء عند أول فجوة (قبل أول نشاط، أو بين الأنشطة، أو بعد آخر نشاط)
+  var cursor = period.start;
+  for (var i = 0; i < activities.length; i++) {
+    if (activities[i].start > cursor) return cursor;
+    cursor = Math.max(cursor, activities[i].end);
+  }
+  return cursor;
 }
 
 function getMaxEndForStart(pIdx, startMin) {
@@ -586,7 +590,7 @@ function showActivityForm(pIdx) {
   var defaultDur = maxDur;
 
   var slider = document.getElementById('af-duration');
-  slider.step = 5;
+  slider.step = 1;
   slider.max = maxDur;
   slider.value = defaultDur;
   TickSlider.refresh(slider);
@@ -703,6 +707,20 @@ function addActivity() {
 
   var activities = getDayActivities();
 
+  // التقاط حدود (snap) ذكي: ضم الفجوات الصغيرة لجعل الأنشطة متصلة
+  if (editingActivityIndex === null) {
+    var SNAP_THRESHOLD = 15;
+    var neighbors = activities.filter(function (a) { return a.start >= period.start && a.end <= period.end; });
+    var nextStart = period.end;
+    var prevEnd = period.start;
+    neighbors.forEach(function (a) {
+      if (a.start >= endMin && a.start < nextStart) nextStart = a.start;
+      if (a.end <= startMin && a.end > prevEnd) prevEnd = a.end;
+    });
+    if (nextStart - endMin > 0 && nextStart - endMin <= SNAP_THRESHOLD) endMin = nextStart;
+    if (startMin - prevEnd > 0 && startMin - prevEnd <= SNAP_THRESHOLD) startMin = prevEnd;
+  }
+
   // إزاحة ذكية: تحريك الأنشطة المجاورة إذا لزم الأمر
   var periodActs = activities.filter(function (a) { return a.start >= period.start && a.end <= period.end; });
   periodActs.forEach(function (a, idx) {
@@ -785,8 +803,15 @@ function removeActivity(globalIndex) {
 
 function onBarFreeClick(pIdx, startMin) {
   showActivityForm(pIdx);
+  var maxEnd = getMaxEndForStart(pIdx, startMin);
+  var maxDur = Math.max(5, maxEnd - startMin);
   document.getElementById('af-start-time').value = minutesToTimeStr(startMin);
-  syncFromStartTime();
+  document.getElementById('af-end-time').value = minutesToTimeStr(startMin + maxDur);
+  var slider = document.getElementById('af-duration');
+  slider.max = maxDur;
+  slider.value = maxDur;
+  TickSlider.refresh(slider);
+  setDurationAnchor('start');
 }
 
 

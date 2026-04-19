@@ -411,14 +411,9 @@ const PRAYER_COLORS = {
 
 const PRAYER_ICONS = { fajr: '🌅', dhuhr: '☀️', asr: '🌤️', maghrib: '🌇', isha: '🌙' };
 
-function renderPrayerGrid(dayData, prayerMins) {
-  const container = document.getElementById('prayer-live');
-  if (!container) return;
+// ─── حساب الصلاة السابقة والتالية ───
 
-  const now = new Date();
-  const nowMin = now.getHours() * 60 + now.getMinutes();
-  const isToday = document.getElementById('schedule-date').value === now.toISOString().split('T')[0];
-
+function _getPrevNextPrayer(prayerMins, nowMin) {
   const prayers = [
     { key: 'fajr', name: 'الفجر', mins: prayerMins.fajr },
     { key: 'sunrise', name: 'الشروق', mins: prayerMins.sunrise },
@@ -427,82 +422,14 @@ function renderPrayerGrid(dayData, prayerMins) {
     { key: 'maghrib', name: 'المغرب', mins: prayerMins.maghrib },
     { key: 'isha', name: 'العشاء', mins: prayerMins.isha }
   ];
-
-  let prevIdx = -1, nextIdx = -1;
-  if (isToday) {
-    for (let i = prayers.length - 1; i >= 0; i--) {
-      if (prayers[i].mins <= nowMin) { prevIdx = i; break; }
-    }
-    for (let i = 0; i < prayers.length; i++) {
-      if (prayers[i].mins > nowMin) { nextIdx = i; break; }
-    }
+  let prev = null, next = null;
+  for (let i = prayers.length - 1; i >= 0; i--) {
+    if (prayers[i].mins <= nowMin) { prev = prayers[i]; break; }
   }
-
-  let html = '';
-
-  if (!isToday) {
-    // لغير اليوم: عرض بسيط للأوقات
-    html += '<div class="pl-simple-times">';
-    prayers.forEach(p => {
-      html += `<span class="pl-st">${p.name} <b>${displayTime(p.mins)}</b></span>`;
-    });
-    html += '</div>';
-    container.innerHTML = html;
-    return;
+  for (let i = 0; i < prayers.length; i++) {
+    if (prayers[i].mins > nowMin) { next = prayers[i]; break; }
   }
-
-  // ─── الدائرة ───
-  if (nextIdx >= 0 && prevIdx >= 0) {
-    const prevMin = prayers[prevIdx].mins;
-    const nextMin = prayers[nextIdx].mins;
-    const totalBetween = nextMin - prevMin;
-    const elapsed = nowMin - prevMin;
-    const remaining = nextMin - nowMin;
-    const pct = totalBetween > 0 ? (elapsed / totalBetween) * 100 : 0;
-    const conicAngle = (pct / 100) * 360;
-
-    html += `<div class="pp-pie-section" id="pp-countdown" data-prev="${prevMin}" data-target="${nextMin}">`;
-    html += `<div class="pp-pie-chart" style="background: conic-gradient(var(--gold) 0deg, var(--gold) ${conicAngle}deg, rgba(78,205,196,0.2) ${conicAngle}deg, rgba(78,205,196,0.2) 360deg)">`;
-    html += `<div class="pp-pie-inner"></div>`;
-    html += `</div>`;
-    html += `<div class="pp-pie-info">`;
-    html += `<div class="pp-pie-row pp-pie-next"><span class="pp-pie-label">${prayers[nextIdx].name}</span><span class="pp-pie-value" id="pp-cd-remaining">بعد ${formatDuration(remaining)}</span></div>`;
-    html += `<div class="pp-pie-row pp-pie-prev"><span class="pp-pie-label">${prayers[prevIdx].name}</span><span class="pp-pie-value" id="pp-cd-elapsed">منذ ${formatDuration(elapsed)}</span></div>`;
-    html += `</div></div>`;
-  } else if (prevIdx === prayers.length - 1) {
-    html += `<div class="pp-countdown pp-cd-done"><span class="pp-cd-label">&#10003; انتهت صلوات اليوم</span></div>`;
-  }
-
-  // ─── الشريط الخطي ───
-  const first = prayers[0].mins;
-  const last = prayers[prayers.length - 1].mins;
-  const totalSpan = last - first;
-  const progressPct = totalSpan > 0 ? Math.min(100, Math.max(0, ((nowMin - first) / totalSpan) * 100)) : 0;
-
-  html += '<div class="prayer-progress-wrap">';
-  html += '<button class="pp-refresh" onclick="renderDay()" title="تحديث">&#8635;</button>';
-  html += '<div class="prayer-progress-outer">';
-  html += '<div class="prayer-progress-bar">';
-  html += `<div class="pp-fill" style="width:${progressPct}%"></div>`;
-  html += `<div class="pp-now" style="right:${progressPct}%"></div>`;
-
-  // نقاط الصلوات
-  prayers.forEach((p, i) => {
-    const pPct = totalSpan > 0 ? ((p.mins - first) / totalSpan) * 100 : 0;
-    const passed = p.mins <= nowMin;
-    const isNext = i === nextIdx;
-    const dotCls = isNext ? 'pp-dot-next' : passed ? 'pp-dot-done' : 'pp-dot-future';
-    html += `<div class="pp-point ${dotCls}" style="right:${pPct}%">`;
-    html += `<div class="pp-point-dot"></div>`;
-    html += `<div class="pp-point-label">`;
-    html += `<span class="pp-point-name">${p.name}</span>`;
-    html += `<span class="pp-point-time">${displayTime(p.mins)}</span>`;
-    html += `</div></div>`;
-  });
-
-  html += '</div></div></div>';
-
-  container.innerHTML = html;
+  return { prev: prev, next: next };
 }
 
 // ─── المخمس (Pentagon) ───
@@ -609,10 +536,32 @@ function renderPentagon(prayerMins) {
     svg += `<text x="${tx}" y="${ty + 16}" class="pent-buffer-info" text-anchor="middle" dominant-baseline="middle">${iqamaMin > 0 ? iqamaMin + ' إق' : ''} | ${afterMin > 0 ? afterMin + ' ب' : ''}</text>`;
   }
 
-  // وقت النوم في المركز
-  const bedtime = getManualBedtime(prayerMins);
-  svg += `<text x="${cx}" y="${cy - 10}" class="pent-center-label" text-anchor="middle" dominant-baseline="middle">وقت النوم</text>`;
-  svg += `<text x="${cx}" y="${cy + 14}" class="pent-center-time" text-anchor="middle" dominant-baseline="middle">${displayTime(bedtime)}</text>`;
+  // مؤقت ذكي في المركز: يعرض الوقت المنقضي منذ الصلاة السابقة إذا كان أقل من 30 دقيقة، وإلا المتبقي للصلاة القادمة
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const isToday = document.getElementById('schedule-date').value === now.toISOString().split('T')[0];
+
+  if (isToday) {
+    const pn = _getPrevNextPrayer(prayerMins, nowMin);
+    let label = '', time = '';
+    if (pn.prev && pn.next) {
+      const elapsed = nowMin - pn.prev.mins;
+      if (elapsed < 30) { label = 'منذ ' + pn.prev.name; time = formatDuration(elapsed); }
+      else { label = pn.next.name + ' بعد'; time = formatDuration(pn.next.mins - nowMin); }
+    } else if (pn.next) {
+      label = pn.next.name + ' بعد';
+      time = formatDuration(pn.next.mins - nowMin);
+    } else if (pn.prev) {
+      label = 'منذ ' + pn.prev.name;
+      time = formatDuration(nowMin - pn.prev.mins);
+    }
+    svg += `<text x="${cx}" y="${cy - 10}" id="pent-smart-label" class="pent-center-label" text-anchor="middle" dominant-baseline="middle">${label}</text>`;
+    svg += `<text x="${cx}" y="${cy + 14}" id="pent-smart-time" class="pent-center-time" text-anchor="middle" dominant-baseline="middle">${time}</text>`;
+  } else {
+    const bedtime = getManualBedtime(prayerMins);
+    svg += `<text x="${cx}" y="${cy - 10}" class="pent-center-label" text-anchor="middle" dominant-baseline="middle">وقت النوم</text>`;
+    svg += `<text x="${cx}" y="${cy + 14}" class="pent-center-time" text-anchor="middle" dominant-baseline="middle">${displayTime(bedtime)}</text>`;
+  }
 
   svg += '</svg>';
   container.innerHTML = svg;
@@ -1230,8 +1179,7 @@ function renderDay() {
   }
 
   if (!dayData) {
-    document.getElementById('prayer-live').innerHTML = '<p class="no-data-msg">لا توجد بيانات متوفرة</p>';
-    document.getElementById('pentagon-wrap').innerHTML = '';
+    document.getElementById('pentagon-wrap').innerHTML = '<p class="no-data-msg">لا توجد بيانات متوفرة</p>';
     document.getElementById('day-stats').innerHTML = '';
     document.getElementById('work-blocks').innerHTML = '';
     document.getElementById('hijri-date').textContent = '';
@@ -1267,7 +1215,6 @@ function renderDay() {
   // حفظ الشرائح للمخطط
   window._allSegments = segments;
 
-  renderPrayerGrid(dayData, prayerMins);
   renderPentagon(prayerMins);
   renderDayStats(segments);
   renderWorkBlocks(segments, prayerMins);
@@ -1557,16 +1504,22 @@ function registerTimers() {
   const isToday = document.getElementById('schedule-date').value === new Date().toISOString().split('T')[0];
   if (!isToday) return;
 
-  // 1. عد تنازلي للصلاة + دائرة
-  const cdEl = document.getElementById('pp-countdown');
-  if (cdEl) {
-    const target = parseInt(cdEl.dataset.target, 10);
-    const prev = parseInt(cdEl.dataset.prev, 10);
-    if (!isNaN(target) && !isNaN(prev)) {
-      LiveTimer.countdown(document.getElementById('pp-cd-remaining'), target, 'بعد', function () { renderDay(); });
-      LiveTimer.elapsed(document.getElementById('pp-cd-elapsed'), prev, 'منذ');
-      LiveTimer.pie(cdEl.querySelector('.pp-pie-chart'), prev, target);
-    }
+  // 1. مؤقت ذكي في مركز المخمس
+  const smartLabel = document.getElementById('pent-smart-label');
+  const smartTime = document.getElementById('pent-smart-time');
+  if (smartLabel && smartTime && window._prayerMins) {
+    const now = new Date();
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    const pn = _getPrevNextPrayer(window._prayerMins, nowMin);
+    LiveTimer.smart(
+      smartLabel,
+      smartTime,
+      pn.prev ? pn.prev.mins : null,
+      pn.prev ? pn.prev.name : '',
+      pn.next ? pn.next.mins : null,
+      pn.next ? pn.next.name : '',
+      1800
+    );
   }
 
   // 2. شريط تقدم العمل الإجمالي
