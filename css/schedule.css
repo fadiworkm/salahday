@@ -1005,18 +1005,22 @@
   font-weight: 600;
 }
 
-/* ─── شريط تقدم العمل ─── */
-#work-progress-top {
-  margin-bottom: 16px;
+/* ─── شريط تقدم العمل (مدمج في بطاقة التاريخ) ─── */
+#work-progress-top:empty {
+  display: none;
+}
+
+.date-progress-card #work-progress-top {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .work-progress {
-  padding: 16px 20px;
-  background: var(--bg-card);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(78, 205, 196, 0.15);
-  border-radius: var(--radius);
+  padding: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
 }
 
 .wp-bar {
