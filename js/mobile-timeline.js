@@ -170,14 +170,7 @@ function _mtBuildFree(start, end, isToday, nowMin, lastLabel, pIdx) {
   html += '<div class="mt-body mt-body-free">';
   html += '<span class="mt-free-dur">' + formatDuration(dur) + '</span>';
   if (st === 'mt-active') {
-    var dateStr = document.getElementById('schedule-date').value;
-    html += '<div class="mt-focus-row">';
-    html += '<span class="mt-focus-act-label">🎯 ركز</span>';
-    html += '<div class="mt-focus-actions">';
-    html += '<button class="mt-focus-btn" onclick="openFocusMode(\'' + dateStr + '\',' + start + ',' + end + ',\'وقت متاح\',\'🎯\',\'#7c6aef\')">&#127919; ركز</button>';
     html += '<span class="mt-timer"></span>';
-    html += '</div>';
-    html += '</div>';
   }
   html += '</div>';
   html += '</div>';
@@ -313,57 +306,3 @@ if (_origRegisterTimers) {
   };
 }
 
-/* ─── view toggle ─── */
-
-(function () {
-  // ☰ = timeline (mobile), ▤ = bars (desktop)
-  var ICON_TL = '\u2630';
-  var ICON_BAR = '\u25A4';
-  var KEY = 'mt-view-pref';
-
-  document.addEventListener('DOMContentLoaded', function () {
-    var btn = document.getElementById('view-toggle');
-    if (!btn) return;
-    var blocks = document.getElementById('work-blocks');
-    if (!blocks) return;
-
-    function isSmallScreen() { return window.innerWidth <= 768; }
-
-    // "forced" = override class that opposes the default for current screen size
-    // On mobile: default is timeline → force = view-desktop
-    // On desktop: default is bars → force = view-mobile
-    function getForceClass() { return isSmallScreen() ? 'view-desktop' : 'view-mobile'; }
-
-    function updateIcon() {
-      var forced = blocks.classList.contains(getForceClass());
-      if (isSmallScreen()) {
-        btn.textContent = forced ? ICON_BAR : ICON_TL;
-      } else {
-        btn.textContent = forced ? ICON_TL : ICON_BAR;
-      }
-    }
-
-    // restore preference
-    var pref = localStorage.getItem(KEY);
-    if (pref === 'forced') {
-      blocks.classList.add(getForceClass());
-    }
-    updateIcon();
-
-    btn.addEventListener('click', function () {
-      var cls = getForceClass();
-      var wasForced = blocks.classList.contains(cls);
-      blocks.classList.remove('view-desktop', 'view-mobile');
-
-      if (wasForced) {
-        // back to default
-        localStorage.removeItem(KEY);
-      } else {
-        // override
-        blocks.classList.add(cls);
-        localStorage.setItem(KEY, 'forced');
-      }
-      updateIcon();
-    });
-  });
-})();

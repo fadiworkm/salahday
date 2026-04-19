@@ -3,52 +3,6 @@
    Layout per node row (LTR):  [time-label] [pill/line] [content]
    ═══════════════════════════════════════════════════════════════════ */
 
-/* ─── visibility: default per screen size ─── */
-@media (max-width: 768px) {
-  .wt-period      { display: none !important; }
-  .work-total-bar { display: none !important; }
-  .wt-act-chips   { display: none !important; }
-  .wt-act-list    { display: none !important; }
-}
-@media (min-width: 769px) {
-  .mt-timeline    { display: none !important; }
-}
-
-/* ─── manual override via .view-desktop / .view-mobile on .work-blocks ─── */
-.work-blocks.view-desktop .wt-period      { display: block !important; }
-.work-blocks.view-desktop .work-total-bar { display: flex !important; }
-.work-blocks.view-desktop .wt-act-chips   { display: flex !important; }
-.work-blocks.view-desktop .wt-act-list    { display: flex !important; }
-.work-blocks.view-desktop .mt-timeline    { display: none !important; }
-
-.work-blocks.view-mobile .wt-period      { display: none !important; }
-.work-blocks.view-mobile .work-total-bar { display: none !important; }
-.work-blocks.view-mobile .wt-act-chips   { display: none !important; }
-.work-blocks.view-mobile .wt-act-list    { display: none !important; }
-.work-blocks.view-mobile .mt-timeline    { display: block !important; }
-
-/* ─── toggle button ─── */
-.btn-view-toggle {
-  width: 30px;
-  height: 30px;
-  background: rgba(124, 106, 239, 0.1);
-  border: 1px solid rgba(124, 106, 239, 0.2);
-  border-radius: 8px;
-  color: var(--purple);
-  font-size: 0.85rem;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  flex-shrink: 0;
-}
-
-.btn-view-toggle:hover {
-  background: rgba(124, 106, 239, 0.2);
-  transform: scale(1.1);
-}
-
 /* ─── container ─── */
 .mt-timeline {
   padding: 0;

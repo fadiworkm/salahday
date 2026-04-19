@@ -549,7 +549,6 @@ function renderPentagon(prayerMins) {
     const v1 = vertices[i], v2 = vertices[nextI];
     const e = edges[i];
     const colorStart = PRAYER_COLORS[prayerKeys[i]];
-    const colorEnd = PRAYER_COLORS[prayerKeys[nextI]];
     const colorWork = PRAYER_COLORS.work;
 
     if (e.total <= 0) continue;
@@ -560,7 +559,6 @@ function renderPentagon(prayerMins) {
     const pA = v1;
     const pB = lerp(v1, v2, t1);
     const pC = lerp(v1, v2, t2);
-    const pD = v2;
 
     // بعد الصلاة (buffer after)
     if (e.afterBuf > 0) {
@@ -1100,7 +1098,7 @@ function ensurePrayerActivities(expandedPeriods) {
   }
 }
 
-function renderWorkBlocks(segments, prayerMins) {
+function renderWorkBlocks(segments, _prayerMins) {
   const container = document.getElementById('work-blocks');
   const expandedPeriods = _buildExpandedPeriods(segments);
   const allPeriods = expandedPeriods;
@@ -1123,186 +1121,19 @@ function renderWorkBlocks(segments, prayerMins) {
   const planActivities = savedPlan ? savedPlan.activities || [] : [];
   const disabledPeriods = savedPlan ? savedPlan.disabledPeriods || [] : [];
 
-  let html = '';
   let totalAvail = 0;
 
-  allPeriods.forEach((seg, i) => {
-    const pKey = 'work:' + seg.start + '-' + seg.end;
-    const disabled = disabledPeriods.indexOf(pKey) !== -1;
-    const currentClass = seg.isCurrent ? ' wt-block-current' : '';
-    const disabledClass = disabled ? ' wt-block-unchecked' : '';
-
-    const periodActs = planActivities.filter(a => a.start >= seg.start && a.end <= seg.end).sort((a, b) => a.start - b.start);
-    const usedTime = periodActs.reduce((sum, a) => sum + (a.end - a.start), 0);
-    const freeTime = seg.duration - usedTime;
-
-    if (!disabled) totalAvail += freeTime;
-
-    const periodName = prayerMins ? getWorkBetweenPrayers(seg, prayerMins) : '';
-    const now2 = new Date();
-    const nowMin2 = now2.getHours() * 60 + now2.getMinutes();
-    const isToday2 = document.getElementById('schedule-date').value === now2.toISOString().split('T')[0];
-    const isCurrent = isToday2 && nowMin2 >= seg.start && nowMin2 < seg.end;
-
-    html += `<div class="wt-period${currentClass}${disabledClass}">`;
-
-    // الرأس
-    html += `<div class="wt-period-header">`;
-    html += `<span class="wt-period-time">${displayTimeRange(seg.start, seg.end)}</span>`;
-    html += `<span class="wt-period-free">${formatDuration(freeTime)} متاح</span>`;
-    html += `<button class="wt-edit-btn" onclick="openPlannerForPeriod(${i})" title="إدارة">&#9998;</button>`;
-    html += `</div>`;
-    if (periodName) {
-      html += `<div class="wt-period-name">${periodName}</div>`;
-    }
-
-    // شريط التقدم للفترة الحالية
-    if (isCurrent && !disabled && freeTime > 0) {
-      // حساب الوقت المنقضي والمتبقي لهذه الفترة
-      const nonWorkActs = periodActs;
-      let pGone = 0, pLeft = 0;
-      let cursor2 = seg.start;
-      nonWorkActs.forEach(act => {
-        if (act.start > cursor2) {
-          const fs = cursor2, fe = act.start;
-          if (nowMin2 >= fe) pGone += fe - fs;
-          else if (nowMin2 > fs) { pGone += nowMin2 - fs; pLeft += fe - nowMin2; }
-          else pLeft += fe - fs;
-        }
-        cursor2 = act.end;
-      });
-      if (cursor2 < seg.end) {
-        const fs = cursor2, fe = seg.end;
-        if (nowMin2 >= fe) pGone += fe - fs;
-        else if (nowMin2 > fs) { pGone += nowMin2 - fs; pLeft += fe - nowMin2; }
-        else pLeft += fe - fs;
-      }
-      const pPct = freeTime > 0 ? ((pGone / freeTime) * 100).toFixed(1) : 0;
-
-      // Focus progress overlaid on same bar
-      const periodFocusSec = typeof FocusData !== 'undefined' ? FocusData.getTotalForSegment(dateStr, seg.start, seg.end) : 0;
-      const periodDurSec = freeTime * 60;
-      const fPct = periodDurSec > 0 ? Math.min(100, (periodFocusSec / periodDurSec) * 100).toFixed(1) : 0;
-
-      html += `<div class="wt-period-progress" data-seg-start="${seg.start}" data-seg-end="${seg.end}">`;
-      html += `<div class="wp-bar">`;
-      html += `<div class="wp-fill" style="width:${pPct}%"></div>`;
-      if (periodFocusSec > 0) {
-        html += `<div class="wp-focus-fill" style="width:${fPct}%"></div>`;
-      }
-      html += `</div>`;
-      html += `<div class="wp-labels">`;
-      html += `<div class="wp-gone"><span class="wp-dot wp-dot-gone"></span> مضى من اليوم <b>${formatDuration(pGone)}</b></div>`;
-      html += `<div class="wp-left"><span class="wp-dot wp-dot-left"></span> متبقي <b>${formatDuration(pLeft)}</b></div>`;
-      html += `</div>`;
-      if (periodFocusSec > 0) {
-        html += `<div class="wp-focus-label">`;
-        html += `<span>🎯 تركيز</span>`;
-        html += `<b>${_formatFocusTime(periodFocusSec)}</b>`;
-        html += `<span class="wp-focus-pct">${fPct}%</span>`;
-        html += `</div>`;
-      }
-      html += `</div>`;
-    }
-
-    if (!disabled) {
-      // الشريط المرئي مع الأنشطة
-      if (periodActs.length > 0) {
-        html += `<div class="wt-visual-bar">`;
-        let cursor = seg.start;
-        periodActs.forEach(act => {
-          if (act.start > cursor) {
-            const freeDur = act.start - cursor;
-            const fState = isToday2 ? (nowMin2 >= act.start ? 'done' : nowMin2 > cursor ? 'active' : '') : '';
-            html += `<div class="wt-vb-seg wt-vb-free wt-clickable${fState ? ' vb-' + fState : ''}" style="flex:${freeDur}" data-seg-s="${cursor}" data-seg-e="${act.start}" onclick="onBarFreeClick(${i}, ${cursor})">`;
-            html += `<div class="vb-fill"></div>`;
-            if (freeDur >= 15) html += `<span class="vb-dur">${formatDuration(freeDur)}</span>`;
-            html += `<span class="vb-range">${displayTime(cursor)} - ${displayTime(act.start)}</span>`;
-            if (fState === 'active') html += `<span class="vb-timer"></span>`;
-            html += `</div>`;
-          }
-          const actDur = act.end - act.start;
-          const actGIdx = planActivities.indexOf(act);
-          const aState = isToday2 ? (nowMin2 >= act.end ? 'done' : nowMin2 >= act.start ? 'active' : '') : '';
-          html += `<div class="wt-vb-seg wt-vb-act wt-clickable${aState ? ' vb-' + aState : ''}" style="flex:${actDur}; background:${act.color}" data-seg-s="${act.start}" data-seg-e="${act.end}" onclick="editActivity(${i}, ${actGIdx})">`;
-          html += `<div class="vb-fill"></div>`;
-          html += `<span class="vb-dur">${act.icon}</span>`;
-          html += `<span class="vb-range">${displayTime(act.start)} - ${displayTime(act.end)}</span>`;
-          if (aState === 'active') html += `<span class="vb-timer"></span>`;
-          html += `</div>`;
-          cursor = act.end;
-        });
-        if (cursor < seg.end) {
-          const freeDur = seg.end - cursor;
-          const fState = isToday2 ? (nowMin2 >= seg.end ? 'done' : nowMin2 > cursor ? 'active' : '') : '';
-          html += `<div class="wt-vb-seg wt-vb-free wt-clickable${fState ? ' vb-' + fState : ''}" style="flex:${freeDur}" data-seg-s="${cursor}" data-seg-e="${seg.end}" onclick="onBarFreeClick(${i}, ${cursor})">`;
-          html += `<div class="vb-fill"></div>`;
-          if (freeDur >= 15) html += `<span class="vb-dur">${formatDuration(freeDur)}</span>`;
-          html += `<span class="vb-range">${displayTime(cursor)} - ${displayTime(seg.end)}</span>`;
-          if (fState === 'active') html += `<span class="vb-timer"></span>`;
-          html += `</div>`;
-        }
-        html += `</div>`;
-
-        // شرائح الأنشطة
-        html += `<div class="wt-act-list">`;
-        periodActs.forEach(act => {
-          const hasNote = act.note && act.note.trim();
-          const cardGIdx = planActivities.indexOf(act);
-          html += `<div class="wt-act-card wt-clickable" style="--act-color:${act.color}" onclick="editActivity(${i}, ${cardGIdx})">`;
-          html += `<div class="wt-act-card-header">`;
-          html += `<span class="wt-act-card-icon">${act.icon}</span>`;
-          html += `<span class="wt-act-card-name">${act.name}</span>`;
-          html += `<span class="wt-act-card-time">${displayTime(act.start)} - ${displayTime(act.end)}</span>`;
-          html += `<span class="wt-act-card-dur">${formatDuration(act.end - act.start)}</span>`;
-          html += `</div>`;
-          if (hasNote) {
-            html += `<div class="wt-act-card-note">${act.note.replace(/</g, '&lt;').replace(/\n/g, '<br>')}</div>`;
-          }
-          html += `</div>`;
-        });
-        html += `</div>`;
-
-        // Focus indicator for each activity
-        periodActs.forEach(act => {
-          const focusTotal = typeof FocusData !== 'undefined' ? FocusData.getTotalForSegment(dateStr, act.start, act.end) : 0;
-          if (focusTotal > 0) {
-            const actDurSec = (act.end - act.start) * 60;
-            const focusPct = Math.min(100, (focusTotal / actDurSec) * 100).toFixed(1);
-            html += `<div class="focus-indicator" style="width:${focusPct}%; background:${act.color}"></div>`;
-          }
-        });
-      }
-
-      // Focus button for active period (outside periodActs check so it shows even with no activities)
-      if (isToday2 && nowMin2 >= seg.start && nowMin2 < seg.end) {
-        const dateStr2 = document.getElementById('schedule-date').value;
-        const activeAct = periodActs.find(a => nowMin2 >= a.start && nowMin2 < a.end);
-        if (activeAct) {
-          html += `<div style="padding: 4px 12px 12px;">`;
-          html += `<button class="focus-btn" style="--focus-btn-bg:${activeAct.color}88;--focus-btn-bg2:${activeAct.color}55" onclick="openFocusMode('${dateStr2}', ${activeAct.start}, ${activeAct.end}, '${(activeAct.name || '').replace(/'/g, "\\'")}', '${activeAct.icon || ''}', '${activeAct.color}')">`;
-          html += `${activeAct.icon || '&#127919;'} ابدأ التركيز — ${activeAct.name || 'تركيز'}</button>`;
-          html += `</div>`;
-        } else {
-          html += `<div style="padding: 4px 12px 12px;">`;
-          html += `<button class="focus-btn" onclick="openFocusMode('${dateStr2}', ${seg.start}, ${seg.end}, 'وقت متاح', '🎯', '#7c6aef')">`;
-          html += `&#127919; ابدأ التركيز</button>`;
-          html += `</div>`;
-        }
-      }
-    } else {
-      html += `<div class="wt-disabled-label">معطّلة</div>`;
-    }
-
-    html += `</div>`;
-  });
-
-  const totalAll = allPeriods.reduce((sum, s) => sum + s.duration, 0);
-
-  // حساب وقت العمل المنقضي والمتبقي حسب الآن
   const now = new Date();
   const nowMin = now.getHours() * 60 + now.getMinutes();
   const isToday = document.getElementById('schedule-date').value === now.toISOString().split('T')[0];
+
+  allPeriods.forEach(seg => {
+    const pKey = 'work:' + seg.start + '-' + seg.end;
+    if (disabledPeriods.indexOf(pKey) !== -1) return;
+    const periodActs = planActivities.filter(a => a.start >= seg.start && a.end <= seg.end);
+    const usedTime = periodActs.reduce((sum, a) => sum + (a.end - a.start), 0);
+    totalAvail += seg.duration - usedTime;
+  });
 
   let workGone = 0, workLeft = 0;
   if (isToday) {
@@ -1310,7 +1141,6 @@ function renderWorkBlocks(segments, prayerMins) {
       const pKey = 'work:' + seg.start + '-' + seg.end;
       if (disabledPeriods.indexOf(pKey) !== -1) return;
       const pActs = planActivities.filter(a => a.start >= seg.start && a.end <= seg.end);
-      // حساب الوقت الحر الفعلي لهذه الفترة
       let cursor = seg.start;
       pActs.sort((a, b) => a.start - b.start).forEach(act => {
         if (act.start > cursor) {
@@ -1332,7 +1162,6 @@ function renderWorkBlocks(segments, prayerMins) {
 
   const workProgressPct = totalAvail > 0 ? ((workGone / totalAvail) * 100).toFixed(1) : 0;
 
-  // النشاط الحالي (لعرضه في شريط التقدم)
   let currentActHtml = '';
   if (isToday) {
     const nowAct = planActivities.find(a => nowMin >= a.start && nowMin < a.end);
@@ -1346,7 +1175,6 @@ function renderWorkBlocks(segments, prayerMins) {
     }
   }
 
-  // شريط تقدم العمل في أعلى الصفحة
   const topProgress = document.getElementById('work-progress-top');
   if (topProgress) {
     if (isToday && totalAvail > 0) {
@@ -1366,13 +1194,7 @@ function renderWorkBlocks(segments, prayerMins) {
     }
   }
 
-  container.innerHTML = html + `
-    <div class="work-total-bar">
-      <span class="wtb-label">وقت العمل المتاح:</span>
-      <span class="wtb-value">${formatDuration(totalAvail)}</span>
-      <span class="wtb-sep">من</span>
-      <span class="wtb-all">${formatDuration(totalAll)}</span>
-    </div>`;
+  container.innerHTML = '';
 }
 
 function updateWorkTotal() {
