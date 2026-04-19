@@ -77,34 +77,49 @@ function renderMobileTimeline() {
       : null;
     var periodStyle = periodColor ? ' style="--period-color:' + periodColor + '"' : '';
 
-    html += '<div class="mt-period' + (isDis ? ' mt-period-disabled' : '') +
-            (isCur ? ' mt-period-current' : '') + '"' + periodStyle + '>';
+    // Collapse by default; current period stays open. "Expand all" preference overrides.
+    var expandAll = false;
+    try { expandAll = localStorage.getItem('mt-expand-all') === '1'; } catch (e) {}
+    var isCollapsed = !expandAll && !isCur && !isDis;
 
-    // header
-    html += '<div class="mt-period-header">';
+    html += '<div class="mt-period' + (isDis ? ' mt-period-disabled' : '') +
+            (isCur ? ' mt-period-current' : '') +
+            (isCollapsed ? ' mt-period-collapsed' : '') + '"' + periodStyle + '>';
+
+    // Compute progress for current period — used as the header's background fill
+    var pPct = 0, fPct = 0, periodFocusSec = 0, hasProgress = false;
+    if (isCur && free > 0) {
+      var pResult = computePeriodProgress(nowSec, seg.start, seg.end);
+      var pTotal = pResult.gone + pResult.left;
+      pPct = pTotal > 0 ? ((pResult.gone / pTotal) * 100).toFixed(1) : 0;
+      periodFocusSec = typeof FocusData !== 'undefined' ? FocusData.getTotalForSegment(dateStr, seg.start, seg.end) : 0;
+      var periodDurSec = free * 60;
+      fPct = periodDurSec > 0 ? Math.min(100, (periodFocusSec / periodDurSec) * 100).toFixed(1) : 0;
+      hasProgress = true;
+    }
+
+    // header — toggles collapse when clicked (disabled periods excluded). Carries data-seg-* for LiveTimer updates.
+    var headerClick = isDis ? '' : ' onclick="_mtTogglePeriod(this)"';
+    var headerData = hasProgress ? ' data-seg-start="' + seg.start + '" data-seg-end="' + seg.end + '"' : '';
+    html += '<div class="mt-period-header' + (hasProgress ? ' mt-period-header-progress' : '') + '"' + headerData + headerClick + '>';
+    if (hasProgress) {
+      html += '<div class="wp-fill" style="width:' + pPct + '%"></div>';
+      if (periodFocusSec > 0) {
+        html += '<div class="wp-focus-fill" style="width:' + fPct + '%"></div>';
+      }
+    }
     html += '<span class="mt-period-time">' + displayTimeRange(seg.start, seg.end) + '</span>';
     html += '<span class="mt-period-dur">' + (isDis ? 'معطّلة' : formatDuration(free) + ' متاح') + '</span>';
+    if (!isDis) html += '<span class="mt-period-caret">&#8964;</span>';
     html += '</div>';
 
     if (isDis) { html += '</div>'; return; }
 
-    // progress bar (current period, today) — uses H:MM:SS from LiveTimer.format()
-    if (isCur && free > 0) {
-      var pResult = computePeriodProgress(nowSec, seg.start, seg.end);
-      var pTotal = pResult.gone + pResult.left;
-      var pPct = pTotal > 0 ? ((pResult.gone / pTotal) * 100).toFixed(1) : 0;
+    html += '<div class="mt-period-body">';
 
-      // Focus progress overlaid on same bar
-      var periodFocusSec = typeof FocusData !== 'undefined' ? FocusData.getTotalForSegment(dateStr, seg.start, seg.end) : 0;
-      var periodDurSec = free * 60;
-      var fPct = periodDurSec > 0 ? Math.min(100, (periodFocusSec / periodDurSec) * 100).toFixed(1) : 0;
-
-      html += '<div class="mt-period-progress" data-seg-start="' + seg.start + '" data-seg-end="' + seg.end + '">';
-      html += '<div class="wp-bar"><div class="wp-fill" style="width:' + pPct + '%"></div>';
-      if (periodFocusSec > 0) {
-        html += '<div class="wp-focus-fill" style="width:' + fPct + '%"></div>';
-      }
-      html += '</div>';
+    // Compact time labels (under header) — only for the current period
+    if (hasProgress) {
+      html += '<div class="mt-period-progress">';
       html += '<div class="wp-labels">';
       html += '<div class="wp-gone"><span class="wp-dot wp-dot-gone"></span> انتهى <b>' + LiveTimer.format(pResult.gone) + '</b></div>';
       html += '<div class="wp-left"><span class="wp-dot wp-dot-left"></span> متبقي <b>' + LiveTimer.format(pResult.left) + '</b></div>';
@@ -112,6 +127,7 @@ function renderMobileTimeline() {
       if (periodFocusSec > 0) {
         html += '<div class="wp-focus-label"><span>🎯 تركيز</span><b>' + _formatFocusTime(periodFocusSec) + '</b><span class="wp-focus-pct">' + fPct + '%</span></div>';
       }
+      html += '</div>';
     }
 
     // track
@@ -140,6 +156,7 @@ function renderMobileTimeline() {
     }
 
     html += '</div>'; // track
+    html += '</div>'; // period-body
     html += '</div>'; // period
   });
 
@@ -162,6 +179,52 @@ function renderMobileTimeline() {
 }
 
 window.renderMobileTimeline = renderMobileTimeline;
+
+function _mtTogglePeriod(headerEl) {
+  var period = headerEl.closest('.mt-period');
+  if (!period) return;
+  period.classList.toggle('mt-period-collapsed');
+}
+window._mtTogglePeriod = _mtTogglePeriod;
+
+/* Expand-all preference: saved in localStorage, survives reload */
+function _mtGetExpandAll() {
+  try { return localStorage.getItem('mt-expand-all') === '1'; } catch (e) { return false; }
+}
+
+function _mtApplyExpandAll(expandAll) {
+  var periods = document.querySelectorAll('.mt-timeline .mt-period');
+  for (var i = 0; i < periods.length; i++) {
+    var p = periods[i];
+    if (p.classList.contains('mt-period-disabled')) continue;
+    if (expandAll || p.classList.contains('mt-period-current')) {
+      p.classList.remove('mt-period-collapsed');
+    } else {
+      p.classList.add('mt-period-collapsed');
+    }
+  }
+  var btn = document.getElementById('toggle-periods-btn');
+  if (btn) {
+    btn.innerHTML = expandAll ? '&#9662;' : '&#9656;'; // ▾ expanded, ▸ collapsed
+    btn.classList.toggle('btn-toggle-periods-expanded', expandAll);
+    btn.title = expandAll ? 'طي الفترات (عرض النشط فقط)' : 'توسيع كل الفترات';
+  }
+}
+
+function _mtToggleExpandAll() {
+  var next = !_mtGetExpandAll();
+  try { localStorage.setItem('mt-expand-all', next ? '1' : '0'); } catch (e) {}
+  _mtApplyExpandAll(next);
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+  var btn = document.getElementById('toggle-periods-btn');
+  if (btn) {
+    btn.addEventListener('click', _mtToggleExpandAll);
+    // Reflect initial state on the button
+    _mtApplyExpandAll(_mtGetExpandAll());
+  }
+});
 
 /* ─── node builders ─── */
 
@@ -278,19 +341,20 @@ function _mtRegisterTimers() {
     })(nodes[i]);
   }
 
-  // 2. Period progress bars — H:MM:SS labels via LiveTimer.progress()
-  var bars = document.querySelectorAll('.mt-timeline .mt-period-progress[data-seg-start]');
-  for (var j = 0; j < bars.length; j++) {
-    (function (ppEl) {
-      var sS = parseInt(ppEl.dataset.segStart, 10);
-      var sE = parseInt(ppEl.dataset.segEnd, 10);
+  // 2. Period progress — fill lives inside the header, labels in the sibling .mt-period-progress
+  var headers = document.querySelectorAll('.mt-timeline .mt-period-header[data-seg-start]');
+  for (var j = 0; j < headers.length; j++) {
+    (function (hdrEl) {
+      var sS = parseInt(hdrEl.dataset.segStart, 10);
+      var sE = parseInt(hdrEl.dataset.segEnd, 10);
+      var labelsEl = hdrEl.parentElement.querySelector('.mt-period-progress');
       LiveTimer.progress(
-        ppEl.querySelector('.wp-fill'),
-        ppEl.querySelector('.wp-gone b'),
-        ppEl.querySelector('.wp-left b'),
+        hdrEl.querySelector('.wp-fill'),
+        labelsEl ? labelsEl.querySelector('.wp-gone b') : null,
+        labelsEl ? labelsEl.querySelector('.wp-left b') : null,
         function (nowSec) { return computePeriodProgress(nowSec, sS, sE); }
       );
-    })(bars[j]);
+    })(headers[j]);
   }
 }
 

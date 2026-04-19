@@ -29,6 +29,67 @@
   border-radius: var(--radius-sm);
   position: relative;
   direction: rtl;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  overflow: hidden;
+}
+.mt-period-header:hover {
+  background: color-mix(in srgb, var(--period-color) 14%, transparent);
+}
+
+/* Progress fill rendered as the header's own background (behind text) */
+.mt-period-header-progress .wp-fill,
+.mt-period-header-progress .wp-focus-fill {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+.mt-period-header-progress .wp-fill {
+  background: linear-gradient(to left, var(--gold), var(--fajr));
+  opacity: 0.55;
+  transition: width 0.5s ease;
+}
+.mt-period-header-progress .wp-focus-fill {
+  background: rgba(46, 204, 113, 0.38);
+  transition: width 0.5s ease;
+}
+.mt-period-header > span,
+.mt-period-header > .mt-period-caret {
+  position: relative;
+  z-index: 1;
+}
+.mt-period-disabled .mt-period-header {
+  cursor: default;
+}
+
+.mt-period-caret {
+  font-size: 0.75rem;
+  color: var(--period-color);
+  opacity: 0.7;
+  flex-shrink: 0;
+  transition: transform 0.25s ease;
+}
+.mt-period-collapsed .mt-period-caret {
+  transform: rotate(-90deg);
+}
+
+.mt-period-body {
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.25s ease;
+  max-height: 4000px;
+  opacity: 1;
+}
+.mt-period-collapsed .mt-period-body {
+  max-height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.mt-period-collapsed .mt-period-header {
+  margin-bottom: 0;
 }
 
 .mt-period-header::before {

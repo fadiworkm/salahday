@@ -1228,6 +1228,27 @@
   color: #4ecdc4;
 }
 
+.btn-toggle-periods {
+  width: 30px;
+  height: 30px;
+  background: rgba(124, 106, 239, 0.1);
+  border: 1px solid rgba(124, 106, 239, 0.2);
+  border-radius: 8px;
+  color: var(--purple);
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, transform 0.2s;
+}
+.btn-toggle-periods:hover {
+  background: rgba(124, 106, 239, 0.2);
+}
+.btn-toggle-periods-expanded {
+  background: rgba(124, 106, 239, 0.25);
+}
+
 .wt-period-name {
   padding: 0 14px 6px;
   font-size: 0.72rem;
