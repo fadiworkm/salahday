@@ -1,60 +1,4 @@
-/* ─── زر المخطط ─── */
-.btn-planner {
-  padding: 8px 16px;
-  background: rgba(78, 205, 196, 0.12);
-  color: var(--success);
-  border: 1px solid rgba(78, 205, 196, 0.25);
-  border-radius: var(--radius-sm);
-  font-family: 'Cairo', sans-serif;
-  font-size: 0.8rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: all 0.2s;
-  white-space: nowrap;
-}
-.btn-planner:hover { background: rgba(78, 205, 196, 0.2); transform: translateY(-1px); }
-
-/* ─── المخطط (Overlay + Modal) ─── */
-.planner-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.65);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  z-index: 300;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s;
-}
-.planner-overlay.active { opacity: 1; pointer-events: all; }
-
-.planner-modal {
-  background: var(--bg-mid);
-  border: 1px solid var(--border-card);
-  border-radius: var(--radius) var(--radius) 0 0;
-  width: 100%;
-  max-width: 520px;
-  max-height: 90vh;
-  display: flex;
-  flex-direction: column;
-  transform: translateY(100%);
-  transition: transform 0.35s ease;
-}
-.planner-overlay.active .planner-modal { transform: translateY(0); }
-
-.planner-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  flex-shrink: 0;
-}
-.planner-header h2 { font-size: 1rem; font-weight: 700; margin: 0; }
-
+/* ─── زر الإغلاق (مشترك لجميع الحوارات) ─── */
 .planner-close {
   width: 36px; height: 36px;
   background: rgba(255, 255, 255, 0.06);
@@ -66,288 +10,6 @@
   transition: all 0.2s;
 }
 .planner-close:hover { background: rgba(255, 107, 107, 0.2); color: var(--danger); }
-
-.planner-body {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-}
-
-.planner-footer {
-  padding: 12px 20px 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  flex-shrink: 0;
-}
-
-.planner-summary {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 0.85rem;
-}
-.ps-label { color: var(--text-secondary); font-weight: 600; }
-.ps-value { color: var(--success); font-weight: 800; font-size: 1.05rem; }
-.ps-detail { font-size: 0.75rem; color: var(--text-muted); margin-right: auto; }
-
-/* تاغات الأنشطة في الصفحة الرئيسية */
-.wt-acts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  width: 100%;
-}
-.wt-act-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 2px 8px;
-  border-radius: 12px;
-  font-size: 0.65rem;
-  font-weight: 600;
-  color: #fff;
-}
-
-/* إبراز الفترة */
-.pl-period-highlight {
-  animation: pl-flash 1.5s ease;
-}
-
-@keyframes pl-flash {
-  0%, 100% { box-shadow: none; }
-  30% { box-shadow: 0 0 20px rgba(78, 205, 196, 0.3), inset 0 0 10px rgba(78, 205, 196, 0.05); }
-}
-
-/* ─── فترة العمل ─── */
-.pl-period {
-  margin-bottom: 16px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(78, 205, 196, 0.1);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-}
-
-.pl-period-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 14px;
-  background: rgba(78, 205, 196, 0.05);
-  border-bottom: 1px solid rgba(78, 205, 196, 0.06);
-}
-
-/* checkbox للفترة */
-.pl-check-label {
-  display: flex;
-  align-items: center;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-.pl-check-label input { display: none; }
-.pl-check-box {
-  width: 20px; height: 20px;
-  border: 2px solid rgba(78, 205, 196, 0.4);
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.04);
-  display: flex; align-items: center; justify-content: center;
-  transition: all 0.2s;
-  flex-shrink: 0;
-}
-.pl-check-label input:checked + .pl-check-box {
-  background: var(--success);
-  border-color: var(--success);
-}
-.pl-check-label input:checked + .pl-check-box::after {
-  content: '\2713'; color: #fff; font-size: 0.7rem; font-weight: 800;
-}
-
-.pl-period-icon {
-  font-size: 1rem;
-  margin: 0 4px;
-}
-
-.pl-period-time {
-  font-size: 0.85rem;
-  font-weight: 700;
-  color: var(--cyan);
-  unicode-bidi: plaintext;
-  direction: rtl;
-  flex: 1;
-}
-
-.pl-period-dur {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-muted);
-}
-
-/* فترة معطلة */
-.pl-period-disabled {
-  opacity: 0.4;
-}
-.pl-period-disabled .pl-period-header {
-  background: rgba(255, 255, 255, 0.02);
-}
-
-/* رأس فترة ما بعد العشاء */
-.pl-header-bedtime {
-  background: rgba(124, 106, 239, 0.08) !important;
-  border-bottom-color: rgba(124, 106, 239, 0.1) !important;
-}
-.pl-header-bedtime .pl-period-time { color: var(--purple); }
-.pl-header-bedtime .pl-check-box { border-color: rgba(124, 106, 239, 0.4); }
-.pl-header-bedtime .pl-check-label input:checked + .pl-check-box { background: var(--purple); border-color: var(--purple); }
-
-/* شريط ما بعد العشاء */
-.pl-bar-bedtime { background: rgba(124, 106, 239, 0.08) !important; border-color: rgba(124, 106, 239, 0.12) !important; }
-.pl-seg-bedtime { background: rgba(124, 106, 239, 0.1); color: var(--purple); cursor: pointer; }
-.pl-seg-bedtime:hover { background: rgba(124, 106, 239, 0.2); }
-
-/* ─── الشريط المرئي ─── */
-.pl-bar-wrap {
-  padding: 12px 14px 8px;
-}
-
-.pl-bar {
-  display: flex;
-  height: 44px;
-  border-radius: 10px;
-  overflow: hidden;
-  background: rgba(78, 205, 196, 0.08);
-  border: 1px solid rgba(78, 205, 196, 0.12);
-}
-
-.pl-segment {
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  min-width: 2px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: var(--text-muted);
-  white-space: nowrap;
-  transition: opacity 0.2s;
-}
-
-.pl-seg-work {
-  background: rgba(78, 205, 196, 0.1);
-  color: var(--success);
-  cursor: pointer;
-}
-.pl-seg-work:hover { background: rgba(78, 205, 196, 0.2); }
-
-.seg-dur {
-  font-size: 0.65rem;
-  font-weight: 600;
-}
-
-.seg-range {
-  font-size: 0.55rem;
-  opacity: 0.6;
-  direction: ltr;
-}
-
-.pl-seg-activity {
-  color: #fff;
-  cursor: pointer;
-  position: relative;
-}
-.pl-seg-activity:hover { opacity: 0.8; }
-
-.pl-seg-delete {
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 18px;
-  height: 18px;
-  background: rgba(0, 0, 0, 0.45);
-  border-radius: 50%;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.6rem;
-  color: #fff;
-}
-.pl-seg-activity:hover .pl-seg-delete { display: flex; }
-
-/* ─── زر إضافة ─── */
-.pl-add-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  width: 100%;
-  padding: 10px;
-  background: transparent;
-  border: none;
-  border-top: 1px dashed rgba(78, 205, 196, 0.15);
-  color: var(--text-muted);
-  font-family: 'Cairo', sans-serif;
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.pl-add-btn:hover { color: var(--success); background: rgba(78, 205, 196, 0.04); }
-
-.pl-full-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  width: 100%;
-  padding: 10px;
-  background: rgba(124, 106, 239, 0.08);
-  border: none;
-  border-top: 1px solid rgba(124, 106, 239, 0.12);
-  color: var(--purple);
-  font-family: 'Cairo', sans-serif;
-  font-size: 0.8rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.pl-full-btn:hover { background: rgba(124, 106, 239, 0.15); }
-
-/* ─── شرائح الأنشطة ─── */
-.pl-activities-list {
-  padding: 6px 14px 10px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.pl-activity-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 5px 12px;
-  border-radius: 20px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: #fff;
-  cursor: pointer;
-  transition: opacity 0.2s;
-}
-.pl-activity-chip:hover { opacity: 0.7; }
-.chip-edit { font-size: 0.7rem; opacity: 0.7; margin-right: 2px; }
-
-.pl-seg-edit {
-  position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 18px;
-  height: 18px;
-  background: rgba(0, 0, 0, 0.45);
-  border-radius: 50%;
-  display: none;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.55rem;
-  color: #fff;
-}
-.pl-seg-activity:hover .pl-seg-edit { display: flex; }
 
 .btn-delete {
   display: block;
@@ -770,169 +432,76 @@
 }
 .confirm-no:hover { background: rgba(255, 255, 255, 0.08); }
 
-/* ─── تجاوب ─── */
-@media (max-width: 600px) {
-  .planner-modal { max-height: 95vh; }
-  .planner-body { padding: 12px; }
-  .af-presets { grid-template-columns: repeat(3, 1fr); }
-  .pl-bar { height: 50px; }
-}
-
-@media (min-width: 601px) {
-  .planner-overlay { align-items: center; padding: 20px; }
-  .planner-modal { border-radius: var(--radius); }
-}
-
-/* ─── فترة الصلاة في المخطط ─── */
-.pl-prayer-group {
-  margin-bottom: 10px;
-  border: 1px solid rgba(124, 106, 239, 0.15);
-  border-radius: var(--radius-sm);
-  overflow: hidden;
-}
-
-.pl-prayer-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.pl-prayer-header:hover {
-  filter: brightness(1.3);
-}
-
-.pl-prayer-icon {
-  font-size: 1rem;
-  flex-shrink: 0;
-}
-
-.pl-prayer-name {
-  font-size: 0.82rem;
-  font-weight: 700;
-  color: var(--text-primary);
-  flex: 1;
-}
-
-.pl-prayer-time {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-muted);
-  unicode-bidi: plaintext;
-  direction: rtl;
-}
-
-.pl-prayer-dur {
-  font-size: 0.72rem;
-  font-weight: 700;
-  color: var(--text-secondary);
-  min-width: 40px;
-  text-align: center;
-}
-
-.pl-prayer-edit {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  opacity: 0.5;
-  transition: opacity 0.2s;
-}
-.pl-prayer-header:hover .pl-prayer-edit {
-  opacity: 1;
-}
-
-/* ─── حوار تعديل مدة الصلاة ─── */
-.pe-modal {
-  max-width: 320px;
-  text-align: right;
-}
-
-.pe-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 18px;
-  justify-content: center;
-}
-
-.pe-icon {
-  font-size: 1.5rem;
-}
-
-.pe-title {
-  font-size: 1.05rem;
-  font-weight: 800;
-  color: var(--text-primary);
-}
-
-.pe-body {
+/* ─── حوار وقت النوم ─── */
+.bd-body {
+  padding: 12px 4px 4px;
   display: flex;
   flex-direction: column;
   gap: 14px;
-  margin-bottom: 18px;
 }
 
-.pe-row {
+.bd-field {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
 }
 
-.pe-row label {
+.bd-field label {
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--text-secondary);
 }
 
-.pe-input-wrap {
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.bd-input {
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  padding: 8px 12px;
+  background: rgba(124, 106, 239, 0.1);
+  color: var(--text-primary);
+  border: 1px solid rgba(124, 106, 239, 0.25);
+  border-radius: 8px;
+  outline: none;
   direction: ltr;
 }
+.bd-input:focus {
+  border-color: var(--purple);
+  box-shadow: 0 0 0 3px rgba(124, 106, 239, 0.2);
+}
 
-.pe-adj {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text-primary);
-  font-size: 1rem;
-  font-weight: 700;
-  cursor: pointer;
+.bd-sleep-info {
   display: flex;
   align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-.pe-adj:hover {
-  background: rgba(78, 205, 196, 0.15);
-  border-color: rgba(78, 205, 196, 0.3);
-  color: var(--success);
+  gap: 8px;
+  padding: 10px 12px;
+  background: rgba(124, 106, 239, 0.08);
+  border: 1px solid rgba(124, 106, 239, 0.15);
+  border-radius: 10px;
+  direction: rtl;
 }
 
-.pe-val {
+.bd-sleep-icon {
   font-size: 1.1rem;
-  font-weight: 800;
-  color: var(--text-primary);
-  min-width: 30px;
-  text-align: center;
+  flex-shrink: 0;
 }
 
-.pe-unit {
+.bd-sleep-label {
   font-size: 0.8rem;
   font-weight: 600;
-  color: var(--text-muted);
+  color: var(--text-secondary);
+  flex: 1;
 }
 
-.pe-save-btn {
-  background: rgba(78, 205, 196, 0.15) !important;
-  color: var(--success) !important;
-  border-color: rgba(78, 205, 196, 0.3) !important;
+.bd-sleep-value {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--purple);
 }
-.pe-save-btn:hover {
-  background: rgba(78, 205, 196, 0.25) !important;
+
+/* ─── تجاوب ─── */
+@media (max-width: 600px) {
+  .af-presets { grid-template-columns: repeat(3, 1fr); }
 }
+
 

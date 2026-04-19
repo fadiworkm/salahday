@@ -473,31 +473,52 @@
 .mt-track > :nth-child(10) { animation-delay: 0.29s; }
 
 /* ════════════════════════════
-   Total bar
+   Bedtime row (end of timeline) — clickable
    ════════════════════════════ */
-.mt-total {
+.mt-bedtime-row {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px 16px;
-  margin-top: 4px;
-  background: rgba(78, 205, 196, 0.05);
-  border: 1px solid rgba(78, 205, 196, 0.1);
+  gap: 10px;
+  padding: 12px 14px;
+  margin-top: 10px;
+  background: rgba(124, 106, 239, 0.06);
+  border: 1px solid rgba(124, 106, 239, 0.18);
   border-radius: var(--radius-sm);
   direction: rtl;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+.mt-bedtime-row:hover {
+  background: rgba(124, 106, 239, 0.12);
+  border-color: rgba(124, 106, 239, 0.32);
 }
 
-.mt-total-label {
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--text-secondary);
+.mt-bedtime-icon {
+  font-size: 1.2rem;
+  flex-shrink: 0;
 }
 
-.mt-total-value {
-  font-size: 0.88rem;
+.mt-bedtime-label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--purple);
+  flex: 1;
+}
+
+.mt-bedtime-value {
+  font-family: 'Cairo', sans-serif;
+  font-size: 0.95rem;
   font-weight: 800;
-  color: var(--success);
+  color: var(--text-primary);
+  direction: ltr;
+  unicode-bidi: plaintext;
+}
+
+.mt-bedtime-edit {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  opacity: 0.6;
+  flex-shrink: 0;
 }
 
 /* ════════════════════════════

@@ -1463,44 +1463,40 @@ footer .city-info {
   animation: fade-in-up 0.5s ease forwards;
 }
 
-/* ─── Page Navigation (shared) ─── */
-.page-nav {
+/* ─── Page Navigation Button (shared) ─── */
+.page-nav-section {
+  margin: 20px 0;
   display: flex;
   justify-content: center;
-  gap: 8px;
-  margin-bottom: 20px;
 }
 
-.nav-link {
-  padding: 10px 20px;
-  background: var(--bg-card);
-  border: 1px solid var(--border-card);
+.page-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 28px;
+  background: rgba(124, 106, 239, 0.1);
+  border: 1px solid rgba(124, 106, 239, 0.25);
   border-radius: var(--radius-sm);
-  color: var(--text-secondary);
+  color: var(--purple);
   text-decoration: none;
   font-family: 'Cairo', sans-serif;
-  font-size: 0.88rem;
-  font-weight: 600;
+  font-size: 0.9rem;
+  font-weight: 700;
   transition: all 0.2s;
 }
 
-.nav-link:hover {
-  background: var(--bg-card-hover);
-  color: var(--text-primary);
+.page-nav-btn:hover {
+  background: rgba(124, 106, 239, 0.2);
+  transform: translateY(-1px);
 }
 
-.nav-link.active {
-  background: rgba(124, 106, 239, 0.15);
-  border-color: rgba(124, 106, 239, 0.3);
-  color: var(--purple);
+.page-nav-back {
+  background: rgba(78, 205, 196, 0.1);
+  border-color: rgba(78, 205, 196, 0.25);
+  color: var(--success);
 }
-
-@media (max-width: 380px) {
-  .page-nav {
-    flex-wrap: wrap;
-  }
-  .nav-link {
-    padding: 7px 12px;
-    font-size: 0.78rem;
-  }
+.page-nav-back:hover {
+  background: rgba(78, 205, 196, 0.2);
 }

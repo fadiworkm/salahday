@@ -56,7 +56,6 @@ function renderMobileTimeline() {
   var acts = saved ? saved.activities || [] : [];
   var disabledList = saved ? saved.disabledPeriods || [] : [];
 
-  var totalAvail = 0;
   var html = '<div class="mt-timeline">';
 
   segs.forEach(function (seg, idx) {
@@ -66,7 +65,6 @@ function renderMobileTimeline() {
                     .sort(function (a, b) { return a.start - b.start; });
     var used = pActs.reduce(function (s, a) { return s + (a.end - a.start); }, 0);
     var free = seg.duration - used;
-    if (!isDis) totalAvail += free;
 
     var isCur = isToday && nowMin >= seg.start && nowMin < seg.end;
 
@@ -79,7 +77,6 @@ function renderMobileTimeline() {
     html += '<div class="mt-period-header">';
     html += '<span class="mt-period-time">' + displayTimeRange(seg.start, seg.end) + '</span>';
     html += '<span class="mt-period-dur">' + (isDis ? 'معطّلة' : formatDuration(free) + ' متاح') + '</span>';
-    if (!isDis) html += '<button class="mt-edit-btn" onclick="openPlannerForPeriod(' + idx + ')">&#9998;</button>';
     html += '</div>';
 
     if (isDis) { html += '</div>'; return; }
@@ -139,10 +136,18 @@ function renderMobileTimeline() {
     html += '</div>'; // period
   });
 
-  html += '<div class="mt-total">';
-  html += '<span class="mt-total-label">وقت العمل المتاح:</span>';
-  html += '<span class="mt-total-value">' + formatDuration(totalAvail) + '</span>';
-  html += '</div>';
+  // وقت النوم — في نهاية الخط الزمني (ينقر للتعديل)
+  if (typeof window._prayerMins !== 'undefined' && window._prayerMins) {
+    var bedtime = (typeof getManualBedtime === 'function') ? getManualBedtime(window._prayerMins) : 0;
+    var bedtimeStr = (typeof displayTime === 'function') ? displayTime(bedtime) : minutesToTimeStr(bedtime);
+    html += '<div class="mt-bedtime-row" onclick="openBedtimeDialog()">';
+    html += '<span class="mt-bedtime-icon">🌙</span>';
+    html += '<span class="mt-bedtime-label">وقت النوم</span>';
+    html += '<span class="mt-bedtime-value">' + bedtimeStr + '</span>';
+    html += '<span class="mt-bedtime-edit">&#9998;</span>';
+    html += '</div>';
+  }
+
   html += '</div>';
 
   container.insertAdjacentHTML('beforeend', html);

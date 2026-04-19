@@ -6,7 +6,6 @@
 let currentFormWorkIndex = null;
 let selectedPreset = null;
 let editingActivityIndex = null;
-let currentPlannerFilter = null; // null = عرض الكل, رقم = فترة واحدة
 let durationAnchor = 'start'; // 'start' = slider changes end, 'end' = slider changes start
 
 // ─── استمرارية البيانات (عبر ScheduleData) ───
@@ -33,208 +32,15 @@ function getDayActivities() {
   return getDayPlan().activities;
 }
 
-function getDisabledPeriods() {
-  return getDayPlan().disabledPeriods;
-}
-
 // ─── الفترات المتاحة (عمل + وقت شخصي) ───
 
 function getPlannerPeriods() {
-  const allSegments = window._allSegments || [];
   const workSegs = window._workSegments || [];
-
-  // فترات العمل
   const periods = workSegs.map(function (seg, i) {
     return { type: 'work', index: i, start: seg.start, end: seg.end, duration: seg.duration, label: 'وقت متاح' };
   });
-
   periods.sort(function (a, b) { return a.start - b.start; });
   return periods;
-}
-
-// ─── فترات الصلاة (تجميع التحضير + الصلاة) ───
-
-// ─── فتح/إغلاق المخطط ───
-
-function openPlanner() {
-  loadPlannerData();
-  currentPlannerFilter = null;
-  renderPlanner(currentPlannerFilter);
-  document.getElementById('planner-overlay').classList.add('active');
-}
-
-function closePlanner() {
-  savePlannerData();
-  currentPlannerFilter = null;
-  document.getElementById('planner-overlay').classList.remove('active');
-  updateMainWorkBlocks();
-}
-
-function openPlannerForPeriod(periodIdx) {
-  loadPlannerData();
-  currentPlannerFilter = periodIdx;
-  renderPlanner(periodIdx);
-  document.getElementById('planner-overlay').classList.add('active');
-}
-
-// ─── بناء شرائح الشريط ───
-
-function buildBarSegments(period, activities) {
-  const segments = [];
-  let cursor = period.start;
-  activities.forEach(function (act, i) {
-    if (act.start > cursor) {
-      segments.push({ type: 'free', start: cursor, end: act.start, duration: act.start - cursor });
-    }
-    segments.push({ type: 'activity', name: act.name, icon: act.icon, color: act.color, start: act.start, end: act.end, actIndex: i, duration: act.end - act.start, note: act.note });
-    cursor = act.end;
-  });
-  if (cursor < period.end) {
-    segments.push({ type: 'free', start: cursor, end: period.end, duration: period.end - cursor });
-  }
-  return segments;
-}
-
-// ─── مفتاح الفترة ───
-
-function periodKey(period) {
-  return period.type + ':' + period.start + '-' + period.end;
-}
-
-function isPeriodDisabled(period) {
-  return getDisabledPeriods().indexOf(periodKey(period)) !== -1;
-}
-
-function togglePeriodEnabled(period) {
-  var disabled = getDisabledPeriods();
-  var key = periodKey(period);
-  var idx = disabled.indexOf(key);
-  if (idx === -1) {
-    disabled.push(key);
-  } else {
-    disabled.splice(idx, 1);
-  }
-  savePlannerData();
-  renderPlanner(currentPlannerFilter);
-}
-
-// ─── عرض المخطط ───
-
-function renderPlanner(onlyPeriodIdx) {
-  var periods = getPlannerPeriods();
-  var activities = getDayActivities();
-  var html = '';
-
-  periods.forEach(function (period, pIdx) {
-    // عرض فترة واحدة فقط إذا تم تحديدها
-    if (onlyPeriodIdx != null && pIdx !== onlyPeriodIdx) return;
-
-    var periodActs = activities.filter(function (a) { return a.start >= period.start && a.end <= period.end; });
-    periodActs.sort(function (a, b) { return a.start - b.start; });
-
-    var barSegments = buildBarSegments(period, periodActs);
-    var usedTime = periodActs.reduce(function (sum, a) { return sum + (a.end - a.start); }, 0);
-    var freeTime = period.duration - usedTime;
-    var disabled = isPeriodDisabled(period);
-    var isBedtime = period.type === 'bedtime';
-    var periodCls = disabled ? ' pl-period-disabled' : '';
-    var iconType = isBedtime ? '&#9790;' : '&#9881;';
-
-    html += '<div class="pl-period' + periodCls + '" data-period-idx="' + pIdx + '">';
-
-    // الرأس مع checkbox
-    html += '<div class="pl-period-header' + (isBedtime ? ' pl-header-bedtime' : '') + '">';
-    html += '<label class="pl-check-label" onclick="event.stopPropagation()">';
-    html += '<input type="checkbox" class="pl-period-check" data-pidx="' + pIdx + '"' + (disabled ? '' : ' checked') + '>';
-    html += '<span class="pl-check-box"></span>';
-    html += '</label>';
-    html += '<span class="pl-period-icon">' + iconType + '</span>';
-    html += '<span class="pl-period-time">' + displayTimeRange(period.start, period.end) + '</span>';
-    html += '<span class="pl-period-dur">' + formatDuration(freeTime) + (isBedtime ? '' : ' متاح') + '</span>';
-    html += '</div>';
-
-    if (!disabled) {
-      // الشريط المرئي
-      html += '<div class="pl-bar-wrap">';
-      html += '<div class="pl-bar' + (isBedtime ? ' pl-bar-bedtime' : '') + '">';
-      barSegments.forEach(function (bs) {
-        if (bs.type === 'free') {
-          var freeCls = isBedtime ? 'pl-seg-bedtime' : 'pl-seg-work';
-          html += '<div class="pl-segment ' + freeCls + '" style="flex:' + bs.duration + '" onclick="onBarFreeClick(' + pIdx + ', ' + bs.start + ')">';
-          if (bs.duration >= 15) html += '<span class="seg-dur">' + formatDuration(bs.duration) + '</span>';
-          html += '<span class="seg-range">' + displayTime(bs.start) + ' - ' + displayTime(bs.end) + '</span>';
-          html += '</div>';
-        } else {
-          var actGIdx = activities.indexOf(periodActs[bs.actIndex]);
-          html += '<div class="pl-segment pl-seg-activity" style="flex:' + bs.duration + '; background:' + bs.color + '" onclick="editActivity(' + pIdx + ', ' + actGIdx + ')" title="' + bs.name + ': ' + formatDuration(bs.duration) + '">';
-          html += '<span class="pl-seg-edit">&#9998;</span>';
-          html += '<span class="seg-dur">' + bs.icon + '</span>';
-          html += '<span class="seg-range">' + displayTime(bs.start) + ' - ' + displayTime(bs.end) + '</span>';
-          html += '</div>';
-        }
-      });
-      html += '</div></div>';
-
-      // شرائح الأنشطة
-      if (periodActs.length > 0) {
-        html += '<div class="pl-activities-list">';
-        periodActs.forEach(function (act) {
-          var actGlobalIdx = activities.indexOf(act);
-          html += '<span class="pl-activity-chip" style="background:' + act.color + '" onclick="editActivity(' + pIdx + ', ' + actGlobalIdx + ')">';
-          html += act.icon + ' ' + act.name + ' (' + formatDuration(act.end - act.start) + ')';
-          if (act.fromHabit) html += '<span class="chip-note" title="عادة يومية">🔄</span>';
-          if (act.note) html += '<span class="chip-note" title="' + act.note.replace(/"/g, '&quot;') + '">📝</span>';
-          html += '<span class="chip-edit">&#9998;</span></span>';
-        });
-        html += '</div>';
-      }
-
-      // زر تعيين كامل الفترة (يظهر فقط عندما لا توجد أنشطة)
-      if (periodActs.length === 0) {
-        html += '<button class="pl-full-btn" onclick="setFullPeriod(' + pIdx + ')">تعيين كامل الفترة</button>';
-      }
-
-      // زر الإضافة
-      html += '<button class="pl-add-btn" onclick="showActivityForm(' + pIdx + ')">+ إضافة نشاط</button>';
-    }
-
-    html += '</div>';
-  });
-
-  document.getElementById('planner-body').innerHTML = html;
-  updatePlannerSummary();
-
-  // ربط أحداث checkbox
-  document.querySelectorAll('.pl-period-check').forEach(function (cb) {
-    cb.addEventListener('change', function () {
-      var pIdx = parseInt(cb.dataset.pidx);
-      var periods = getPlannerPeriods();
-      if (periods[pIdx]) togglePeriodEnabled(periods[pIdx]);
-    });
-  });
-}
-
-// ─── ملخص المخطط ───
-
-function updatePlannerSummary() {
-  var periods = getPlannerPeriods();
-  var activities = getDayActivities();
-  var totalFree = 0;
-  var totalUsed = 0;
-
-  periods.forEach(function (p) {
-    if (isPeriodDisabled(p)) return;
-    var pActs = activities.filter(function (a) { return a.start >= p.start && a.end <= p.end; });
-    var used = pActs.reduce(function (sum, a) { return sum + (a.end - a.start); }, 0);
-    totalFree += p.duration;
-    totalUsed += used;
-  });
-
-  var remaining = totalFree - totalUsed;
-  document.getElementById('planner-summary').innerHTML =
-    '<span class="ps-label">الوقت المتبقي:</span>' +
-    '<span class="ps-value">' + formatDuration(remaining) + '</span>' +
-    '<span class="ps-detail">من ' + formatDuration(totalFree) + '</span>';
 }
 
 // ─── الأنشطة المسبقة ───
@@ -774,7 +580,6 @@ function addActivity() {
 
   savePlannerData();
   closeActivityForm();
-  renderPlanner(currentPlannerFilter);
   updateMainWorkBlocks();
 }
 
@@ -796,7 +601,6 @@ function removeActivity(globalIndex) {
     }
     activities.splice(globalIndex, 1);
     savePlannerData();
-    renderPlanner(currentPlannerFilter);
     updateMainWorkBlocks();
   }
 }
@@ -1041,17 +845,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   await ScheduleData.whenReady();
   loadPlannerData();
 
-  document.getElementById('open-planner').addEventListener('click', openPlanner);
   document.getElementById('clear-day-btn').addEventListener('click', clearDayPlan);
-  document.getElementById('planner-close').addEventListener('click', closePlanner);
-  document.getElementById('planner-overlay').addEventListener('click', function (e) {
-    if (e.target === e.currentTarget) closePlanner();
-  });
-
-  document.getElementById('planner-save').addEventListener('click', function () {
-    savePlannerData();
-    closePlanner();
-  });
 
   document.getElementById('af-close').addEventListener('click', closeActivityForm);
   document.getElementById('activity-form-overlay').addEventListener('click', function (e) {

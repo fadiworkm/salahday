@@ -30,14 +30,8 @@
       <p class="subtitle">نظّم يومك وفق أوقات الصلاة</p>
     </header>
 
-    <!-- شريط تقدم العمل (أعلى الصفحة) -->
+    <!-- work-progress-->
     <div id="work-progress-top"></div>
-
-    <!-- Navigation back to sleep calc -->
-    <nav class="page-nav">
-      <a href="index.html" class="nav-link active">&#128197; جدول اليوم</a>
-      <a href="habits.html" class="nav-link">&#128260; العادات</a>
-    </nav>
 
     <!-- Date + Controls -->
     <section class="input-section">
@@ -50,22 +44,6 @@
             <div class="day-name" id="day-name"></div>
           </div>
           <button id="next-day" class="btn-nav-day">&larr;</button>
-        </div>
-        <div class="controls-row">
-          <button id="refresh-btn" class="ctrl-btn" title="تحديث البيانات">&#8635; تحديث</button>
-          <div class="ctrl-sep"></div>
-          <button id="today-btn" class="ctrl-btn" title="اليوم">&#128197; اليوم</button>
-          <div class="ctrl-sep"></div>
-          <span class="ctrl-icon">&#9790;</span>
-          <input type="time" id="manual-bedtime" class="ctrl-input" step="300">
-          <button type="button" id="reset-bedtime" class="ctrl-btn ctrl-sm" title="افتراضي">&#8634;</button>
-          <div class="ctrl-sep"></div>
-          <input type="date" id="copy-from-date" class="ctrl-input ctrl-date">
-          <button type="button" id="copy-day-btn" class="ctrl-btn ctrl-sm" title="نسخ من يوم">&#128203;</button>
-          <div class="ctrl-sep"></div>
-          <button type="button" id="export-btn" class="ctrl-btn ctrl-sm" title="تصدير">&#128228;</button>
-          <button type="button" id="import-btn" class="ctrl-btn ctrl-sm" title="استيراد">&#128229;</button>
-          <input type="file" id="import-file" accept=".json" style="display:none">
         </div>
       </div>
     </section>
@@ -85,7 +63,6 @@
       <div class="card">
         <div class="card-header-row">
           <h2><span class="icon">&#9881;</span> فترات العمل المتاحة</h2>
-          <button class="btn-planner" id="open-planner">&#9997; إدارة الوقت</button>
           <button class="btn-clear-day" id="clear-day-btn" title="مسح أنشطة اليوم">&#128465;</button>
         </div>
         <div class="work-blocks" id="work-blocks">
@@ -121,6 +98,11 @@
           <!-- Filled by JS -->
         </div>
       </div>
+    </section>
+
+    <!-- Navigate to habits -->
+    <section class="page-nav-section">
+      <a href="habits.html" class="page-nav-btn">&#128260; إدارة العادات اليومية</a>
     </section>
 
     <!-- Footer -->
@@ -264,23 +246,6 @@
     </div>
   </div>
 
-  <!-- ─── أداة تخطيط العمل ─── -->
-  <div class="planner-overlay" id="planner-overlay">
-    <div class="planner-modal">
-      <div class="planner-header">
-        <h2>&#9997; إدارة وقت العمل</h2>
-        <button class="planner-close" id="planner-close">&times;</button>
-      </div>
-      <div class="planner-body" id="planner-body">
-        <!-- Filled by JS -->
-      </div>
-      <div class="planner-footer">
-        <div class="planner-summary" id="planner-summary"></div>
-        <button class="btn-primary" id="planner-save" style="margin-top:12px;">حفظ الجدول</button>
-      </div>
-    </div>
-  </div>
-
   <!-- ─── نموذج إضافة نشاط ─── -->
   <div class="activity-form-overlay" id="activity-form-overlay">
     <div class="activity-form-modal">
@@ -418,24 +383,25 @@
     </div>
   </div>
 
-  <!-- ─── تصدير البيانات ─── -->
-  <div class="confirm-overlay" id="export-overlay">
-    <div class="confirm-modal" style="max-width:340px">
-      <div class="confirm-icon">&#128228;</div>
-      <div class="confirm-text">تصدير بيانات الجدول</div>
-      <div style="display:flex;gap:10px;margin:14px 0;justify-content:center">
-        <div style="text-align:center">
-          <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:4px">من</div>
-          <input type="date" id="export-from" class="ctrl-input ctrl-date">
+  <!-- ─── حوار تعديل وقت النوم ─── -->
+  <div class="confirm-overlay" id="bedtime-overlay">
+    <div class="confirm-modal" style="max-width:360px">
+      <div class="confirm-icon">&#127769;</div>
+      <div class="confirm-text">وقت النوم</div>
+      <div class="bd-body">
+        <div class="bd-field">
+          <label for="bd-bedtime">موعد النوم</label>
+          <input type="time" id="bd-bedtime" class="bd-input" step="300" oninput="onBedtimeDialogInput()">
         </div>
-        <div style="text-align:center">
-          <div style="font-size:0.72rem;color:var(--text-muted);margin-bottom:4px">إلى</div>
-          <input type="date" id="export-to" class="ctrl-input ctrl-date">
+        <div class="bd-sleep-info">
+          <span class="bd-sleep-icon">&#128164;</span>
+          <span class="bd-sleep-label">مدة النوم حتى الفجر</span>
+          <span class="bd-sleep-value" id="bd-sleep-value">-</span>
         </div>
       </div>
       <div class="confirm-btns">
-        <button class="confirm-yes" id="export-confirm">تصدير</button>
-        <button class="confirm-no" id="export-cancel">إلغاء</button>
+        <button class="confirm-yes" id="bd-save">حفظ</button>
+        <button class="confirm-no" id="bd-cancel">إلغاء</button>
       </div>
     </div>
   </div>

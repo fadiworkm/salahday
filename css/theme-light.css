@@ -286,90 +286,13 @@
   border-color: rgba(224, 120, 48, 0.40) !important;
 }
 
-/* ─── 17. Planner Modal ─── */
-[data-theme="light"] .planner-overlay {
-  background: rgba(0, 0, 0, 0.30) !important;
-}
-
-[data-theme="light"] .planner-modal {
-  background: #f5f7fc;
-  border-color: rgba(0, 0, 0, 0.10);
-  box-shadow: 0 -4px 30px rgba(0, 0, 0, 0.12);
-}
-
-[data-theme="light"] .planner-header {
-  border-bottom-color: rgba(0, 0, 0, 0.08) !important;
-}
-
-[data-theme="light"] .planner-footer {
-  border-top-color: rgba(0, 0, 0, 0.08) !important;
-}
-
+/* ─── 17. Shared close button (all dialogs) ─── */
 [data-theme="light"] .planner-close {
   background: rgba(0, 0, 0, 0.06) !important;
 }
 
 [data-theme="light"] .planner-close:hover {
   background: rgba(224, 85, 85, 0.14) !important;
-}
-
-/* Work period blocks */
-[data-theme="light"] .pl-period {
-  background: rgba(255, 255, 255, 0.60) !important;
-  border-color: rgba(46, 173, 166, 0.15) !important;
-  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
-}
-
-[data-theme="light"] .pl-period-header {
-  background: rgba(46, 173, 166, 0.06) !important;
-  border-bottom-color: rgba(46, 173, 166, 0.08) !important;
-}
-
-[data-theme="light"] .pl-check-box {
-  background: rgba(255, 255, 255, 0.80) !important;
-}
-
-[data-theme="light"] .pl-period-disabled {
-  opacity: 0.5;
-}
-
-[data-theme="light"] .pl-period-disabled .pl-period-header {
-  background: rgba(0, 0, 0, 0.02) !important;
-}
-
-[data-theme="light"] .pl-bar {
-  background: rgba(46, 173, 166, 0.08) !important;
-  border-color: rgba(46, 173, 166, 0.14) !important;
-}
-
-[data-theme="light"] .pl-add-btn {
-  border-top-color: rgba(46, 173, 166, 0.18) !important;
-}
-
-[data-theme="light"] .pl-add-btn:hover {
-  background: rgba(46, 173, 166, 0.05) !important;
-}
-
-[data-theme="light"] .pl-header-bedtime {
-  background: rgba(108, 92, 231, 0.07) !important;
-  border-bottom-color: rgba(108, 92, 231, 0.10) !important;
-}
-
-[data-theme="light"] .pl-bar-bedtime {
-  background: rgba(108, 92, 231, 0.07) !important;
-  border-color: rgba(108, 92, 231, 0.12) !important;
-}
-
-[data-theme="light"] .pl-seg-bedtime {
-  background: rgba(108, 92, 231, 0.09) !important;
-}
-
-[data-theme="light"] .pl-seg-work {
-  background: rgba(46, 173, 166, 0.09) !important;
-}
-
-[data-theme="light"] .pl-seg-work:hover {
-  background: rgba(46, 173, 166, 0.18) !important;
 }
 
 /* ─── 18. Activity Form Modals ─── */

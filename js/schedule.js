@@ -296,14 +296,41 @@ function loadSettingsFromDay() {
 }
 
 function getManualBedtime(prayerMins) {
-  const input = document.getElementById('manual-bedtime');
-  if (input && input.dataset.manual === '1') {
-    const parts = input.value.split(':').map(Number);
-    return parts[0] * 60 + parts[1];
-  }
   const saved = getSavedBedtime();
   if (saved != null) return saved;
   return prayerMins.isha + scheduleSettings.bedtimeAfterIsha;
+}
+
+function openBedtimeDialog() {
+  if (!window._prayerMins) return;
+  const current = getManualBedtime(window._prayerMins);
+  const input = document.getElementById('bd-bedtime');
+  input.value = minutesToTimeStr(current);
+  updateBedtimeSleepPreview(current);
+  document.getElementById('bedtime-overlay').classList.add('active');
+}
+
+function closeBedtimeDialog() {
+  document.getElementById('bedtime-overlay').classList.remove('active');
+}
+
+function updateBedtimeSleepPreview(bedtimeMin) {
+  if (!window._prayerMins) return;
+  const fajr = window._prayerMins.fajr;
+  const sleepDur = fajr <= bedtimeMin ? (1440 - bedtimeMin + fajr) : (fajr - bedtimeMin);
+  document.getElementById('bd-sleep-value').textContent = formatDuration(sleepDur);
+}
+
+function onBedtimeDialogInput() {
+  const parts = document.getElementById('bd-bedtime').value.split(':').map(Number);
+  updateBedtimeSleepPreview(parts[0] * 60 + parts[1]);
+}
+
+function saveBedtimeFromDialog() {
+  const parts = document.getElementById('bd-bedtime').value.split(':').map(Number);
+  saveManualBedtime(parts[0] * 60 + parts[1]);
+  closeBedtimeDialog();
+  renderDay();
 }
 
 function generateDaySegments(prayerMins) {
@@ -1197,19 +1224,6 @@ function renderDay() {
   const prayerMins = extractPrayerMinutes(dayData);
   window._prayerMins = prayerMins;
 
-  // تعيين وقت النوم — من المحفوظ أو الافتراضي
-  const bedtimeInput = document.getElementById('manual-bedtime');
-  if (bedtimeInput && bedtimeInput.dataset.manual !== '1') {
-    const saved = getSavedBedtime();
-    if (saved != null) {
-      bedtimeInput.value = minutesToTimeStr(saved);
-      bedtimeInput.dataset.manual = '1';
-    } else {
-      const defaultBedtime = prayerMins.isha + scheduleSettings.bedtimeAfterIsha;
-      bedtimeInput.value = minutesToTimeStr(defaultBedtime);
-    }
-  }
-
   const segments = generateDaySegments(prayerMins);
 
   // حفظ الشرائح للمخطط
@@ -1240,36 +1254,7 @@ async function changeDate(delta) {
   const current = new Date(dateInput.value + 'T12:00:00');
   current.setDate(current.getDate() + delta);
   dateInput.value = current.toISOString().split('T')[0];
-  const bedtimeInput = document.getElementById('manual-bedtime');
-  if (bedtimeInput) bedtimeInput.dataset.manual = '';
   await loadDayFromServer();
-  loadSettingsFromDay();
-  renderDay();
-}
-
-// ─── نسخ من يوم ───
-
-async function copyFromDay() {
-  const fromDate = document.getElementById('copy-from-date').value;
-  const toDate = document.getElementById('schedule-date').value;
-  if (!fromDate || !toDate || fromDate === toDate) return;
-
-  // تحميل يوم المصدر من الخادم إن لم يكن محملاً
-  let source = ScheduleData.getDay(fromDate);
-  if (!source) {
-    await ScheduleData.loadDay(fromDate);
-    source = ScheduleData.getDay(fromDate);
-  }
-  if (!source) return;
-
-  if (Array.isArray(source)) source = { activities: source, disabledPeriods: [] };
-
-  // نسخ عميق
-  const copy = JSON.parse(JSON.stringify(source));
-  ScheduleData.saveDay(toDate, copy);
-
-  const bi = document.getElementById('manual-bedtime');
-  if (bi) bi.dataset.manual = '';
   loadSettingsFromDay();
   renderDay();
 }
@@ -1278,64 +1263,21 @@ async function copyFromDay() {
 
 function attachEvents() {
   document.getElementById('schedule-date').addEventListener('change', async () => {
-    const bi = document.getElementById('manual-bedtime');
-    if (bi) bi.dataset.manual = '';
     await loadDayFromServer();
     loadSettingsFromDay();
     renderDay();
   });
   document.getElementById('prev-day').addEventListener('click', () => changeDate(-1));
   document.getElementById('next-day').addEventListener('click', () => changeDate(1));
-  document.getElementById('today-btn').addEventListener('click', async () => {
-    document.getElementById('schedule-date').value = new Date().toISOString().split('T')[0];
-    const bi = document.getElementById('manual-bedtime');
-    if (bi) bi.dataset.manual = '';
-    await loadDayFromServer();
-    loadSettingsFromDay();
-    renderDay();
-  });
 
-  // تحديث البيانات من الخادم
-  document.getElementById('refresh-btn').addEventListener('click', async () => {
-    await ScheduleData.refresh();
-    const dateStr = document.getElementById('schedule-date').value;
-    await ScheduleData.loadDay(dateStr);
-    loadSettingsFromDay();
-    const bi = document.getElementById('manual-bedtime');
-    if (bi) bi.dataset.manual = '';
-    renderDay();
-  });
-
-  // وقت النوم اليدوي — حفظ عند التغيير
-  document.getElementById('manual-bedtime').addEventListener('change', () => {
-    const bi = document.getElementById('manual-bedtime');
-    bi.dataset.manual = '1';
-    const parts = bi.value.split(':').map(Number);
-    saveManualBedtime(parts[0] * 60 + parts[1]);
-    renderDay();
-  });
-  document.getElementById('reset-bedtime').addEventListener('click', () => {
-    const bi = document.getElementById('manual-bedtime');
-    bi.dataset.manual = '';
-    clearSavedBedtime();
-    renderDay();
-  });
-
-  // نسخ من يوم آخر
-  document.getElementById('copy-day-btn').addEventListener('click', copyFromDay);
-
-  // تصدير / استيراد
-  document.getElementById('export-btn').addEventListener('click', openExportDialog);
-  document.getElementById('export-confirm').addEventListener('click', doExport);
-  document.getElementById('export-cancel').addEventListener('click', closeExportDialog);
-  document.getElementById('export-overlay').addEventListener('click', (e) => {
-    if (e.target === e.currentTarget) closeExportDialog();
-  });
-  document.getElementById('import-btn').addEventListener('click', () => {
-    document.getElementById('import-file').click();
-  });
-  document.getElementById('import-file').addEventListener('change', handleImport);
   document.getElementById('export-stats-btn').addEventListener('click', exportDayStatsJSON);
+
+  // حوار وقت النوم
+  document.getElementById('bd-save').addEventListener('click', saveBedtimeFromDialog);
+  document.getElementById('bd-cancel').addEventListener('click', closeBedtimeDialog);
+  document.getElementById('bedtime-overlay').addEventListener('click', (e) => {
+    if (e.target === e.currentTarget) closeBedtimeDialog();
+  });
 
   document.getElementById('settings-toggle').addEventListener('click', openSettings);
   document.getElementById('close-settings').addEventListener('click', closeSettings);
@@ -1350,77 +1292,6 @@ function attachEvents() {
       scheduleSettings.timeFormat = btn.dataset.value;
     });
   });
-
-}
-
-// ─── تصدير / استيراد ───
-
-function openExportDialog() {
-  const dateStr = document.getElementById('schedule-date').value;
-  document.getElementById('export-from').value = dateStr;
-  document.getElementById('export-to').value = dateStr;
-  document.getElementById('export-overlay').classList.add('active');
-}
-
-function closeExportDialog() {
-  document.getElementById('export-overlay').classList.remove('active');
-}
-
-async function doExport() {
-  const from = document.getElementById('export-from').value;
-  const to = document.getElementById('export-to').value;
-  if (!from || !to) return;
-
-  await ScheduleData.refresh();
-  const allDays = ScheduleData.getAllDays();
-  const exportDays = {};
-
-  for (const date of Object.keys(allDays).sort()) {
-    if (date >= from && date <= to) {
-      exportDays[date] = allDays[date];
-    }
-  }
-
-  const payload = { days: exportDays, customPresets: ScheduleData.getPresets() };
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = from === to ? 'schedule-' + from + '.json' : 'schedule-' + from + '_' + to + '.json';
-  a.click();
-  URL.revokeObjectURL(url);
-  closeExportDialog();
-}
-
-async function handleImport(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  try {
-    const text = await file.text();
-    const data = JSON.parse(text);
-    if (!data.days) return;
-
-    for (const date of Object.keys(data.days)) {
-      ScheduleData.saveDay(date, data.days[date]);
-    }
-
-    if (data.customPresets && data.customPresets.length > 0) {
-      ScheduleData.savePresets(data.customPresets);
-    }
-
-    // تحديث اليوم الحالي
-    const dateStr = document.getElementById('schedule-date').value;
-    await ScheduleData.loadDay(dateStr);
-    loadSettingsFromDay();
-    const bi = document.getElementById('manual-bedtime');
-    if (bi) bi.dataset.manual = '';
-    renderDay();
-  } catch (err) {
-    console.error('فشل الاستيراد:', err);
-  }
-
-  e.target.value = '';
 }
 
 // ─── الإعدادات ───
