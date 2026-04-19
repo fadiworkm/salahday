@@ -9,12 +9,12 @@ let prayerData = [];
 // ─── الإعدادات ───
 let scheduleSettings = {
   buffers: {
-    fajr:    { before: 90, after: 30 },
-    sunrise: { before: 0,  after: 20 },
-    dhuhr:   { before: 15, after: 20 },
-    asr:     { before: 15, after: 15 },
-    maghrib: { before: 10, after: 20 },
-    isha:    { before: 10, after: 20 }
+    fajr: { iqama: 20, after: 30 },
+    sunrise: { iqama: 0, after: 20 },
+    dhuhr: { iqama: 10, after: 20 },
+    asr: { iqama: 10, after: 15 },
+    maghrib: { iqama: 5, after: 20 },
+    isha: { iqama: 10, after: 20 }
   },
   bedtimeAfterIsha: 120,
   timeFormat: '12',
@@ -136,32 +136,32 @@ function getClosestDate(dateStr) {
 
 function extractPrayerMinutes(dayData) {
   return {
-    fajr:    parseArabicTime(dayData['الفجر']),
+    fajr: parseArabicTime(dayData['الفجر']),
     sunrise: parseArabicTime(dayData['الشروق']),
-    dhuhr:   parseArabicTime(dayData['الظهر']),
-    asr:     parseArabicTime(dayData['العصر']),
+    dhuhr: parseArabicTime(dayData['الظهر']),
+    asr: parseArabicTime(dayData['العصر']),
     maghrib: parseArabicTime(dayData['المغرب']),
-    isha:    parseArabicTime(dayData['العشاء'])
+    isha: parseArabicTime(dayData['العشاء'])
   };
 }
 
 // ─── توليد الجدول اليومي ───
 
 const PRAYER_NAMES = {
-  fajr:    'صلاة الفجر',
+  fajr: 'صلاة الفجر',
   sunrise: 'الشروق',
-  dhuhr:   'صلاة الظهر',
-  asr:     'صلاة العصر',
+  dhuhr: 'صلاة الظهر',
+  asr: 'صلاة العصر',
   maghrib: 'صلاة المغرب',
-  isha:    'صلاة العشاء'
+  isha: 'صلاة العشاء'
 };
 
 const PREP_NAMES = {
-  fajr:    'تحضير للفجر',
-  dhuhr:   'تحضير للظهر',
-  asr:     'تحضير للعصر',
+  fajr: 'تحضير للفجر',
+  dhuhr: 'تحضير للظهر',
+  asr: 'تحضير للعصر',
   maghrib: 'تحضير للمغرب',
-  isha:    'تحضير للعشاء'
+  isha: 'تحضير للعشاء'
 };
 
 function getSavedBedtime() {
@@ -213,14 +213,14 @@ function generateHabitActivities(dateStr, day) {
     const offset = parseInt(habit.offsetAfter, 10) || 0;
 
     if (habit.scheduleType === 'prayer-to-prayer') {
-      const fromBuf = buf[habit.fromPrayer] || { before: 0, after: 0 };
-      const toBuf   = buf[habit.toPrayer]   || { before: 0, after: 0 };
-      start = pMins[habit.fromPrayer] + fromBuf.after + offset;
-      end   = pMins[habit.toPrayer]   - toBuf.before;
+      const fromBuf = buf[habit.fromPrayer] || { iqama: 0, after: 0 };
+      const toBuf = buf[habit.toPrayer] || { iqama: 0, after: 0 };
+      start = pMins[habit.fromPrayer] + fromBuf.iqama + fromBuf.after + offset;
+      end = pMins[habit.toPrayer] + toBuf.iqama;
       if (end <= start) return;
     } else if (habit.scheduleType === 'prayer-duration') {
-      const fromBuf = buf[habit.fromPrayer] || { before: 0, after: 0 };
-      start = pMins[habit.fromPrayer] + fromBuf.after + offset;
+      const fromBuf = buf[habit.fromPrayer] || { iqama: 0, after: 0 };
+      start = pMins[habit.fromPrayer] + fromBuf.iqama + fromBuf.after + offset;
       end = start + (parseInt(habit.duration, 10) || 30);
     } else if (habit.scheduleType === 'custom-time') {
       start = parseInt(habit.startTime, 10) || 0;
@@ -314,37 +314,22 @@ function generateDaySegments(prayerMins) {
 
   const occupiedRanges = [];
 
-  // الفجر
-  if (buf.fajr.before > 0) {
-    occupiedRanges.push({ type: 'prep', label: PREP_NAMES.fajr, prayerKey: 'fajr', start: prayerMins.fajr - buf.fajr.before, end: prayerMins.fajr });
-  }
-  occupiedRanges.push({ type: 'prayer', label: PRAYER_NAMES.fajr, prayerKey: 'fajr', start: prayerMins.fajr, end: prayerMins.fajr + buf.fajr.after });
+  // الفجر — تبدأ الصلاة عند أذان الفجر + وقت الإقامة
+  occupiedRanges.push({ type: 'prayer', label: PRAYER_NAMES.fajr, prayerKey: 'fajr', start: prayerMins.fajr + buf.fajr.iqama, end: prayerMins.fajr + buf.fajr.iqama + buf.fajr.after });
 
   // الشروق: لا يقسم الجدول - يضاف كتلميح فقط
 
   // الظهر
-  if (buf.dhuhr.before > 0) {
-    occupiedRanges.push({ type: 'prep', label: PREP_NAMES.dhuhr, prayerKey: 'dhuhr', start: prayerMins.dhuhr - buf.dhuhr.before, end: prayerMins.dhuhr });
-  }
-  occupiedRanges.push({ type: 'prayer', label: PRAYER_NAMES.dhuhr, prayerKey: 'dhuhr', start: prayerMins.dhuhr, end: prayerMins.dhuhr + buf.dhuhr.after });
+  occupiedRanges.push({ type: 'prayer', label: PRAYER_NAMES.dhuhr, prayerKey: 'dhuhr', start: prayerMins.dhuhr + buf.dhuhr.iqama, end: prayerMins.dhuhr + buf.dhuhr.iqama + buf.dhuhr.after });
 
   // العصر
-  if (buf.asr.before > 0) {
-    occupiedRanges.push({ type: 'prep', label: PREP_NAMES.asr, prayerKey: 'asr', start: prayerMins.asr - buf.asr.before, end: prayerMins.asr });
-  }
-  occupiedRanges.push({ type: 'prayer', label: PRAYER_NAMES.asr, prayerKey: 'asr', start: prayerMins.asr, end: prayerMins.asr + buf.asr.after });
+  occupiedRanges.push({ type: 'prayer', label: PRAYER_NAMES.asr, prayerKey: 'asr', start: prayerMins.asr + buf.asr.iqama, end: prayerMins.asr + buf.asr.iqama + buf.asr.after });
 
   // المغرب
-  if (buf.maghrib.before > 0) {
-    occupiedRanges.push({ type: 'prep', label: PREP_NAMES.maghrib, prayerKey: 'maghrib', start: prayerMins.maghrib - buf.maghrib.before, end: prayerMins.maghrib });
-  }
-  occupiedRanges.push({ type: 'prayer', label: PRAYER_NAMES.maghrib, prayerKey: 'maghrib', start: prayerMins.maghrib, end: prayerMins.maghrib + buf.maghrib.after });
+  occupiedRanges.push({ type: 'prayer', label: PRAYER_NAMES.maghrib, prayerKey: 'maghrib', start: prayerMins.maghrib + buf.maghrib.iqama, end: prayerMins.maghrib + buf.maghrib.iqama + buf.maghrib.after });
 
   // العشاء
-  if (buf.isha.before > 0) {
-    occupiedRanges.push({ type: 'prep', label: PREP_NAMES.isha, prayerKey: 'isha', start: prayerMins.isha - buf.isha.before, end: prayerMins.isha });
-  }
-  occupiedRanges.push({ type: 'prayer', label: PRAYER_NAMES.isha, prayerKey: 'isha', start: prayerMins.isha, end: prayerMins.isha + buf.isha.after });
+  occupiedRanges.push({ type: 'prayer', label: PRAYER_NAMES.isha, prayerKey: 'isha', start: prayerMins.isha + buf.isha.iqama, end: prayerMins.isha + buf.isha.iqama + buf.isha.after });
 
   // وقت النوم — يحدد نهاية فترة العمل وبداية النوم
   const bedEnd = Math.min(bedtimeMin, 1440);
@@ -435,12 +420,12 @@ function renderPrayerGrid(dayData, prayerMins) {
   const isToday = document.getElementById('schedule-date').value === now.toISOString().split('T')[0];
 
   const prayers = [
-    { key: 'fajr',    name: 'الفجر',  mins: prayerMins.fajr },
+    { key: 'fajr', name: 'الفجر', mins: prayerMins.fajr },
     { key: 'sunrise', name: 'الشروق', mins: prayerMins.sunrise },
-    { key: 'dhuhr',   name: 'الظهر',  mins: prayerMins.dhuhr },
-    { key: 'asr',     name: 'العصر',  mins: prayerMins.asr },
+    { key: 'dhuhr', name: 'الظهر', mins: prayerMins.dhuhr },
+    { key: 'asr', name: 'العصر', mins: prayerMins.asr },
     { key: 'maghrib', name: 'المغرب', mins: prayerMins.maghrib },
-    { key: 'isha',    name: 'العشاء', mins: prayerMins.isha }
+    { key: 'isha', name: 'العشاء', mins: prayerMins.isha }
   ];
 
   let prevIdx = -1, nextIdx = -1;
@@ -544,9 +529,9 @@ function renderPentagon(prayerMins) {
     let endMin = prayerMins[nextKey];
     if (endMin <= startMin) endMin += 1440;
     const total = endMin - startMin;
-    const afterBuf = buf[key] ? buf[key].after : 0;
-    const beforeBuf = buf[nextKey] ? buf[nextKey].before : 0;
-    const workTime = Math.max(0, total - afterBuf - beforeBuf);
+    const afterBuf = buf[key] ? (buf[key].iqama + buf[key].after) : 0;
+    const beforeBuf = 0;
+    const workTime = Math.max(0, total - afterBuf);
     return { total, afterBuf, beforeBuf, workTime };
   });
 
@@ -585,11 +570,6 @@ function renderPentagon(prayerMins) {
     if (e.workTime > 0) {
       svg += `<line x1="${pB.x}" y1="${pB.y}" x2="${pC.x}" y2="${pC.y}" stroke="${colorWork}" stroke-width="5" stroke-opacity="0.7" stroke-linecap="round"/>`;
     }
-    // تحضير للصلاة التالية (buffer before)
-    if (e.beforeBuf > 0) {
-      svg += `<line x1="${pC.x}" y1="${pC.y}" x2="${pD.x}" y2="${pD.y}" stroke="${colorEnd}" stroke-width="6" stroke-opacity="0.4" stroke-linecap="round"/>`;
-    }
-
     // تسميات المدة على المنتصف
     const mx = (v1.x + v2.x) / 2;
     const my = (v1.y + v2.y) / 2;
@@ -615,8 +595,8 @@ function renderPentagon(prayerMins) {
     const key = prayerKeys[i];
     const color = PRAYER_COLORS[key];
     const timeStr = displayTime(prayerMins[key]);
+    const iqamaMin = buf[key] ? buf[key].iqama : 0;
     const afterMin = buf[key] ? buf[key].after : 0;
-    const beforeMin = buf[key] ? buf[key].before : 0;
 
     svg += `<circle cx="${v.x}" cy="${v.y}" r="8" fill="${color}" class="pent-dot"/>`;
     svg += `<circle cx="${v.x}" cy="${v.y}" r="12" fill="none" stroke="${color}" stroke-width="2" stroke-opacity="0.3"/>`;
@@ -628,7 +608,7 @@ function renderPentagon(prayerMins) {
 
     svg += `<text x="${tx}" y="${ty - 14}" class="pent-prayer-name" fill="${color}" text-anchor="middle" dominant-baseline="middle">${prayerLabels[i]}</text>`;
     svg += `<text x="${tx}" y="${ty + 2}" class="pent-prayer-time" text-anchor="middle" dominant-baseline="middle">${timeStr}</text>`;
-    svg += `<text x="${tx}" y="${ty + 16}" class="pent-buffer-info" text-anchor="middle" dominant-baseline="middle">${beforeMin > 0 ? beforeMin + ' ق' : ''} | ${afterMin > 0 ? afterMin + ' ب' : ''}</text>`;
+    svg += `<text x="${tx}" y="${ty + 16}" class="pent-buffer-info" text-anchor="middle" dominant-baseline="middle">${iqamaMin > 0 ? iqamaMin + ' إق' : ''} | ${afterMin > 0 ? afterMin + ' ب' : ''}</text>`;
   }
 
   // وقت النوم في المركز
@@ -707,7 +687,7 @@ function renderDayStats(segments) {
   // حساب الفجوات غير المحددة داخل فترات العمل
   const unassignedSlots = [];
   const disabledPeriods = savedPlanStats ? savedPlanStats.disabledPeriods || [] : [];
-  workSegs.forEach(function(wSeg, wIdx) {
+  workSegs.forEach(function (wSeg, wIdx) {
     const pKey = 'work:' + wSeg.start + '-' + wSeg.end;
     if (disabledPeriods.indexOf(pKey) !== -1) return;
     const pActs = planActivities.filter(a => a.start >= wSeg.start && a.end <= wSeg.end).sort((a, b) => a.start - b.start);
@@ -748,13 +728,13 @@ function renderDayStats(segments) {
 
   // Group focus by category: focus in work periods → "عمل", focus on planned activities → that activity
   const focusByCat = {};
-  focusSessions.forEach(function(s) {
+  focusSessions.forEach(function (s) {
     if ((s.totalFocusSec || 0) <= 0) return;
     totalDayFocusSec += s.totalFocusSec;
     totalDayFocusSessions += 1;
 
     // Check if this focus matches a planned activity by name
-    const matchedCat = categories.find(function(c) { return c.name === s.activityName; });
+    const matchedCat = categories.find(function (c) { return c.name === s.activityName; });
     // If matched to a planned activity, assign there; otherwise assign to "غير محدد" (unspecified time)
     const catName = matchedCat ? matchedCat.name : 'غير محدد';
 
@@ -791,7 +771,7 @@ function renderDayStats(segments) {
       html += `</div>`;
       // Show detail breakdown if multiple focus sessions in this category
       if (focus.details.length > 1) {
-        focus.details.forEach(function(d) {
+        focus.details.forEach(function (d) {
           html += `<div class="ds-focus-detail">`;
           html += `<span class="ds-focus-detail-icon">${d.icon || '🎯'}</span>`;
           html += `<span class="ds-focus-detail-name">${d.name}</span>`;
@@ -829,7 +809,7 @@ function showUnassignedDialog() {
   var body = document.getElementById('unassigned-body');
 
   var html = '';
-  slots.forEach(function(slot) {
+  slots.forEach(function (slot) {
     html += '<div class="ua-slot" onclick="onUnassignedSlotClick(' + slot.periodIdx + ', ' + slot.start + '); document.getElementById(\'unassigned-overlay\').classList.remove(\'active\')">';
     html += '<div class="ua-slot-info">';
     html += '<span class="ua-slot-time">' + displayTimeRange(slot.start, slot.end) + '</span>';
@@ -987,11 +967,11 @@ function exportDayStatsJSON() {
 /** تحديد الصلاتين اللتين تقع فترة العمل بينهما */
 function getWorkBetweenPrayers(seg, prayerMins) {
   const prayerOrder = [
-    { key: 'fajr',    name: 'الفجر' },
-    { key: 'dhuhr',   name: 'الظهر' },
-    { key: 'asr',     name: 'العصر' },
+    { key: 'fajr', name: 'الفجر' },
+    { key: 'dhuhr', name: 'الظهر' },
+    { key: 'asr', name: 'العصر' },
     { key: 'maghrib', name: 'المغرب' },
-    { key: 'isha',    name: 'العشاء' }
+    { key: 'isha', name: 'العشاء' }
   ];
 
   // Find the prayer whose athan falls within this period (prayer at start)
@@ -1212,7 +1192,7 @@ function renderWorkBlocks(segments, prayerMins) {
       }
       html += `</div>`;
       html += `<div class="wp-labels">`;
-      html += `<div class="wp-gone"><span class="wp-dot wp-dot-gone"></span> انتهى <b>${formatDuration(pGone)}</b></div>`;
+      html += `<div class="wp-gone"><span class="wp-dot wp-dot-gone"></span> مضى من اليوم <b>${formatDuration(pGone)}</b></div>`;
       html += `<div class="wp-left"><span class="wp-dot wp-dot-left"></span> متبقي <b>${formatDuration(pLeft)}</b></div>`;
       html += `</div>`;
       if (periodFocusSec > 0) {
@@ -1277,7 +1257,7 @@ function renderWorkBlocks(segments, prayerMins) {
           html += `<span class="wt-act-card-dur">${formatDuration(act.end - act.start)}</span>`;
           html += `</div>`;
           if (hasNote) {
-            html += `<div class="wt-act-card-note">${act.note.replace(/</g,'&lt;').replace(/\n/g,'<br>')}</div>`;
+            html += `<div class="wt-act-card-note">${act.note.replace(/</g, '&lt;').replace(/\n/g, '<br>')}</div>`;
           }
           html += `</div>`;
         });
@@ -1300,7 +1280,7 @@ function renderWorkBlocks(segments, prayerMins) {
         const activeAct = periodActs.find(a => nowMin2 >= a.start && nowMin2 < a.end);
         if (activeAct) {
           html += `<div style="padding: 4px 12px 12px;">`;
-          html += `<button class="focus-btn" style="--focus-btn-bg:${activeAct.color}88;--focus-btn-bg2:${activeAct.color}55" onclick="openFocusMode('${dateStr2}', ${activeAct.start}, ${activeAct.end}, '${(activeAct.name||'').replace(/'/g,"\\'")}', '${activeAct.icon||''}', '${activeAct.color}')">`;
+          html += `<button class="focus-btn" style="--focus-btn-bg:${activeAct.color}88;--focus-btn-bg2:${activeAct.color}55" onclick="openFocusMode('${dateStr2}', ${activeAct.start}, ${activeAct.end}, '${(activeAct.name || '').replace(/'/g, "\\'")}', '${activeAct.icon || ''}', '${activeAct.color}')">`;
           html += `${activeAct.icon || '&#127919;'} ابدأ التركيز — ${activeAct.name || 'تركيز'}</button>`;
           html += `</div>`;
         } else {
@@ -1377,7 +1357,7 @@ function renderWorkBlocks(segments, prayerMins) {
           <div class="wp-fill" style="width:${workProgressPct}%"></div>
         </div>
         <div class="wp-labels">
-          <div class="wp-gone"><span class="wp-dot wp-dot-gone"></span> انتهى <b id="wp-gone-val">${formatDuration(workGone)}</b></div>
+          <div class="wp-gone"><span class="wp-dot wp-dot-gone"></span> مضى من اليوم <b id="wp-gone-val">${formatDuration(workGone)}</b></div>
           <div class="wp-left"><span class="wp-dot wp-dot-left"></span> متبقي <b id="wp-left-val">${formatDuration(workLeft)}</b></div>
         </div>
       </div>`;
@@ -1473,7 +1453,7 @@ function renderDay() {
 
   // تحميل بيانات التركيز وإعادة عرض الإحصائيات بعد وصول البيانات
   if (typeof FocusData !== 'undefined') {
-    FocusData.load(dateStr).then(function() {
+    FocusData.load(dateStr).then(function () {
       renderDayStats(segments);
     });
   }
@@ -1684,16 +1664,16 @@ function loadSettings() {
 function applySettingsToUI() {
   const buf = scheduleSettings.buffers;
 
-  setInputValue('buf-fajr-before', buf.fajr.before);
+  setInputValue('buf-fajr-iqama', buf.fajr.iqama);
   setInputValue('buf-fajr-after', buf.fajr.after);
   setInputValue('buf-sunrise-after', buf.sunrise.after);
-  setInputValue('buf-dhuhr-before', buf.dhuhr.before);
+  setInputValue('buf-dhuhr-iqama', buf.dhuhr.iqama);
   setInputValue('buf-dhuhr-after', buf.dhuhr.after);
-  setInputValue('buf-asr-before', buf.asr.before);
+  setInputValue('buf-asr-iqama', buf.asr.iqama);
   setInputValue('buf-asr-after', buf.asr.after);
-  setInputValue('buf-maghrib-before', buf.maghrib.before);
+  setInputValue('buf-maghrib-iqama', buf.maghrib.iqama);
   setInputValue('buf-maghrib-after', buf.maghrib.after);
-  setInputValue('buf-isha-before', buf.isha.before);
+  setInputValue('buf-isha-iqama', buf.isha.iqama);
   setInputValue('buf-isha-after', buf.isha.after);
   setInputValue('bedtime-after-isha-schedule', scheduleSettings.bedtimeAfterIsha);
   setInputValue('pomo-duration-schedule', scheduleSettings.pomoDuration);
@@ -1717,12 +1697,12 @@ function getInputValue(id, defaultVal) {
 
 function saveSettings() {
   scheduleSettings.buffers = {
-    fajr:    { before: getInputValue('buf-fajr-before', 90),    after: getInputValue('buf-fajr-after', 30) },
-    sunrise: { before: 0,                                        after: getInputValue('buf-sunrise-after', 20) },
-    dhuhr:   { before: getInputValue('buf-dhuhr-before', 15),    after: getInputValue('buf-dhuhr-after', 20) },
-    asr:     { before: getInputValue('buf-asr-before', 15),      after: getInputValue('buf-asr-after', 15) },
-    maghrib: { before: getInputValue('buf-maghrib-before', 10),  after: getInputValue('buf-maghrib-after', 20) },
-    isha:    { before: getInputValue('buf-isha-before', 10),     after: getInputValue('buf-isha-after', 20) }
+    fajr: { iqama: getInputValue('buf-fajr-iqama', 20), after: getInputValue('buf-fajr-after', 30) },
+    sunrise: { iqama: 0, after: getInputValue('buf-sunrise-after', 20) },
+    dhuhr: { iqama: getInputValue('buf-dhuhr-iqama', 10), after: getInputValue('buf-dhuhr-after', 20) },
+    asr: { iqama: getInputValue('buf-asr-iqama', 10), after: getInputValue('buf-asr-after', 15) },
+    maghrib: { iqama: getInputValue('buf-maghrib-iqama', 5), after: getInputValue('buf-maghrib-after', 20) },
+    isha: { iqama: getInputValue('buf-isha-iqama', 10), after: getInputValue('buf-isha-after', 20) }
   };
   scheduleSettings.bedtimeAfterIsha = getInputValue('bedtime-after-isha-schedule', 120);
   scheduleSettings.pomoDuration = getInputValue('pomo-duration-schedule', 45);

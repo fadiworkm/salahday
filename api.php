@@ -33,12 +33,12 @@ $date   = $_GET['date']   ?? '';
 function defaultSettings() {
     return [
         'buffers' => [
-            'fajr'    => ['before' => 90, 'after' => 30],
-            'sunrise' => ['before' => 0,  'after' => 20],
-            'dhuhr'   => ['before' => 15, 'after' => 20],
-            'asr'     => ['before' => 15, 'after' => 15],
-            'maghrib' => ['before' => 10, 'after' => 20],
-            'isha'    => ['before' => 10, 'after' => 20],
+            'fajr'    => ['iqama' => 20, 'after' => 30],
+            'sunrise' => ['iqama' => 0,  'after' => 20],
+            'dhuhr'   => ['iqama' => 10, 'after' => 20],
+            'asr'     => ['iqama' => 10, 'after' => 15],
+            'maghrib' => ['iqama' => 5,  'after' => 20],
+            'isha'    => ['iqama' => 10, 'after' => 20],
         ],
         'bedtimeAfterIsha' => 120,
         'timeFormat'       => '12',
