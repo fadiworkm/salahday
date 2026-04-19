@@ -34,6 +34,8 @@ function _mtState(start, end, isToday, nowMin) {
 function _mtPillH(dur) { return Math.max(56, Math.min(dur * 1.3, 200)); }
 function _mtLineH(dur) { return Math.max(20, Math.min(dur * 0.6, 80)); }
 
+var MT_EXPAND_KEY = 'mt-expand-all';
+
 /* ─── main render ─── */
 
 function renderMobileTimeline() {
@@ -57,6 +59,7 @@ function renderMobileTimeline() {
   var disabledList = saved ? saved.disabledPeriods || [] : [];
 
   var html = '<div class="mt-timeline">';
+  var expandAll = _mtGetExpandAll();
 
   segs.forEach(function (seg, idx) {
     var pKey = 'work:' + seg.start + '-' + seg.end;
@@ -77,9 +80,6 @@ function renderMobileTimeline() {
       : null;
     var periodStyle = periodColor ? ' style="--period-color:' + periodColor + '"' : '';
 
-    // Collapse by default; current period stays open. "Expand all" preference overrides.
-    var expandAll = false;
-    try { expandAll = localStorage.getItem('mt-expand-all') === '1'; } catch (e) {}
     var isCollapsed = !expandAll && !isCur && !isDis;
 
     html += '<div class="mt-period' + (isDis ? ' mt-period-disabled' : '') +
@@ -175,7 +175,6 @@ function renderMobileTimeline() {
   html += '</div>';
 
   container.insertAdjacentHTML('beforeend', html);
-  // Note: timers registered via _mtRegisterTimers() which is hooked into registerTimers()
 }
 
 window.renderMobileTimeline = renderMobileTimeline;
@@ -187,12 +186,11 @@ function _mtTogglePeriod(headerEl) {
 }
 window._mtTogglePeriod = _mtTogglePeriod;
 
-/* Expand-all preference: saved in localStorage, survives reload */
 function _mtGetExpandAll() {
-  try { return localStorage.getItem('mt-expand-all') === '1'; } catch (e) { return false; }
+  try { return localStorage.getItem(MT_EXPAND_KEY) === '1'; } catch (e) { return false; }
 }
 
-function _mtApplyExpandAll(expandAll) {
+function _mtApplyExpandAll(expandAll, btnArg) {
   var periods = document.querySelectorAll('.mt-timeline .mt-period');
   for (var i = 0; i < periods.length; i++) {
     var p = periods[i];
@@ -203,9 +201,9 @@ function _mtApplyExpandAll(expandAll) {
       p.classList.add('mt-period-collapsed');
     }
   }
-  var btn = document.getElementById('toggle-periods-btn');
+  var btn = btnArg || document.getElementById('toggle-periods-btn');
   if (btn) {
-    btn.innerHTML = expandAll ? '&#9662;' : '&#9656;'; // ▾ expanded, ▸ collapsed
+    btn.innerHTML = expandAll ? '&#9662;' : '&#9656;';
     btn.classList.toggle('btn-toggle-periods-expanded', expandAll);
     btn.title = expandAll ? 'طي الفترات (عرض النشط فقط)' : 'توسيع كل الفترات';
   }
@@ -213,7 +211,7 @@ function _mtApplyExpandAll(expandAll) {
 
 function _mtToggleExpandAll() {
   var next = !_mtGetExpandAll();
-  try { localStorage.setItem('mt-expand-all', next ? '1' : '0'); } catch (e) {}
+  try { localStorage.setItem(MT_EXPAND_KEY, next ? '1' : '0'); } catch (e) {}
   _mtApplyExpandAll(next);
 }
 
@@ -221,8 +219,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var btn = document.getElementById('toggle-periods-btn');
   if (btn) {
     btn.addEventListener('click', _mtToggleExpandAll);
-    // Reflect initial state on the button
-    _mtApplyExpandAll(_mtGetExpandAll());
+    _mtApplyExpandAll(_mtGetExpandAll(), btn);
   }
 });
 
@@ -279,17 +276,15 @@ function _mtBuildAct(act, isToday, nowMin, lastLabel, pIdx, actGIdx) {
     html += '<div class="mt-note">' + act.note.replace(/</g,'&lt;').replace(/\n/g,'<br>') + '</div>';
   }
   html += '</div>';
+  var actDateStr = document.getElementById('schedule-date').value;
   if (st === 'mt-active') {
-    var dateStr = document.getElementById('schedule-date').value;
     html += '<div class="mt-focus-row">';
     html += '<div class="mt-focus-actions">';
-    html += '<button class="mt-focus-btn" style="--focus-btn-bg:' + color + '88;--focus-btn-bg2:' + color + '55" onclick="openFocusMode(\'' + dateStr + '\',' + act.start + ',' + act.end + ',\'' + (act.name||'').replace(/'/g,"\\'") + '\',\'' + (act.icon||'') + '\',\'' + color + '\')">&#127919; ركز</button>';
+    html += '<button class="mt-focus-btn" style="--focus-btn-bg:' + color + '88;--focus-btn-bg2:' + color + '55" onclick="openFocusMode(\'' + actDateStr + '\',' + act.start + ',' + act.end + ',\'' + (act.name||'').replace(/'/g,"\\'") + '\',\'' + (act.icon||'') + '\',\'' + color + '\')">&#127919; ركز</button>';
     html += '<span class="mt-timer"></span>';
     html += '</div>';
     html += '</div>';
   }
-  // Focus progress for this activity
-  var actDateStr = document.getElementById('schedule-date').value;
   var actFocusSec = typeof FocusData !== 'undefined' ? FocusData.getTotalForSegment(actDateStr, act.start, act.end) : 0;
   if (actFocusSec > 0) {
     var actDurSec = dur * 60;
